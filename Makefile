@@ -13,7 +13,7 @@ SRCS = $(wildcard $(SDIR)/*.cpp)
 OBJS = $(patsubst $(SDIR)/%.cpp, $(ODIR)/%.o, $(SRCS))
 
 LDFLAGS = -lX11 -lGL -lGLEW
-CFLAGS = -I$(DDIR) -Werror -Wall -Wextra -Wformat -ansi -pedantic -std=c++14 $($(BUILD)_FLAGS) 
+CFLAGS = -I$(DDIR) -Wall -Wextra -Wformat -ansi -pedantic -std=c++14 $($(BUILD)_FLAGS) #-Werror 
 BIN := KingCraft
 
 # Default rule
@@ -24,11 +24,13 @@ $(BIN): $(OBJS)
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS) 
 
 # Intermediate objects
-$(OBJS): $(SRCS)
-	$(CC) -c $< $(CFLAGS)
+$(ODIR)/%.o: $(SRCS)
+	$(CC) -c $< $(CFLAGS) -o $@
 
 # Remove object files and binaries
 clean: 
 	rm -f $(BIN) $(ODIR)/*.o
 
-.PHONY: clean all
+rebuild: clean all
+
+.PHONY: clean all rebuild

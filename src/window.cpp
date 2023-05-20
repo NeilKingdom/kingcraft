@@ -1,124 +1,78 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <assert.h>
+#include <iostream>
+#include <cassert>
 #include <X11/X.h>
 #include <X11/Xlib.h>
-#include <GL/glew.h> /* Put before other OpenGL library headers */
+#include <GL/glew.h> // Put before other OpenGL library headers
 
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <GL/glu.h>
 
+#include "callbacks.hpp"
+
 #define APP_TITLE "KingCraft"
-#define ASSERT(x) if (!(x)) assert(false)
-#define GLCall(x) GLClearError();\
-   x;\
-   ASSERT(GLCheckError())
 
-static void GLClearError() 
-{
-   while (glGetError() != GL_NO_ERROR) ;;
-}
-
-static bool GLCheckError()
-{
-   int error;
-   while ((error = glGetError()) != GL_NO_ERROR)
-   {
-      printf("OpenGL Error ");
-      switch(error) {
-         case GL_INVALID_ENUM:
-            printf("GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument.");
-            break;
-         case GL_INVALID_VALUE:
-            printf("GL_INVALID_OPERATION: A numeric argument is out of range.");
-            break;
-         case GL_INVALID_OPERATION:
-            printf("GL_INVALID_OPERATION: The specified operation is not allowed in the current state.");
-            break;
-         case GL_INVALID_FRAMEBUFFER_OPERATION:
-            printf("GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete.");
-            break;
-         case GL_OUT_OF_MEMORY:
-            printf("GL_OUT_OF_MEMORY: There is not enough memory left to execute the command.");
-            break;
-         case GL_STACK_UNDERFLOW:
-            printf("GL_STACK_UNDERFLOW: An attempt has been made to perform an operation that would cause an internal stack to underflow.");
-            break;
-         case GL_STACK_OVERFLOW :
-            printf("GL_STACK_OVERFLOW: An attempt has been made to perform an operation that would cause an internal stack to overflow.");
-            break;
-         default :
-            printf("Unrecognized error %d", error);
-      }
-      printf("\n");
-      return false;
-   }
-   return true;
-}
-
-/* X11 variables */
-Display                *dpy;  /* The target monitor/display */
-Window                  root; /* The parent window of our application's window */
-Window                  win;  /* The application's window */
-XVisualInfo            *vi;   /* Struct containing additional info about the window */
-Colormap                cmap; /* The color map of the window */
-XSetWindowAttributes    swa;  /* Set attributes struct */
-XWindowAttributes       gwa;  /* Get attributes struct */
-XEvent                  xev;  /* XEvent struct for handling X events */
-GLXContext              glx;  /* The OpenGL context for X11 */
+// X11 variables
+Display                *dpy;  // The target monitor/display 
+Window                  root; // The parent window of our application's window 
+Window                  win;  // The application's window
+XVisualInfo            *vi;   // Struct containing additional info about the window
+Colormap                cmap; // The color map of the window
+XSetWindowAttributes    swa;  // Set attributes struct
+XWindowAttributes       gwa;  // Get attributes struct 
+XEvent                  xev;  // XEvent struct for handling X events 
+GLXContext              glx;  // The OpenGL context for X11
 GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
 
-static unsigned int CompileShader(unsigned int type, const char *source)
+static unsigned CompileShader(unsigned type, const std::string source)
 {
-   GLCall(unsigned int id = glCreateShader(type));
-   const char *src = strdup(source);
-   GLCall(glShaderSource(id, 1, &src, NULL));
-   GLCall(glCompileShader(id));
+   unsigned int id = glCreateShader(type);
+   const char *src = source.c_str(); // OpenGL requires a C-style string for glShaderSource() 
+   glShaderSource(id, 1, &src, NULL);
+   glCompileShader(id);
 
    int result;
-   GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
+   glGetShaderiv(id, GL_COMPILE_STATUS, &result);
    if (result == GL_FALSE)
    {
       int length;
-      GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
+      glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
       char* message = (char*)alloca(length * sizeof(char));
-      GLCall(glGetShaderInfoLog(id, length, &length, message));
-      printf("Failed to compile %s shader: %s\n", (type == GL_VERTEX_SHADER ? "vertex" : "fragment"), message);
-      GLCall(glDeleteShader(id));
+      glGetShaderInfoLog(id, length, &length, message);
+      std::cerr << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") 
+         << " shader: " << message << std::endl;
+      glDeleteShader(id);
       return 0;
    }
 
    return id;
 }
 
-static unsigned int CreateShader(const char *vertexShader, const char *fragmentShader)
+static unsigned CreateShader(const std::string vertexShader, const std::string fragmentShader)
 {
    unsigned int program = glCreateProgram();
    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
 
-   GLCall(glAttachShader(program, vs));
-   GLCall(glAttachShader(program, fs));
-   GLCall(glLinkProgram(program));
-   GLCall(glValidateProgram(program));
+   glAttachShader(program, vs);
+   glAttachShader(program, fs);
+   glLinkProgram(program);
+   glValidateProgram(program);
 
-   GLCall(glDeleteShader(vs));
-   GLCall(glDeleteShader(fs));
+   glDeleteShader(vs);
+   glDeleteShader(fs);
 
    return program;
 }
 
 int main(int argc, char *argv[]) 
 {
-   dpy = XOpenDisplay(NULL); /* NULL = first monitor */
+   dpy = XOpenDisplay(NULL); // NULL = first monitor
 
    if (dpy == NULL) 
    {
-      printf("\n\tcannot connect to X server\n\n");
-      exit(0);
+      std::cerr << "Cannot connect to X server" << std::endl;
+      exit(-1);
    }
 
    root = DefaultRootWindow(dpy);
@@ -127,38 +81,48 @@ int main(int argc, char *argv[])
 
    if (vi == NULL) 
    {
-      fprintf(stderr, "No appropriate visual found\n");
+      std::cerr << "No appropriate visual found" << std::endl;
       exit(-1);
    } 
    else 
    {
-      fprintf(stderr, "visual %p selected\n", (void *)vi->visualid); 
+      std::cerr << "Visual " << vi->visualid << " selected" << std::endl;
    }
 
    cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
-
    swa.colormap = cmap;
-   /* Handle the following events: */
+   // Handle the following events:
    swa.event_mask = (ExposureMask | KeyPressMask);
 
-   /* TODO: Query user's screen size */
+   // TODO: Query user's screen size for window size
    win = XCreateWindow(dpy, root, 0, 0, 600, 600, 0, vi->depth, 
          InputOutput, vi->visual, (CWColormap | CWEventMask), &swa);
 
    XMapWindow(dpy, win);
    XStoreName(dpy, win, APP_TITLE);
 
-   glx = glXCreateContext(dpy, vi, NULL, GL_TRUE); /* Create the OpenGL context */
-   glXMakeCurrent(dpy, win, glx); /* Attach the GLX context to the application window */
+   glx = glXCreateContext(dpy, vi, NULL, GL_TRUE); // Create the OpenGL context
+   glXMakeCurrent(dpy, win, glx); // Attach the GLX context to the application window 
 
-   /* Must be placed after a valid OpenGL context has been made current */
+   // Must be placed after a valid OpenGL context has been made current 
    if (glewInit() != GLEW_OK) 
    {
-      fprintf(stderr, "Failed to initalize GLEW\n");
+      std::cerr << "Failed to initialize GLEW" << std::endl;
       exit(-1);
    }
 
-   glEnable(GL_DEPTH_TEST); /* Enable depth comparisons and update the depth buffer */
+#ifdef DEBUG
+   std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+#endif
+
+   // NOTE: You cannot OR these!!!
+   glEnable(GL_DEPTH_TEST); 
+   glEnable(GL_DEBUG_OUTPUT);
+   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+   if (glDebugMessageCallback)
+      glDebugMessageCallback(debugCallback, nullptr);
+   else 
+      std::cout << "WARNING: glDebugMessageCallback() is unavailable!" << std::endl;
 
    float positions[6] = {
       -0.5f, -0.5f,
@@ -167,12 +131,12 @@ int main(int argc, char *argv[])
    };
 
    unsigned int buffer;
-   GLCall(glGenBuffers(1, &buffer));
-   GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-   GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, positions, GL_STATIC_DRAW));
+   glGenBuffers(1, &buffer);
+   glBindBuffer(GL_ARRAY_BUFFER, buffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, positions, GL_STATIC_DRAW);
 
-   GLCall(glEnableVertexAttribArray(0));
-   GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0));
+   glEnableVertexAttribArray(0);
+   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 
    const char *vertexShader = 
       "#version 330 core\n"
@@ -193,9 +157,9 @@ int main(int argc, char *argv[])
       "}\n";
 
    unsigned int shader = CreateShader(vertexShader, fragmentShader);
-   GLCall(glUseProgram(shader));
+   glUseProgram(shader);
 
-   GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
    while(true) 
    {
@@ -207,22 +171,26 @@ int main(int argc, char *argv[])
          {
             XGetWindowAttributes(dpy, win, &gwa);
             glViewport(0, 0, gwa.width, gwa.height);
-            GLCall(glClear(GL_COLOR_BUFFER_BIT)); /* Clear the color buffer */
+            glClear(GL_COLOR_BUFFER_BIT); // Clear the color buffer
 
-            GLCall(glDrawArrays(GL_TRIANGLES, 0, 3)); 
+            glDrawArrays(GL_TRIANGLES, 0, 3); 
 
-            glXSwapBuffers(dpy, win); /* Draw new contents */
+            int error;
+            while ((error = glGetError()) != GL_NO_ERROR)
+               std::cout << "OpenGL Error: " << error << std::endl;
+
+            glXSwapBuffers(dpy, win); // Draw new contents 
             break;
          }
          case KeyPress:
          {
-            printf("Key press detected\n");
+            std::cout << "Key press detected" << std::endl;
             break;
          }
          case ButtonPress:
          {
             glXMakeCurrent(dpy, None, NULL);
-            printf("Click detected\n");
+            std::cout << "Click detected" << std::endl;
             break;
          }
       }
