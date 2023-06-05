@@ -5,10 +5,10 @@
 #include <cstring>
 #include <string>
 #include <chrono>
-#include <signal.h>
 #include <unistd.h>
 #include <math.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 #include <GL/glew.h> // Put before other OpenGL library headers
 #include <GL/gl.h>
@@ -20,15 +20,15 @@
 
 // X11 variables
 Display                *dpy;  // The target monitor/display 
-Window                  root; // The parent window of our application's window 
 Window                  win;  // The application's window
+Screen                 *scrn; // 
+int                     scrn_id;
 XVisualInfo            *vi;   // Struct containing additional info about the window
-Colormap                cmap; // The color map of the window
-XSetWindowAttributes    swa;  // Set attributes struct
 XWindowAttributes       gwa;  // Get attributes struct 
 XEvent                  xev;  // XEvent struct for handling X events 
 GLXContext              glx;  // The OpenGL context for X11
-GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+                              //
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int *);
 
 static unsigned CompileShader(unsigned type, const std::string source)
 {
@@ -71,13 +71,6 @@ static unsigned CreateShader(const std::string vertexShader, const std::string f
    return program;
 }
 
-void winResizeCallback(int signal);
-void winResizeCallback(int signal) 
-{
-   XGetWindowAttributes(dpy, win, &gwa);
-   glViewport(0, 0, gwa.width, gwa.height);
-}
-
 static bool isExtensionSupported(const char *extList, const char *extension) {
 	const char *start;
 	const char *where, *terminator;
@@ -112,17 +105,23 @@ int main(int argc, char *argv[])
 {
    /*** Setup X11 window ***/
 
+   // Open the display
    dpy = XOpenDisplay(NULL); // NULL = first monitor
    if (dpy == NULL) 
    {
       std::cerr << "Cannot connect to X server" << std::endl;
       exit(-1);
    }
-   root = DefaultRootWindow(dpy);
+   scrn = DefaultScreenOfDisplay(dpy);
+   scrn_id = DefaultScreen(dpy);
+
+   // Check GLX version
+   int vmajor, vminor = 0;
+   glXQueryVersion(dpy, &vmajor, &vminor);
 
    // Specify what version of OpenGL we're using to the X11 extension (330 Core) 
    int glx_attribs[] = {
-      /*GLX_X_RENDERABLE    , True,
+      GLX_X_RENDERABLE    , True,
       GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
       GLX_RENDER_TYPE     , GLX_RGBA_BIT,
       GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
@@ -132,16 +131,10 @@ int main(int argc, char *argv[])
       GLX_ALPHA_SIZE      , 8,
       GLX_DEPTH_SIZE      , 24,
       GLX_STENCIL_SIZE    , 8,
-      GLX_DOUBLEBUFFER    , True,*/
-      GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-      GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-      GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+      GLX_DOUBLEBUFFER    , True,
       None
    };
 
-   typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int *);
-   glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-   glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
 
    // Create a framebuffer configuration
    int fbcount;
@@ -153,48 +146,94 @@ int main(int argc, char *argv[])
       exit(-1);
    }
 
-   // Normal way of choosing visual in X11...
-   /*vi = glXChooseVisual(dpy, 0, att); 
-   if (vi == NULL) 
-   {
-      std::cerr << "No appropriate visual found" << std::endl;
-      exit(-1);
-   } 
-   else 
-   {
-      std::cerr << "Visual " << vi->visualid << " selected" << std::endl;
-   }*/
+   // Pick the FB config/visual with the most samples per pixel
+	std::cout << "Getting best XVisualInfo\n";
+	int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+	for (int i = 0; i < fbcount; i++) {
+		vi = glXGetVisualFromFBConfig(dpy, fbc[i]);
+		if (vi != 0) {
+			int samp_buf, samples;
+			glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+			glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLES, &samples);
 
-   vi = glXGetVisualFromFBConfig(dpy, fbc[0]);
+			if (best_fbc < 0 || (samp_buf && samples > best_num_samp)) {
+				best_fbc = i;
+				best_num_samp = samples;
+			}
+			if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp)
+				worst_fbc = i;
+			worst_num_samp = samples;
+		}
+		XFree(vi);
+	}
+	std::cout << "Best visual info index: " << best_fbc << std::endl;
+	GLXFBConfig bestFbc = fbc[best_fbc];
+	XFree( fbc ); // Make sure to free this!
+
+   vi = glXGetVisualFromFBConfig(dpy, bestFbc);
    if (vi == NULL) 
    {
       std::cerr << "No appropriate visual found" << std::endl;
       exit(-1);
    } 
-   else 
-   {
-      std::cerr << "Visual " << vi->visualid << " selected" << std::endl;
+   if (scrn_id != vi->screen) {
+      std::cout << "scrn_id(" << scrn_id << ") does not match vi->screen(" << vi->screen << ")" << std::endl;
+      exit(-1);
    }
+   
+   // Open the window
+	XSetWindowAttributes windowAttribs;
+	windowAttribs.border_pixel = BlackPixel(dpy, scrn_id);
+	windowAttribs.background_pixel = WhitePixel(dpy, scrn_id);
+	windowAttribs.override_redirect = true;
+	windowAttribs.colormap = XCreateColormap(dpy, RootWindow(dpy, scrn_id), vi->visual, AllocNone);
+	windowAttribs.event_mask = ExposureMask;
+	win = XCreateWindow(dpy, RootWindow(dpy, scrn_id), 0, 0, 600, 600, 0, vi->depth, InputOutput, vi->visual, CWBackPixel | CWColormap | CWBorderPixel | CWEventMask, &windowAttribs);
 
-   cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
-   swa.colormap = cmap;
-   // Handle the following events:
-   swa.event_mask = (ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
+	// Create GLX OpenGL context
+	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+	glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
 
-   win = XCreateWindow(dpy, root, 0, 0, 600, 600, 0, vi->depth, 
-         InputOutput, vi->visual, (CWColormap | CWEventMask), &swa);
+	const char *glxExts = glXQueryExtensionsString(dpy, scrn_id);
+	std::cout << "Late extensions:\n\t" << glxExts << std::endl;
+	if (glXCreateContextAttribsARB == 0) {
+		std::cout << "glXCreateContextAttribsARB() not found" << std::endl;
+	}
+	
+	int context_attribs[] = {
+		GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+		GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+		GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+		None
+	};
 
-   XMapWindow(dpy, win); 
-   XStoreName(dpy, win, APP_TITLE);
-
-   //glx = glXCreateContext(dpy, vi, NULL, GL_TRUE);  Create the OpenGL context
-   glx = glXCreateNewContext(dpy, fbc[0], GLX_RGBA_TYPE, 0, true);
+   if (!isExtensionSupported(glxExts, "GLX_ARB_create_context")) {
+      glx = glXCreateNewContext(dpy, bestFbc, GLX_RGBA_TYPE, 0, true);
+   } else {
+      glx = glXCreateContextAttribsARB(dpy, bestFbc, 0, true, context_attribs);
+   }
    XSync(dpy, false);
-   glXMakeCurrent(dpy, win, glx); // Attach the GLX context to the application window 
 
-   /* Set affine transform for viewport based on window width/height */
-   XGetWindowAttributes(dpy, win, &gwa);
-   glViewport(0, 0, gwa.width, gwa.height);
+   // Verifying that context is a direct context
+   if (!glXIsDirect(dpy, glx)) {
+      std::cout << "Indirect GLX rendering context obtained" << std::endl; 
+   } else {
+      std::cout << "Direct GLX rendering context obtained" << std::endl;
+   }
+   glXMakeCurrent(dpy, win, glx);
+
+#ifdef DEBUG
+   std::cout << "GL Vendor: " << glGetString(GL_VENDOR) << "\n";
+	std::cout << "GL Renderer: " << glGetString(GL_RENDERER) << "\n";
+	std::cout << "GL Version: " << glGetString(GL_VERSION) << "\n";
+	std::cout << "GL Shading Language: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
+#endif
+
+   // Handle the following events:
+   //swa.event_mask = (ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
+   
+   XClearWindow(dpy, win);
+   XMapRaised(dpy, win);
 
    // Must be placed after a valid OpenGL context has been made current 
    if (glewInit() != GLEW_OK) 
@@ -203,19 +242,6 @@ int main(int argc, char *argv[])
       exit(-1);
    }
 
-#ifdef DEBUG
-   std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-#endif
-
-   /*** Set callback for X11 window resize event */
-
-   sigset_t sig_set;
-   sigemptyset(&sig_set);
-   sigaddset(&sig_set, SIGWINCH);
-
-   struct sigaction sig_act = { winResizeCallback, sig_set, SA_RESTART, };
-   sigaction(SIGWINCH, &sig_act, NULL);
-   
    /*** Setup debugging ***/
 
    // NOTE: You cannot OR these!!!
@@ -243,11 +269,11 @@ int main(int argc, char *argv[])
 
    /*** Setup VAO, VBO, and EBO ***/
 
-   float vertices[(3 * 4)] = {
-       0.5f,  0.5f,  0.0f,
-       0.5f, -0.5f,  0.0f,
-      -0.5f, -0.5f,  0.0f,
-      //-0.5f,  0.5f,  0.0f
+   float vertices[] = {
+     // positions         // colors
+     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top
    };
 
    unsigned int indices[6] = {
@@ -268,44 +294,27 @@ int main(int argc, char *argv[])
    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+   // Position attribute
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
    glEnableVertexAttribArray(0);
+
+   // Color attribute
+   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+   glEnableVertexAttribArray(1);
 
    // Unbind array buffer + vertex array
    //glBindBuffer(GL_ARRAY_BUFFER, 0);
    //glBindVertexArray(0);
-   
-   glBindVertexArray(vao);
 
    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-   auto prev_millis = std::chrono::high_resolution_clock::now();
+   glBindVertexArray(vao);
+   
+   float green_val = 0.0f;
 
    /*** Game loop ***/
 
    while (true) 
    {
-      glClearColor(0.2f, 0.4f, 0.4f, 1.0);
-      glClear(GL_COLOR_BUFFER_BIT); 
-      
-      glUseProgram(shader); // Bind shader program for draw call
-
-      using std::chrono::duration;
-      using std::chrono::high_resolution_clock;
-      auto millis_now = duration<float, std::milli>(high_resolution_clock::now() - prev_millis).count();
-
-      //std::cout << "millis now = " << millis_now << std::endl;
-
-      float green_val = (sin(millis_now) / 2.0f) + 0.5f;
-      int vertex_col_location = glGetUniformLocation(shader, "myColor");
-      glUniform4f(vertex_col_location, 0.0f, 1.0f, green_val, 1.0f);
-
-      //glBindVertexArray(vao);
-      //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); 
-      glDrawArrays(GL_TRIANGLES, 0, 3);
-
-      glXSwapBuffers(dpy, win); 
-
       /*** Process events ***/
 
       while (XPending(dpy) > 0) 
@@ -316,6 +325,10 @@ int main(int argc, char *argv[])
          {
             case Expose: // Window was being overlapped by another window, but is now exposed
             {
+               /* Set affine transform for viewport based on window width/height */
+               XGetWindowAttributes(dpy, win, &gwa);
+               glViewport(0, 0, gwa.width, gwa.height);
+   
                std::cout << "Window was exposed" << std::endl;
                break;
             }
@@ -331,6 +344,19 @@ int main(int argc, char *argv[])
             }
          }
       }
+
+      glClearColor(0.2f, 0.4f, 0.4f, 1.0);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+      
+      glUseProgram(shader); // Bind shader program for draw call
+      glBindVertexArray(vao);
+
+      //std::cout << "millis now = " << millis_now << std::endl;
+
+      //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); 
+      glDrawArrays(GL_TRIANGLES, 0, 3);
+
+      glXSwapBuffers(dpy, win); 
    } 
 
    glDeleteVertexArrays(1, &vao);
