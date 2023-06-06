@@ -5,8 +5,10 @@ layout (location = 1) in vec3 aColor;
 
 out vec3 myColor;
 
+uniform mat4 u_MVP;
+
 void main()
 {
-   gl_Position = vec4(aPos, 1.0f);
+   gl_Position = vec4(aPos, 1.0f) * u_MVP;
    myColor = aColor;
 }

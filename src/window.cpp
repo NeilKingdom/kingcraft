@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include <chrono>
+#include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
 #include <X11/Xlib.h>
@@ -17,6 +18,13 @@
 #include "../include/callbacks.hpp"
 
 #define APP_TITLE "KingCraft"
+
+#define degToRad(angle) ((angle) * M_PI / 180.0f)
+#define radToDeg(andle) ((angle) * 180.0f / M_PI)
+
+typedef float mat1x3[3];
+typedef float mat3x3[9];
+typedef float mat4x4[16];
 
 // X11 variables
 Display                *dpy;  // The target monitor/display 
@@ -99,6 +107,40 @@ static bool isExtensionSupported(const char *extList, const char *extension) {
 	}
 
 	return false;
+}
+
+static mat3x3 *dotProd3x3(mat3x3 src, mat3x3 transform) {
+   mat3x3 *output = (mat3x3*)malloc(9 * sizeof(float));
+
+   /*
+   for (int i = 0; i < sizeof(mat3x3); i++) {
+      output[i] = (src[i] * transform[i]) + (src[i + 1]
+   }
+   */
+
+   *output[0] = (src[0] * transform[0]) + (src[1] * transform[3]) + (src[2] * transform[6]);
+   *output[1] = (src[0] * transform[1]) + (src[1] * transform[4]) + (src[2] * transform[7]);
+   *output[2] = (src[0] * transform[2]) + (src[1] * transform[5]) + (src[2] * transform[8]);
+
+   *output[3] = (src[3] * transform[0]) + (src[4] * transform[3]) + (src[5] * transform[6]);
+   *output[4] = (src[3] * transform[1]) + (src[4] * transform[4]) + (src[5] * transform[7]);
+   *output[5] = (src[3] * transform[2]) + (src[4] * transform[5]) + (src[5] * transform[8]);
+
+   *output[6] = (src[6] * transform[0]) + (src[7] * transform[3]) + (src[8] * transform[6]);
+   *output[7] = (src[6] * transform[1]) + (src[7] * transform[4]) + (src[8] * transform[7]);
+   *output[8] = (src[6] * transform[2]) + (src[7] * transform[5]) + (src[8] * transform[8]);
+
+   return output;
+}
+
+static float *dotProd1x3(mat1x3 src, mat3x3 transform) {
+   float *output = new mat1x3;
+
+   output[0] = (src[0] * transform[0]) + (src[1] * transform[1]) + (src[2] * transform[2]);
+   output[1] = (src[0] * transform[3]) + (src[1] * transform[4]) + (src[2] * transform[5]);
+   output[2] = (src[0] * transform[6]) + (src[1] * transform[7]) + (src[2] * transform[8]);
+
+   return output;
 }
 
 int main(int argc, char *argv[]) 
@@ -253,6 +295,88 @@ int main(int argc, char *argv[])
    else 
       std::cout << "WARNING: glDebugMessageCallback() is unavailable!" << std::endl;
 
+   /*** Setup VAO, VBO, and EBO ***/
+
+   float vertices[] = {
+     // positions         // colors
+     0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f,   // top right
+     0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f,  0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
+    -0.5f,  0.5f,  0.0f,  0.5f, 0.5f, 0.5f    // top left
+   };
+
+   /*
+    * 3--0
+    * | /|
+    * |/ |
+    * 2--1
+    */
+   unsigned int indices[6] = {
+      0, 1, 3,
+      1, 2, 3
+   };
+
+   mat1x3 topRight = { vertices[0], vertices[1], vertices[2] };
+   mat1x3 btmRight = { vertices[6], vertices[7], vertices[8] };
+   mat1x3 btmLeft  = { vertices[12], vertices[13], vertices[14] };
+   mat1x3 topLeft  = { vertices[18], vertices[19], vertices[20] };
+
+   /*
+   float *topRightOut = dotProd1x3(topRight, rotMatZ);
+   float *btmRightOut = dotProd1x3(btmRight, rotMatZ);
+   float *btmLeftOut  = dotProd1x3(btmLeft, rotMatZ);
+   float *topLeftOut  = dotProd1x3(topLeft, rotMatZ);
+
+   vertices[0] = topRightOut[0];
+   vertices[1] = topRightOut[1];
+   vertices[2] = topRightOut[2];
+
+   vertices[6] = btmRightOut[0];
+   vertices[7] = btmRightOut[1];
+   vertices[8] = btmRightOut[2];
+
+   vertices[12] = btmLeftOut[0];
+   vertices[13] = btmLeftOut[1];
+   vertices[14] = btmLeftOut[2];
+
+   vertices[18] = topLeftOut[0];
+   vertices[19] = topLeftOut[1];
+   vertices[20] = topLeftOut[2];
+   */
+
+   std::cout << "New vertices:" << std::endl
+      << vertices[0] << " " << vertices[1] << " " << vertices[2] << std::endl
+      << vertices[6] << " " << vertices[7] << " " << vertices[8] << std::endl
+      << vertices[12] << " " << vertices[13] << " " << vertices[14] << std::endl
+      << vertices[18] << " " << vertices[19] << " " << vertices[20] << std::endl;
+
+   unsigned int vao, vbo, ebo;
+   glGenVertexArrays(1, &vao);
+   glGenBuffers(1, &vbo);
+   glGenBuffers(1, &ebo);
+
+   glBindVertexArray(vao);
+
+   glBindBuffer(GL_ARRAY_BUFFER, vbo);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+   // Position attribute
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+   glEnableVertexAttribArray(0);
+
+   // Color attribute
+   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+   glEnableVertexAttribArray(1);
+
+   // Unbind array buffer + vertex array
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glBindVertexArray(0);
+
+   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+   
    /*** Setup vertex/fragment shaders ***/
 
    std::ifstream ifs("res/shader/vertex.shader");
@@ -267,49 +391,8 @@ int main(int argc, char *argv[])
 
    unsigned int shader = CreateShader(vertexShader, fragmentShader);
 
-   /*** Setup VAO, VBO, and EBO ***/
-
-   float vertices[] = {
-     // positions         // colors
-     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top
-   };
-
-   unsigned int indices[6] = {
-      0, 1, 3,
-      1, 2, 3
-   };
-
-   unsigned int vao, vbo, ebo;
-   glGenVertexArrays(1, &vao);
-   glGenBuffers(1, &vbo);
-   glGenBuffers(1, &ebo);
-
-   glBindVertexArray(vao);
-
-   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-   //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-   //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-   // Position attribute
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-   glEnableVertexAttribArray(0);
-
-   // Color attribute
-   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-   glEnableVertexAttribArray(1);
-
-   // Unbind array buffer + vertex array
-   //glBindBuffer(GL_ARRAY_BUFFER, 0);
-   //glBindVertexArray(0);
-
-   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-   glBindVertexArray(vao);
-   
-   float green_val = 0.0f;
+   float theta_rad = 0.0f;
+   float theta_deg = 0.0f;
 
    /*** Game loop ***/
 
@@ -351,10 +434,23 @@ int main(int argc, char *argv[])
       glUseProgram(shader); // Bind shader program for draw call
       glBindVertexArray(vao);
 
+      theta_deg += (1 % 360);
+      theta_rad = degToRad(theta_deg);
+      
+      mat4x4 rotMatY = {
+         cos(-theta_rad),    0,     sin(-theta_rad), 0,
+         0,                  1,     0,               0,
+        -sin(theta_rad),     0,     cos(-theta_rad), 0,
+         0,                  0,     0,               1
+      };
+
+      int mvpLocation = glGetUniformLocation(shader, "u_MVP");
+      glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, rotMatY);
+
       //std::cout << "millis now = " << millis_now << std::endl;
 
-      //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); 
-      glDrawArrays(GL_TRIANGLES, 0, 3);
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); 
+      //glDrawArrays(GL_TRIANGLES, 0, 3);
 
       glXSwapBuffers(dpy, win); 
    } 

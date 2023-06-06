@@ -1,7 +1,7 @@
 #version 330 core
 
-out vec4 FragColor;
 in vec3 myColor;
+out vec4 FragColor;
 
 void main()
 {
