@@ -35,7 +35,23 @@ XVisualInfo            *vi;   // Struct containing additional info about the win
 XWindowAttributes       gwa;  // Get attributes struct 
 XEvent                  xev;  // XEvent struct for handling X events 
 GLXContext              glx;  // The OpenGL context for X11
-                              //
+
+using namespace std::chrono;
+void CalculateFrameRate(int &fps, int &_fpsCount, steady_clock::time_point &lastTime) {
+    auto currentTime = steady_clock::now();
+
+    const auto elapsedTime = duration_cast<nanoseconds>(currentTime - lastTime).count();
+    ++_fpsCount;
+
+    if (elapsedTime > 1000000000) {
+        lastTime = currentTime;
+        fps = _fpsCount;
+        _fpsCount = 0;
+        
+        std::cout << "FPS: " << fps << std::endl; // print out fps in every second (or you can use it elsewhere)
+    }
+}
+                              
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int *);
 
 static unsigned CompileShader(unsigned type, const std::string source)
@@ -109,6 +125,38 @@ static bool isExtensionSupported(const char *extList, const char *extension) {
 	return false;
 }
 
+static float *dotProd4x4(const mat4x4 src, const mat4x4 transform) {
+   float *output = new mat4x4;
+
+   /*
+   for (int i = 0; i < sizeof(mat3x3); i++) {
+      output[i] = (src[i] * transform[i]) + (src[i + 1]
+   }
+   */
+
+   output[0]  = (src[0] * transform[0])  + (src[1] * transform[4])  + (src[2] * transform[8])   + (src[3] * transform[12]);
+   output[1]  = (src[0] * transform[1])  + (src[1] * transform[5])  + (src[2] * transform[9])   + (src[3] * transform[13]);
+   output[2]  = (src[0] * transform[2])  + (src[1] * transform[6])  + (src[2] * transform[10])  + (src[3] * transform[14]);
+   output[3]  = (src[0] * transform[3])  + (src[1] * transform[7])  + (src[2] * transform[11])  + (src[3] * transform[15]);
+
+   output[4]  = (src[4] * transform[0])  + (src[5] * transform[4])  + (src[6] * transform[8])   + (src[7] * transform[12]);
+   output[5]  = (src[4] * transform[1])  + (src[5] * transform[5])  + (src[6] * transform[9])   + (src[7] * transform[13]);
+   output[6]  = (src[4] * transform[2])  + (src[5] * transform[6])  + (src[6] * transform[10])  + (src[7] * transform[14]);
+   output[7]  = (src[4] * transform[3])  + (src[5] * transform[7])  + (src[6] * transform[11])  + (src[7] * transform[15]);
+
+   output[8]  = (src[8] * transform[0])  + (src[9] * transform[4])  + (src[10] * transform[8])  + (src[11] * transform[12]);
+   output[9]  = (src[8] * transform[1])  + (src[9] * transform[5])  + (src[10] * transform[9])  + (src[11] * transform[13]);
+   output[10] = (src[8] * transform[2])  + (src[9] * transform[6])  + (src[10] * transform[10]) + (src[11] * transform[14]);
+   output[11] = (src[8] * transform[3])  + (src[9] * transform[7])  + (src[10] * transform[11]) + (src[11] * transform[15]);
+
+   output[12] = (src[12] * transform[0]) + (src[13] * transform[4]) + (src[14] * transform[8])  + (src[15] * transform[12]);
+   output[13] = (src[12] * transform[1]) + (src[13] * transform[5]) + (src[14] * transform[9])  + (src[15] * transform[13]);
+   output[14] = (src[12] * transform[2]) + (src[13] * transform[6]) + (src[14] * transform[10]) + (src[15] * transform[14]);
+   output[15] = (src[12] * transform[3]) + (src[13] * transform[7]) + (src[14] * transform[11]) + (src[15] * transform[15]);
+
+   return output;
+}
+
 static mat3x3 *dotProd3x3(mat3x3 src, mat3x3 transform) {
    mat3x3 *output = (mat3x3*)malloc(9 * sizeof(float));
 
@@ -173,7 +221,12 @@ int main(int argc, char *argv[])
       GLX_ALPHA_SIZE      , 8,
       GLX_DEPTH_SIZE      , 24,
       GLX_STENCIL_SIZE    , 8,
-      GLX_DOUBLEBUFFER    , True,
+      /*
+       * NOTE: The buffer swap for double buffering is synchronized with your monitor's
+       * vertical refresh rate (v-sync). Disabling double buffering effectively 
+       * unlocks the framerate as the buffer swaps no longer need to align with v-sync.
+       */
+      GLX_DOUBLEBUFFER    , True, 
       None
    };
 
@@ -394,6 +447,12 @@ int main(int argc, char *argv[])
    float theta_rad = 0.0f;
    float theta_deg = 0.0f;
 
+   int _fpsCount = 0;
+   int fps = 0; // this will store the final fps for the last second
+
+   using namespace std::chrono;
+   time_point<steady_clock> lastTime = steady_clock::now();
+
    /*** Game loop ***/
 
    while (true) 
@@ -436,6 +495,13 @@ int main(int argc, char *argv[])
 
       theta_deg += (1 % 360);
       theta_rad = degToRad(theta_deg);
+
+      mat4x4 rotMatX = {
+         1,    0,                   0,                0,
+         0,    cos(-theta_rad),    -sin(-theta_rad),  0,
+         0,    sin(-theta_rad),     cos(-theta_rad),  0,
+         0,    0,                   0,                1
+      };
       
       mat4x4 rotMatY = {
          cos(-theta_rad),    0,     sin(-theta_rad), 0,
@@ -444,8 +510,18 @@ int main(int argc, char *argv[])
          0,                  0,     0,               1
       };
 
+      mat4x4 rotMatZ = {
+         cos(-theta_rad), -sin(-theta_rad), 0, 0,
+         sin(-theta_rad),  cos(-theta_rad), 0, 0,
+         0,                0,               1, 0,
+         0,                0,               0, 1
+      };
+
+      float *output = dotProd4x4(rotMatX, rotMatY);
+      output = dotProd4x4(output, rotMatZ);
+
       int mvpLocation = glGetUniformLocation(shader, "u_MVP");
-      glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, rotMatY);
+      glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, output);
 
       //std::cout << "millis now = " << millis_now << std::endl;
 
@@ -453,6 +529,9 @@ int main(int argc, char *argv[])
       //glDrawArrays(GL_TRIANGLES, 0, 3);
 
       glXSwapBuffers(dpy, win); 
+
+      delete output;
+      CalculateFrameRate(fps, _fpsCount, lastTime);
    } 
 
    glDeleteVertexArrays(1, &vao);
