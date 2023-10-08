@@ -5,12 +5,15 @@
 #include <cstring>
 #include <string>
 #include <chrono>
+#include <algorithm>
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include "glm/ext.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include <GL/glew.h> // Put before other OpenGL library headers
 #include <GL/gl.h>
 #include <GL/glx.h>  // X11-specific APIs
@@ -29,107 +32,6 @@ XVisualInfo            *vi;   // Struct containing additional info about the win
 XWindowAttributes       gwa;  // Get attributes struct
 XEvent                  xev;  // XEvent struct for handling X events
 GLXContext              glx;  // The OpenGL context for X11
-
-typedef float mat4[16];
-
-static mat4 r_mat_x = {
-   1,    0,    0,    0,
-   0,    1,    0,    0,
-   0,    0,    1,    0,
-   0,    0,    0,    1
-};
-
-static mat4 r_mat_y = {
-   1,    0,    0,    0,
-   0,    1,    0,    0,
-   0,    0,    1,    0,
-   0,    0,    0,    1
-};
-
-static mat4 r_mat_z = {
-   1,    0,    0,    0,
-   0,    1,    0,    0,
-   0,    0,    1,    0,
-   0,    0,    0,    1
-};
-
-static void bind_rot_mat_x(float r) {
-   mat4 tmp = {
-      1,    0,          0,          0,
-      0,    cosf(r),   -sinf(r),    0,
-      0,    sinf(r),    cosf(r),    0,
-      0,    0,          0,          1
-   };
-
-   memmove(r_mat_x, tmp, sizeof(r_mat_x));
-}
-
-static void bind_rot_mat_y(float r) {
-   mat4 tmp = {
-      cosf(r),    0,    sinf(r),    0,
-      0,          1,    0,          0,
-     -sinf(r),    0,    cosf(r),    0,
-      0,          0,    0,          1
-   };
-
-   memmove(r_mat_y, tmp, sizeof(r_mat_y));
-}
-
-static void bind_rot_mat_z(float r) {
-   mat4 tmp = {
-      cosf(r),   -sinf(r),    0,    0,
-      sinf(r),    cosf(r),    0,    0,
-      0,          0,          1,    0,
-      0,          0,          0,    1
-   };
-
-   memmove(r_mat_z, tmp, sizeof(r_mat_z));
-}
-
-mat4 *dot_prod_mat4(const mat4 m1, const mat4 m2) {
-   mat4 *output = NULL;
-   output = (mat4 *)malloc(sizeof(*output));
-   if (output == NULL) {
-      //LAC_ERROR("Failed to allocate matrix");
-      return NULL;
-   }
-
-   (*output)[0]  = (m1[0] * m2[0])  + (m1[1] * m2[4])  + (m1[2] * m2[8])   + (m1[3] * m2[12]);
-   (*output)[1]  = (m1[0] * m2[1])  + (m1[1] * m2[5])  + (m1[2] * m2[9])   + (m1[3] * m2[13]);
-   (*output)[2]  = (m1[0] * m2[2])  + (m1[1] * m2[6])  + (m1[2] * m2[10])  + (m1[3] * m2[14]);
-   (*output)[3]  = (m1[0] * m2[3])  + (m1[1] * m2[7])  + (m1[2] * m2[11])  + (m1[3] * m2[15]);
-
-   (*output)[4]  = (m1[4] * m2[0])  + (m1[5] * m2[4])  + (m1[6] * m2[8])   + (m1[7] * m2[12]);
-   (*output)[5]  = (m1[4] * m2[1])  + (m1[5] * m2[5])  + (m1[6] * m2[9])   + (m1[7] * m2[13]);
-   (*output)[6]  = (m1[4] * m2[2])  + (m1[5] * m2[6])  + (m1[6] * m2[10])  + (m1[7] * m2[14]);
-   (*output)[7]  = (m1[4] * m2[3])  + (m1[5] * m2[7])  + (m1[6] * m2[11])  + (m1[7] * m2[15]);
-
-   (*output)[8]  = (m1[8] * m2[0])  + (m1[9] * m2[4])  + (m1[10] * m2[8])  + (m1[11] * m2[12]);
-   (*output)[9]  = (m1[8] * m2[1])  + (m1[9] * m2[5])  + (m1[10] * m2[9])  + (m1[11] * m2[13]);
-   (*output)[10] = (m1[8] * m2[2])  + (m1[9] * m2[6])  + (m1[10] * m2[10]) + (m1[11] * m2[14]);
-   (*output)[11] = (m1[8] * m2[3])  + (m1[9] * m2[7])  + (m1[10] * m2[11]) + (m1[11] * m2[15]);
-
-   (*output)[12] = (m1[12] * m2[0]) + (m1[13] * m2[4]) + (m1[14] * m2[8])  + (m1[15] * m2[12]);
-   (*output)[13] = (m1[12] * m2[1]) + (m1[13] * m2[5]) + (m1[14] * m2[9])  + (m1[15] * m2[13]);
-   (*output)[14] = (m1[12] * m2[2]) + (m1[13] * m2[6]) + (m1[14] * m2[10]) + (m1[15] * m2[14]);
-   (*output)[15] = (m1[12] * m2[3]) + (m1[13] * m2[7]) + (m1[14] * m2[11]) + (m1[15] * m2[15]);
-
-   return output;
-}
-
-mat4 *rotate_mat4(mat4 m, float rx, float ry, float rz) {
-   mat4 *tmp1, *tmp2;
-
-   bind_rot_mat_x(rx);
-   bind_rot_mat_y(ry);
-   bind_rot_mat_z(rz);
-
-   tmp1 = dot_prod_mat4(r_mat_x, r_mat_y);
-   tmp2 = dot_prod_mat4(*tmp1, r_mat_z);
-
-   free(tmp1);
-   return tmp2;
-}
 
 using namespace std::chrono;
 void CalculateFrameRate(int &fps, int &_fpsCount, steady_clock::time_point &lastTime)
@@ -441,18 +343,13 @@ int main(int argc, char **argv)
 
    unsigned int shader = CreateShader(vertexShader, fragmentShader);
 
-   mat4 ident_mat = {
-      1,   0,   0,   0,
-      0,   1,   0,   0,
-      0,   0,   1,   0,
-      0,   0,   0,   1
-   };
-
-   float *output1 = ident_mat;
-   float *output2 = nullptr;
-
    float theta_rad = 0.0f;
    float theta_deg = 0.0f;
+   float t_fact = 0.0f;
+
+   mat4 trn_mat = { 0 };
+   mat4 rot_mat = { 0 };
+   mat4 mvp_mat = { 0 };
 
    int _fpsCount = 0;
    int fps = 0; // this will store the final fps for the last second
@@ -488,6 +385,8 @@ int main(int argc, char **argv)
             }
             case ButtonPress: // Mouse button pressed
             {
+               // TODO: Not working
+               t_fact += 0.1;
                std::cout << "Click detected" << std::endl;
                break;
             }
@@ -505,12 +404,27 @@ int main(int argc, char **argv)
       theta_deg += (1 % 360);
       theta_rad = lac_deg_to_rad(theta_deg);
 
-      output2 = *rotate_mat4(output1, theta_rad, theta_rad, theta_rad);
+      lac_get_rotation_mat4(&rot_mat, theta_rad, theta_rad, theta_rad);
+      lac_get_translation_mat4(&trn_mat, t_fact, t_fact/2, t_fact/4);
+      lac_dot_prod_mat4(trn_mat, rot_mat, &mvp_mat);
 
-      int mvpLocation = glGetUniformLocation(shader, "u_MVP");
+      t_fact -= 0.01;
+
+      int mvpLocation = glGetUniformLocation(shader, "model");
       // Change to GL_TRUE if column major ordering is required
-      glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, (float *)output2);
-      //glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, output);
+      glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, mvp_mat);
+
+      glm::mat4 view = glm::lookAt(
+          glm::vec3(1.2f, 1.2f, 1.2f),
+          glm::vec3(0.0f, 0.0f, 0.0f),
+          glm::vec3(0.0f, 0.0f, 1.0f)
+      );
+      GLint uniView = glGetUniformLocation(shader, "view");
+      glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+
+      glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
+      GLint uniProj = glGetUniformLocation(shader, "proj");
+      glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
       //std::cout << "millis now = " << millis_now << std::endl;
 
@@ -519,8 +433,6 @@ int main(int argc, char **argv)
 
       glXSwapBuffers(dpy, win);
 
-      memmove(output1, output2, sizeof(*output1));
-      free(output2);
       CalculateFrameRate(fps, _fpsCount, lastTime);
    }
 
