@@ -12,8 +12,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "glm/ext.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 #include <GL/glew.h> // Put before other OpenGL library headers
 #include <GL/gl.h>
 #include <GL/glx.h>  // X11-specific APIs
@@ -144,22 +142,22 @@ int main(int argc, char **argv)
 
    // Specify what version of OpenGL we're using to the X11 extension (330 Core)
    int glx_attribs[] = {
-      GLX_X_RENDERABLE    , True,
-      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , 8,
-      GLX_GREEN_SIZE      , 8,
-      GLX_BLUE_SIZE       , 8,
-      GLX_ALPHA_SIZE      , 8,
-      GLX_DEPTH_SIZE      , 24,
-      GLX_STENCIL_SIZE    , 8,
+      GLX_X_RENDERABLE,    True,
+      GLX_DRAWABLE_TYPE,   GLX_WINDOW_BIT,
+      GLX_RENDER_TYPE,     GLX_RGBA_BIT,
+      GLX_X_VISUAL_TYPE,   GLX_TRUE_COLOR,
+      GLX_RED_SIZE,        8,
+      GLX_GREEN_SIZE,      8,
+      GLX_BLUE_SIZE,       8,
+      GLX_ALPHA_SIZE,      8,
+      GLX_DEPTH_SIZE,      24,
+      GLX_STENCIL_SIZE,    8,
       /*
        * NOTE: The buffer swap for double buffering is synchronized with your monitor's
        * vertical refresh rate (v-sync). Disabling double buffering effectively
        * unlocks the framerate as the buffer swaps no longer need to align with v-sync.
        */
-      GLX_DOUBLEBUFFER    , True,
+      GLX_DOUBLEBUFFER,    True,
       None
    };
 
@@ -195,7 +193,7 @@ int main(int argc, char **argv)
 	}
 	std::cout << "Best visual info index: " << best_fbc << std::endl;
 	GLXFBConfig bestFbc = fbc[best_fbc];
-	XFree( fbc ); // Make sure to free this!
+	XFree(fbc);
 
    vi = glXGetVisualFromFBConfig(dpy, bestFbc);
    if (vi == NULL)
@@ -256,6 +254,7 @@ int main(int argc, char **argv)
 	std::cout << "GL Shading Language: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
 #endif
 
+   // TODO: Enable events
    // Handle the following events:
    //swa.event_mask = (ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
 
@@ -283,17 +282,17 @@ int main(int argc, char **argv)
    /*** Setup VAO, VBO, and EBO ***/
 
    float vertices[] = {
-     // positions         // colors
-     0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f,   // top right
-     0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f,  0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-    -0.5f,  0.5f,  0.0f,  0.5f, 0.5f, 0.5f    // top left
+       // positions         // colors
+       0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f,   // top right
+       0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+      -0.5f, -0.5f,  0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
+      -0.5f,  0.5f,  0.0f,  0.5f, 0.5f, 0.5f    // top left
    };
 
    /*
     * 3--0
-    * | /|
-    * |/ |
+    * |\ |
+    * | \|
     * 2--1
     */
    unsigned int indices[6] = {
@@ -345,11 +344,11 @@ int main(int argc, char **argv)
 
    float theta_rad = 0.0f;
    float theta_deg = 0.0f;
-   float t_fact = 0.0f;
+   float t_fact = -2.0f;
 
    mat4 trn_mat = { 0 };
    mat4 rot_mat = { 0 };
-   mat4 mvp_mat = { 0 };
+   mat4 model = { 0 };
 
    int _fpsCount = 0;
    int fps = 0; // this will store the final fps for the last second
@@ -385,8 +384,6 @@ int main(int argc, char **argv)
             }
             case ButtonPress: // Mouse button pressed
             {
-               // TODO: Not working
-               t_fact += 0.1;
                std::cout << "Click detected" << std::endl;
                break;
             }
@@ -395,7 +392,7 @@ int main(int argc, char **argv)
 
       /*** Render ***/
 
-      glClearColor(0.2f, 0.4f, 0.4f, 1.0);
+      glClearColor(0.2f, 0.4f, 0.4f, 1.0); // Set background color
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       glUseProgram(shader); // Bind shader program for draw call
@@ -403,34 +400,35 @@ int main(int argc, char **argv)
 
       theta_deg += (1 % 360);
       theta_rad = lac_deg_to_rad(theta_deg);
-
-      lac_get_rotation_mat4(&rot_mat, theta_rad, theta_rad, theta_rad);
-      lac_get_translation_mat4(&trn_mat, t_fact, t_fact/2, t_fact/4);
-      lac_dot_prod_mat4(trn_mat, rot_mat, &mvp_mat);
-
       t_fact -= 0.01;
 
-      int mvpLocation = glGetUniformLocation(shader, "model");
-      // Change to GL_TRUE if column major ordering is required
-      glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, mvp_mat);
+      lac_get_rotation_mat4(&rot_mat, (theta_rad * 0.5), (theta_rad * 0.25), theta_rad);
+      lac_get_translation_mat4(&trn_mat, 0.0f, 0.0f, t_fact);
+      lac_dot_prod_mat4(trn_mat, rot_mat, &model);
 
-      glm::mat4 view = glm::lookAt(
-          glm::vec3(1.2f, 1.2f, 1.2f),
-          glm::vec3(0.0f, 0.0f, 0.0f),
-          glm::vec3(0.0f, 0.0f, 1.0f)
+      // Model matrix
+      int modelLocation = glGetUniformLocation(shader, "model");
+      // Change to GL_TRUE if column-major ordering is required
+      glUniformMatrix4fv(modelLocation, 1, GL_TRUE, model);
+
+      // View matrix
+      mat4 view_mat = { 0 };
+      lac_get_view_mat4(
+            &view_mat,
+            (const vec3){ 0.000001f, 0.000001f, 1.0f }, // Components must be non-zero
+            (const vec3){ 0.0f, 0.0f, 0.0f },
+            (const vec3){ 0.0f, 0.0f, 1.0f }
       );
-      GLint uniView = glGetUniformLocation(shader, "view");
-      glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+      int viewLocation = glGetUniformLocation(shader, "view");
+      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, view_mat);
 
-      glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
-      GLint uniProj = glGetUniformLocation(shader, "proj");
-      glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
-
-      //std::cout << "millis now = " << millis_now << std::endl;
+      // Projection matrix
+      mat4 proj_mat = { 0 };
+      lac_get_projection_mat4(&proj_mat, ((float)gwa.height / (float)gwa.width), lac_deg_to_rad(90.0f), 1.0f, 100.0f);
+      int projLocation = glGetUniformLocation(shader, "proj");
+      glUniformMatrix4fv(projLocation, 1, GL_TRUE, proj_mat);
 
       glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-      //glDrawArrays(GL_TRIANGLES, 0, 3);
-
       glXSwapBuffers(dpy, win);
 
       CalculateFrameRate(fps, _fpsCount, lastTime);
@@ -444,5 +442,5 @@ int main(int argc, char **argv)
    XDestroyWindow(dpy, win);
    XCloseDisplay(dpy);
 
-   return 0;
+   return EXIT_SUCCESS;
 }
