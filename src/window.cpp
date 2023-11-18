@@ -378,14 +378,14 @@ int main(int argc, char **argv)
    int fps_inc = 0;
    int fps = 0;
 
-   time_point<steady_clock> time_prev = steady_clock::now();
-   std::chrono::duration<long, std::ratio<1, 1000000>>::rep time_elapsed;
+   time_point<steady_clock> time_prev_fps = steady_clock::now();
+   std::chrono::nanoseconds::rep time_elapsed = 0L;
 
    /*** Game loop ***/
 
    while (true)
    {
-      auto time_prev2 = steady_clock::now();
+      auto time_prev_frame = steady_clock::now();
 
       /*** Process events ***/
 
@@ -393,7 +393,6 @@ int main(int argc, char **argv)
       {
          XNextEvent(dpy, &xev); // Blocks until event is received
 
-         // TODO: Programmatically set keyboard delay via X11 akin to xset (reduces choppiness)
          switch (xev.type)
          {
             case Expose: // Window was being overlapped by another window, but is now exposed
@@ -403,19 +402,19 @@ int main(int argc, char **argv)
                glViewport(0, 0, gwa.width, gwa.height);
                break;
             }
-            case (KeyPress | KeyRelease):
+            case KeyPress:
             {
                KeySym sym = XLookupKeysym(&xev.xkey, 0);
                switch (sym)
                {
                   case XK_a:
                   {
-                     camera_trn_x += 0.006 * time_elapsed;
+                     camera_trn_x += 5 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
                      break;
                   }
                   case XK_d:
                   {
-                     camera_trn_x -= 0.006 * time_elapsed;
+                     camera_trn_x -= 5 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
                      break;
                   }
                }
@@ -439,12 +438,12 @@ int main(int argc, char **argv)
 
       theta_deg += (1 % 360);
       theta_rad = lac_deg_to_rad(theta_deg);
-      //t_fact -= 0.01;
+      //trn_fact -= 0.01;
 
       // Model matrix (translate to world space)
       lac_get_rotation_mat4(&rot_mat, theta_rad, (theta_rad * 0.9f), (theta_rad * 0.8f)); // Rotate
       lac_get_translation_mat4(&trn_mat, 0.0f, 0.0f, trn_fact); // Translate
-      lac_dot_prod_mat4(trn_mat, rot_mat, &model_mat);
+      lac_multiply_mat4(trn_mat, rot_mat, &model_mat);
 
       int modelLocation = glGetUniformLocation(shader, "model");
       glUniformMatrix4fv(modelLocation, 1, GL_TRUE, model_mat);
@@ -469,9 +468,9 @@ int main(int argc, char **argv)
       glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
       glXSwapBuffers(dpy, win);
 
-      auto time_now = steady_clock::now();
-      time_elapsed = duration_cast<milliseconds>(time_now - time_prev2).count();
-      //CalculateFrameRate(fps, fps_inc, time_prev);
+      auto time_now_frame = steady_clock::now();
+      time_elapsed = duration_cast<nanoseconds>(time_now_frame - time_prev_frame).count();
+      //CalculateFrameRate(fps, fps_inc, time_prev_fps);
    }
 
    glDeleteVertexArrays(1, &vao);

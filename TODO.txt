@@ -1,0 +1,2 @@
+Try moving XEvent loop to separate thread
+Implement camera
