@@ -21,6 +21,8 @@
 
 #include "../include/callbacks.hpp"
 #include "../../liblac/include/matmath.h"
+#include "../../liblac/include/vecmath.h"
+#include "../../liblac/include/transforms.h"
 
 #define APP_TITLE "KingCraft"
 
@@ -363,17 +365,21 @@ int main(int argc, char **argv)
 
    /*** Initialize some variables ***/
 
-   float camera_trn_x = 0.0f;
-
    float theta_rad = 0.0f;
    float theta_deg = 0.0f;
-   float trn_fact = -3.0f;
 
    mat4 trn_mat = { 0 };
    mat4 rot_mat = { 0 };
    mat4 model_mat = { 0 };
    mat4 view_mat = { 0 };
+   mat4 camera_mat = { 0 };
    mat4 proj_mat = { 0 };
+
+   vec3 camera_vec = { 0 };
+   vec3 look_dir_vec = { 0.0f, 0.0f, 1.0f };
+   vec3 up_vec = { 0.0f, 1.0f, 0.0f };
+   vec3 target_vec = { 0.0f, 0.0f, 1.0f };
+   vec3 forward_vec = { 0 };
 
    int fps_inc = 0;
    int fps = 0;
@@ -386,6 +392,7 @@ int main(int argc, char **argv)
    while (true)
    {
       auto time_prev_frame = steady_clock::now();
+      lac_multiply_vec3(look_dir_vec, &forward_vec, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
 
       /*** Process events ***/
 
@@ -407,14 +414,24 @@ int main(int argc, char **argv)
                KeySym sym = XLookupKeysym(&xev.xkey, 0);
                switch (sym)
                {
-                  case XK_a:
+                  case XK_a: // Left
                   {
-                     camera_trn_x += 5 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     look_dir_vec[0] += 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
                      break;
                   }
-                  case XK_d:
+                  case XK_d: // Right 
                   {
-                     camera_trn_x -= 5 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     look_dir_vec[0] -= 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     break;
+                  }
+                  case XK_w: // Forward
+                  {
+                     lac_add_vec3(camera_vec, forward_vec, &camera_vec);
+                     break;
+                  }
+                  case XK_s: // Backward
+                  {
+                     lac_subtract_vec3(camera_vec, forward_vec, &camera_vec);
                      break;
                   }
                }
@@ -438,33 +455,30 @@ int main(int argc, char **argv)
 
       theta_deg += (1 % 360);
       theta_rad = lac_deg_to_rad(theta_deg);
-      //trn_fact -= 0.01;
 
       // Model matrix (translate to world space)
-      lac_get_rotation_mat4(&rot_mat, theta_rad, (theta_rad * 0.9f), (theta_rad * 0.8f)); // Rotate
-      lac_get_translation_mat4(&trn_mat, 0.0f, 0.0f, trn_fact); // Translate
+      lac_get_rotation_mat4(&rot_mat, theta_rad, (theta_rad * 0.9f), (theta_rad * 0.8f)); 
+      lac_get_translation_mat4(&trn_mat, 0.0f, 0.0f, 1.5f); 
       lac_multiply_mat4(trn_mat, rot_mat, &model_mat);
 
       int modelLocation = glGetUniformLocation(shader, "model");
       glUniformMatrix4fv(modelLocation, 1, GL_TRUE, model_mat);
 
-      // TODO: Add inverse function to make camera behave properly
       // View matrix (translate to view space)
-      lac_get_look_at_mat4(
-         &view_mat,
-         (const vec3){ 0.000001f, 0.000001f, 1.0f },
-         (const vec3){ 0.0f, 0.0f, 0.0f },
-         (const vec3){ 0.0f, 0.0f, 1.0f }
-      );
-      view_mat[3] = camera_trn_x;
+      lac_add_vec3(camera_vec, look_dir_vec, &target_vec);
+      lac_get_point_at_mat4(&camera_mat, camera_vec, target_vec, up_vec);
+      lac_invert_mat4(camera_mat, &view_mat);
+
       int viewLocation = glGetUniformLocation(shader, "view");
       glUniformMatrix4fv(viewLocation, 1, GL_TRUE, view_mat);
 
       // Projection matrix
       lac_get_projection_mat4(&proj_mat, ((float)gwa.height / (float)gwa.width), fov, znear, zfar);
+
       int projLocation = glGetUniformLocation(shader, "proj");
       glUniformMatrix4fv(projLocation, 1, GL_TRUE, proj_mat);
 
+      // Draw call
       glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
       glXSwapBuffers(dpy, win);
 
