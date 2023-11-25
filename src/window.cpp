@@ -1,3 +1,5 @@
+// C++ APIs
+#include <cstdlib>
 #include <iostream>
 #include <cassert>
 #include <fstream>
@@ -8,35 +10,38 @@
 #include <algorithm>
 #include <iomanip>
 
+// C APIs
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysymdef.h>
 
-#include <GL/glew.h> // NOTE: Put before other OpenGL library headers
-#include <GL/gl.h>
+#include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers
+#include <GL/gl.h>   // General OpenGL APIs
 #include <GL/glx.h>  // X11-specific APIs
 
+// My APIs
 #include "../include/callbacks.hpp"
-#include "../../liblac/include/matmath.h"
-#include "../../liblac/include/vecmath.h"
-#include "../../liblac/include/transforms.h"
+#include <matmath.h>
+#include <vecmath.h>
+#include <transforms.h>
 
 #define APP_TITLE "KingCraft"
 
 using namespace std::chrono;
 
 // X11 variables
-Display                *dpy;  // The target monitor/display
-Window                  win;  // The application's window
-Screen                 *scrn; //
-int                     scrn_id;
-XVisualInfo            *vi;   // Struct containing additional info about the window
-XWindowAttributes       gwa;  // Get window attributes struct
-XEvent                  xev;  // XEvent stores the most-recently received event type
-GLXContext              glx;  // The OpenGL context for X11
+Display                *dpy;        // The target monitor/display (assuming we might have multiple displays)
+Window                  win;        // The application's parent window
+Screen                 *scrn;       // The entire screen of the selected display
+int                     scrn_id;    // The screen's unique ID
+XVisualInfo            *xvi;        // Struct containing additional info about the window
+XWindowAttributes       xwa;        // Struct containing the window's attributes
+XEvent                  xev;        // Stores the event type of the most recently received event
+GLXContext              glx;        // The OpenGL context for X11
 
 static float fov = lac_deg_to_rad(90.0f);
 static float znear = 1.0f;
@@ -59,7 +64,13 @@ void CalculateFrameRate(int &fps, int &fps_inc, steady_clock::time_point &time_p
     }
 }
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int *);
+typedef GLXContext (*glXCreateContextAttribsARBProc)(
+   Display *dpy, 
+   GLXFBConfig fb_conf, 
+   GLXContext glx, 
+   Bool is_fwd_compat, 
+   const int *glx_attribs
+);
 
 static unsigned CompileShader(unsigned type, const std::string source)
 {
@@ -69,14 +80,15 @@ static unsigned CompileShader(unsigned type, const std::string source)
    glCompileShader(id);
 
    int result;
-   glGetShaderiv(id, GL_COMPILE_STATUS, &result); // Get shader compilation status
-   if (result == GL_FALSE) // Print out reason for failure
+   glGetShaderiv(id, GL_COMPILE_STATUS, &result); 
+   if (result == GL_FALSE) 
    {
       int length;
       glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
       char* message = (char*)alloca(length * sizeof(char));
       glGetShaderInfoLog(id, length, &length, message);
-      std::cerr << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
+      std::cerr << "Failed to compile " 
+         << (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
          << " shader: " << message << std::endl;
       glDeleteShader(id);
       return 0;
@@ -102,37 +114,43 @@ static unsigned CreateShader(const std::string vertexShader, const std::string f
    return program;
 }
 
-static bool isExtensionSupported(const char *extList, const char *extension) {
+static bool isExtensionSupported(const char *extList, const char *extName) 
+{
 	const char *start, *where, *terminator;
 
-	where = strchr(extension, ' ');
-	if (where || *extension == '\0') {
+	where = strchr(extName, ' ');
+	if (where || *extName == '\0') 
+   {
 		return false;
 	}
 
-   start=extList;
-   while (true) {
-		where = strstr(start, extension);
-		if (!where) break;
+   start = extList;
 
-		terminator = where + strlen(extension);
-		if (where == start || *(where - 1) == ' ') {
-			if (*terminator == ' ' || *terminator == '\0') {
+   while (true) 
+   {
+		where = strstr(start, extName);
+		if (!where) {
+         return false;
+      } 
+
+		terminator = where + strlen(extName);
+		if (where == start || *(where - 1) == ' ') 
+      {
+			if (*terminator == ' ' || *terminator == '\0') 
+         {
 				return true;
 			}
 		}
 
 		start = terminator;
 	}
-
-	return false;
 }
 
 int main(int argc, char **argv)
 {
    /*** Setup X11 window ***/
 
-   // Open the display
+   // Open the X11 display
    dpy = XOpenDisplay(NULL); // NULL = first monitor
    if (dpy == NULL) {
       std::cerr << "Cannot connect to X server" << std::endl;
@@ -141,11 +159,11 @@ int main(int argc, char **argv)
    scrn = DefaultScreenOfDisplay(dpy);
    scrn_id = DefaultScreen(dpy);
 
-   // Check GLX version
-   int vmajor, vminor = 0;
+   // Get OpenGL version
+   int vmajor, vminor;
    glXQueryVersion(dpy, &vmajor, &vminor);
 
-   // Specify what version of OpenGL we're using to the X11 extension (330 Core)
+   // Specify attributes for the OpenGL context
    int glx_attribs[] = {
       GLX_X_RENDERABLE,    True,
       GLX_DRAWABLE_TYPE,   GLX_WINDOW_BIT,
@@ -158,15 +176,15 @@ int main(int argc, char **argv)
       GLX_DEPTH_SIZE,      24,
       GLX_STENCIL_SIZE,    8,
       /*
-       * NOTE: The buffer swap for double buffering is synchronized with your monitor's
-       * vertical refresh rate (v-sync). Disabling double buffering effectively
-       * unlocks the framerate as the buffer swaps no longer need to align with v-sync.
+         NOTE: The buffer swap for double buffering is synchronized with your monitor's
+         vertical refresh rate (v-sync). Disabling double buffering effectively
+         unlocks the framerate as the buffer swaps no longer need to align with v-sync.
        */
       GLX_DOUBLEBUFFER,    True,
       None
    };
 
-   // Create a framebuffer configuration
+   // Create a framebuffer (FB) configuration
    int fbcount;
    GLXFBConfig *fbc = glXChooseFBConfig(dpy, win, glx_attribs, &fbcount);
    if (fbc == NULL)
@@ -178,36 +196,50 @@ int main(int argc, char **argv)
 
    // Pick the FB config/visual with the most samples per-pixel
 	std::cout << "Getting best XVisualInfo\n";
-	int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
-	for (int i = 0; i < fbcount; i++) {
-		vi = glXGetVisualFromFBConfig(dpy, fbc[i]);
-		if (vi != 0) {
+	int best_fbc = -1; 
+   int worst_fbc = -1; 
+   int best_num_samp = -1;  
+   int worst_num_samp = 999;
+
+	for (int i = 0; i < fbcount; ++i) {
+		xvi = glXGetVisualFromFBConfig(dpy, fbc[i]);
+		if (xvi != 0) 
+      {
 			int samp_buf, samples;
 			glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf);
 			glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLES, &samples);
 
-			if (best_fbc < 0 || (samp_buf && samples > best_num_samp)) {
+			if (best_fbc < 0 || (samp_buf && samples > best_num_samp)) 
+         {
 				best_fbc = i;
 				best_num_samp = samples;
 			}
-			if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp)
+
+			if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp) 
+         {
 				worst_fbc = i;
+         }
 			worst_num_samp = samples;
 		}
-		XFree(vi);
+		XFree(xvi);
 	}
+
 	std::cout << "Best visual info index: " << best_fbc << std::endl;
 	GLXFBConfig bestFbc = fbc[best_fbc];
 	XFree(fbc);
 
-   vi = glXGetVisualFromFBConfig(dpy, bestFbc);
-   if (vi == NULL) {
+   xvi = glXGetVisualFromFBConfig(dpy, bestFbc);
+   if (xvi == NULL) 
+   {
       std::cerr << "No appropriate visual found" << std::endl;
-      exit(-1);
+      XCloseDisplay(dpy);
+      exit(EXIT_FAILURE);
    }
-   if (scrn_id != vi->screen) {
-      std::cout << "scrn_id(" << scrn_id << ") does not match vi->screen(" << vi->screen << ")" << std::endl;
-      exit(-1);
+   if (scrn_id != xvi->screen) 
+   {
+      std::cerr << "scrn_id(" << scrn_id << ") does not match vi->screen(" << xvi->screen << ")" << std::endl;
+      XCloseDisplay(dpy);
+      exit(EXIT_FAILURE);
    }
 
    /*** Open an X11 window ***/
@@ -216,38 +248,58 @@ int main(int argc, char **argv)
 	windowAttribs.border_pixel = BlackPixel(dpy, scrn_id);
 	windowAttribs.background_pixel = WhitePixel(dpy, scrn_id);
 	windowAttribs.override_redirect = true;
-	windowAttribs.colormap = XCreateColormap(dpy, RootWindow(dpy, scrn_id), vi->visual, AllocNone);
+	windowAttribs.colormap = XCreateColormap(dpy, RootWindow(dpy, scrn_id), xvi->visual, AllocNone);
 	windowAttribs.event_mask = (ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
-	win = XCreateWindow(dpy, RootWindow(dpy, scrn_id), 0, 0, 600, 600, 0, vi->depth, InputOutput, vi->visual, (CWBackPixel | CWColormap | CWBorderPixel | CWEventMask), &windowAttribs);
+	win = XCreateWindow(
+      dpy, RootWindow(dpy, scrn_id), 
+      0, 0, 600, 600, 0, 
+      xvi->depth, 
+      InputOutput, 
+      xvi->visual, 
+      (CWBackPixel | CWColormap | CWBorderPixel | CWEventMask), 
+      &windowAttribs
+   );
 
 	/*** Create GLX OpenGL context ***/
 
-	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
-
-	const char *glxExts = glXQueryExtensionsString(dpy, scrn_id);
-	std::cout << "Late extensions:\n\t" << glxExts << std::endl;
-	if (glXCreateContextAttribsARB == 0) {
+   /*
+      The OpenGL Architecture Review Board (ARB) has developed certain extension functions (usually 
+      platform-specific) which must be retrieved via glXGetProcAddressARB(). Assuming that the argument
+      proc_name matches with an existing ARB extension function, a function pointer to that extension
+      function is returned.
+   */
+   const unsigned char* proc_name = (const unsigned char*)"glXCreateContextAttribsARB";
+	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 
+      (glXCreateContextAttribsARBProc)glXGetProcAddressARB(proc_name);
+	if (glXCreateContextAttribsARB == 0) 
+   {
 		std::cout << "glXCreateContextAttribsARB() not found" << std::endl;
 	}
 
-	int context_attribs[] = {
-		GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-		GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-		GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-		None
-	};
-
-   if (!isExtensionSupported(glxExts, "GLX_ARB_create_context")) {
+	const char *glxExts = glXQueryExtensionsString(dpy, scrn_id);
+	std::cout << "Late extensions:\n\t" << glxExts << std::endl;
+   if (!isExtensionSupported(glxExts, "GLX_ARB_create_context")) 
+   {
       glx = glXCreateNewContext(dpy, bestFbc, GLX_RGBA_TYPE, 0, true);
-   } else {
-      glx = glXCreateContextAttribsARB(dpy, bestFbc, 0, true, context_attribs);
+   } 
+   else 
+   {
+      int glx_attribs[] = {
+         GLX_CONTEXT_MAJOR_VERSION_ARB,   3,
+         GLX_CONTEXT_MINOR_VERSION_ARB,   3,
+         GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+         None
+      };
+      glx = glXCreateContextAttribsARB(dpy, bestFbc, 0, true, glx_attribs);
    }
    XSync(dpy, false);
 
    // Verifying that context is a direct context
    if (!glXIsDirect(dpy, glx)) {
       std::cout << "Indirect GLX rendering context obtained" << std::endl;
-   } else {
+   } 
+   else 
+   {
       std::cout << "Direct GLX rendering context obtained" << std::endl;
    }
    glXMakeCurrent(dpy, win, glx);
@@ -266,22 +318,25 @@ int main(int argc, char **argv)
    if (glewInit() != GLEW_OK)
    {
       std::cerr << "Failed to initialize GLEW" << std::endl;
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
 
    /*** Setup debugging ***/
 
-   // NOTE: You cannot OR these!!!
-   glEnable(GL_DEPTH_TEST); // Enable z-ordering via depth buffer
-   glEnable(GL_CULL_FACE); // Cull faces which are not visible to the camera
-   glDepthFunc(GL_LESS); // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
-   glCullFace(GL_FRONT); // Use if triangles are rasterized in clockwise ordering
-   glEnable(GL_DEBUG_OUTPUT);
-   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+   glDepthFunc(GL_LESS);                     // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
+   glCullFace(GL_FRONT);                     // Use if triangles are rasterized in clockwise ordering
+   glEnable(GL_DEPTH_TEST);                  // Enable z-ordering via depth buffer
+   glEnable(GL_CULL_FACE);                   // Cull faces which are not visible to the camera
+   glEnable(GL_DEBUG_OUTPUT);                // Enable debug output
+
    if (glDebugMessageCallback)
-      glDebugMessageCallback(debugCallback, nullptr); // Set callback function for debug messages
+   {
+      glDebugMessageCallback(debugCallback, nullptr); 
+   }
    else
+   {
       std::cerr << "WARNING: glDebugMessageCallback() is unavailable!" << std::endl;
+   }
 
    /*** Setup VAO, VBO, and EBO ***/
 
@@ -371,15 +426,15 @@ int main(int argc, char **argv)
    mat4 trn_mat = { 0 };
    mat4 rot_mat = { 0 };
    mat4 model_mat = { 0 };
-   mat4 view_mat = { 0 };
-   mat4 camera_mat = { 0 };
+   mat4 pointat_mat = { 0 };
+   mat4 lookat_mat = { 0 };
    mat4 proj_mat = { 0 };
 
-   vec3 camera_vec = { 0 };
    vec3 look_dir_vec = { 0.0f, 0.0f, 1.0f };
    vec3 up_vec = { 0.0f, 1.0f, 0.0f };
-   vec3 target_vec = { 0.0f, 0.0f, 1.0f };
-   vec3 forward_vec = { 0 };
+   vec3 cam_curr_targ_vec = { 0 };
+   vec3 cam_new_targ_vec = { 0.0f, 0.0f, 1.0f };
+   vec3 cam_fwd_vec = { 0 };
 
    int fps_inc = 0;
    int fps = 0;
@@ -392,7 +447,7 @@ int main(int argc, char **argv)
    while (true)
    {
       auto time_prev_frame = steady_clock::now();
-      lac_multiply_vec3(look_dir_vec, &forward_vec, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
+      lac_multiply_vec3(look_dir_vec, &cam_fwd_vec, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
 
       /*** Process events ***/
 
@@ -405,8 +460,8 @@ int main(int argc, char **argv)
             case Expose: // Window was being overlapped by another window, but is now exposed
             {
                /* Set affine transform for viewport based on window width/height */
-               XGetWindowAttributes(dpy, win, &gwa);
-               glViewport(0, 0, gwa.width, gwa.height);
+               XGetWindowAttributes(dpy, win, &xwa);
+               glViewport(0, 0, xwa.width, xwa.height);
                break;
             }
             case KeyPress:
@@ -426,12 +481,12 @@ int main(int argc, char **argv)
                   }
                   case XK_w: // Forward
                   {
-                     lac_add_vec3(camera_vec, forward_vec, &camera_vec);
+                     lac_add_vec3(cam_curr_targ_vec, cam_fwd_vec, &cam_curr_targ_vec);
                      break;
                   }
                   case XK_s: // Backward
                   {
-                     lac_subtract_vec3(camera_vec, forward_vec, &camera_vec);
+                     lac_subtract_vec3(cam_curr_targ_vec, cam_fwd_vec, &cam_curr_targ_vec);
                      break;
                   }
                }
@@ -465,15 +520,15 @@ int main(int argc, char **argv)
       glUniformMatrix4fv(modelLocation, 1, GL_TRUE, model_mat);
 
       // View matrix (translate to view space)
-      lac_add_vec3(camera_vec, look_dir_vec, &target_vec);
-      lac_get_point_at_mat4(&camera_mat, camera_vec, target_vec, up_vec);
-      lac_invert_mat4(camera_mat, &view_mat);
+      lac_add_vec3(cam_curr_targ_vec, look_dir_vec, &cam_new_targ_vec);
+      lac_get_point_at_mat4(&pointat_mat, cam_curr_targ_vec, cam_new_targ_vec, up_vec);
+      lac_invert_mat4(pointat_mat, &lookat_mat);
 
       int viewLocation = glGetUniformLocation(shader, "view");
-      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, view_mat);
+      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, lookat_mat);
 
       // Projection matrix
-      lac_get_projection_mat4(&proj_mat, ((float)gwa.height / (float)gwa.width), fov, znear, zfar);
+      lac_get_projection_mat4(&proj_mat, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);
 
       int projLocation = glGetUniformLocation(shader, "proj");
       glUniformMatrix4fv(projLocation, 1, GL_TRUE, proj_mat);
