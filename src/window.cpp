@@ -1,4 +1,6 @@
 // C++ APIs
+#include <X11/X.h>
+#include <common.h>
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
@@ -249,7 +251,7 @@ int main(int argc, char **argv)
 	windowAttribs.background_pixel = WhitePixel(dpy, scrn_id);
 	windowAttribs.override_redirect = true;
 	windowAttribs.colormap = XCreateColormap(dpy, RootWindow(dpy, scrn_id), xvi->visual, AllocNone);
-	windowAttribs.event_mask = (ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
+	windowAttribs.event_mask = (ExposureMask | PointerMotionMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
 	win = XCreateWindow(
       dpy, RootWindow(dpy, scrn_id), 
       0, 0, 600, 600, 0, 
@@ -341,16 +343,16 @@ int main(int argc, char **argv)
    /*** Setup VAO, VBO, and EBO ***/
 
    float vertices[] = {
-       // positions          // colors
-       0.5f,  0.5f,  -0.5f,  0.3f, 0.7f, 0.6f,  // top right (front)
-       0.5f, -0.5f,  -0.5f,  1.0f, 1.0f, 0.9f,  // bottom right (front)
-      -0.5f, -0.5f,  -0.5f,  0.4f, 1.0f, 0.3f,  // bottom left (front)
-      -0.5f,  0.5f,  -0.5f,  0.7f, 0.7f, 1.0f,  // top left (front)
+       // positions         // colors
+       0.5f,  0.5f, -0.5f,  0.3f,  0.7f,  0.6f,  // top right (front)
+       0.5f, -0.5f, -0.5f,  1.0f,  1.0f,  0.9f,  // bottom right (front)
+      -0.5f, -0.5f, -0.5f,  0.4f,  1.0f,  0.3f,  // bottom left (front)
+      -0.5f,  0.5f, -0.5f,  0.7f,  0.7f,  1.0f,  // top left (front)
 
-       0.5f,  0.5f,   0.5f,  0.9f, 0.5f, 0.1f,  // top right (back)
-       0.5f, -0.5f,   0.5f,  1.0f, 0.4f, 0.2f,  // bottom right (back)
-      -0.5f, -0.5f,   0.5f,  0.2f, 1.0f, 0.3f,  // bottom left (back)
-      -0.5f,  0.5f,   0.5f,  0.5f, 0.5f, 0.5f   // top left (back)
+       0.5f,  0.5f,  0.5f,  0.9f,  0.5f,  0.1f,  // top right (back)
+       0.5f, -0.5f,  0.5f,  1.0f,  0.4f,  0.2f,  // bottom right (back)
+      -0.5f, -0.5f,  0.5f,  0.2f,  1.0f,  0.3f,  // bottom left (back)
+      -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f   // top left (back)
    };
 
    /*
@@ -420,21 +422,25 @@ int main(int argc, char **argv)
 
    /*** Initialize some variables ***/
 
-   float theta_rad = 0.0f;
-   float theta_deg = 0.0f;
+   float cube_rot_rad = 0.0f;
+   float cube_rot_deg = 0.0f;
 
-   mat4 trn_mat = { 0 };
-   mat4 rot_mat = { 0 };
-   mat4 model_mat = { 0 };
-   mat4 pointat_mat = { 0 };
-   mat4 lookat_mat = { 0 };
-   mat4 proj_mat = { 0 };
+   mat4 m_cube_trn = { 0 };
+   mat4 m_cube_rot = { 0 };
 
-   vec3 look_dir_vec = { 0.0f, 0.0f, 1.0f };
-   vec3 up_vec = { 0.0f, 1.0f, 0.0f };
-   vec3 cam_curr_targ_vec = { 0 };
-   vec3 cam_new_targ_vec = { 0.0f, 0.0f, 1.0f };
-   vec3 cam_fwd_vec = { 0 };
+   mat4 m_cam_rot = { 0 };
+   mat4 m_point_at = { 0 };
+
+   mat4 m_model = { 0 };
+   mat4 m_view = { 0 };
+   mat4 m_proj = { 0 };
+
+   vec3 v_eye = { 0 };
+   vec3 v_forward = { 0 };
+   vec3 v_look_dir = { 0.0f, 0.0f, 1.0f };
+
+   float cam_roll = 0.0f;
+   float cam_pitch = 0.0f;
 
    int fps_inc = 0;
    int fps = 0;
@@ -447,7 +453,7 @@ int main(int argc, char **argv)
    while (true)
    {
       auto time_prev_frame = steady_clock::now();
-      lac_multiply_vec3(look_dir_vec, &cam_fwd_vec, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
+      lac_multiply_vec3(&v_forward, v_look_dir, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
 
       /*** Process events ***/
 
@@ -464,6 +470,14 @@ int main(int argc, char **argv)
                glViewport(0, 0, xwa.width, xwa.height);
                break;
             }
+            case MotionNotify:
+            {
+               int x_pos, y_pos, inop;
+               Window wnop;
+               XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x_pos, &y_pos, (unsigned int*)&inop);
+               std::cout << "x: " << x_pos << "y: " << y_pos << std::endl;
+               break;
+            }
             case KeyPress:
             {
                KeySym sym = XLookupKeysym(&xev.xkey, 0);
@@ -471,22 +485,34 @@ int main(int argc, char **argv)
                {
                   case XK_a: // Left
                   {
-                     look_dir_vec[0] += 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     //v_eye[0] -= 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     cam_pitch += 5 * time_elapsed * (1.0f / 1000 / 1000 / 100);
                      break;
                   }
                   case XK_d: // Right 
                   {
-                     look_dir_vec[0] -= 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     //v_eye[0] += 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     cam_pitch -= 5 * time_elapsed * (1.0f / 1000 / 1000 / 100);
                      break;
                   }
                   case XK_w: // Forward
                   {
-                     lac_add_vec3(cam_curr_targ_vec, cam_fwd_vec, &cam_curr_targ_vec);
+                     lac_add_vec3(&v_eye, v_eye, v_forward);
                      break;
                   }
                   case XK_s: // Backward
                   {
-                     lac_subtract_vec3(cam_curr_targ_vec, cam_fwd_vec, &cam_curr_targ_vec);
+                     lac_subtract_vec3(&v_eye, v_eye, v_forward);
+                     break;
+                  }
+                  case XK_space: // Up
+                  {
+                     v_eye[1] += 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     break;
+                  }
+                  case XK_BackSpace: // Down
+                  {
+                     v_eye[1] -= 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
                      break;
                   }
                }
@@ -508,30 +534,45 @@ int main(int argc, char **argv)
       glUseProgram(shader); // Bind shader program for draw call
       glBindVertexArray(vao);
 
-      theta_deg += (1 % 360);
-      theta_rad = lac_deg_to_rad(theta_deg);
+      cube_rot_deg += (1 % 360);
+      cube_rot_rad = lac_deg_to_rad(cube_rot_deg);
 
       // Model matrix (translate to world space)
-      lac_get_rotation_mat4(&rot_mat, theta_rad, (theta_rad * 0.9f), (theta_rad * 0.8f)); 
-      lac_get_translation_mat4(&trn_mat, 0.0f, 0.0f, 1.5f); 
-      lac_multiply_mat4(trn_mat, rot_mat, &model_mat);
+      //lac_get_rotation_mat4(&m_cube_rot, cube_rot_rad, (cube_rot_rad * 0.9f), (cube_rot_rad * 0.8f)); 
+      lac_get_rotation_mat4(&m_cube_rot, 0.0f, 0.0f, 0.0f); 
+      lac_get_translation_mat4(&m_cube_trn, 0.0f, 0.0f, 1.5f); 
+      lac_multiply_mat4(&m_model, m_cube_trn, m_cube_rot);
 
       int modelLocation = glGetUniformLocation(shader, "model");
-      glUniformMatrix4fv(modelLocation, 1, GL_TRUE, model_mat);
+      glUniformMatrix4fv(modelLocation, 1, GL_TRUE, m_model);
 
       // View matrix (translate to view space)
-      lac_add_vec3(cam_curr_targ_vec, look_dir_vec, &cam_new_targ_vec);
-      lac_get_point_at_mat4(&pointat_mat, cam_curr_targ_vec, cam_new_targ_vec, up_vec);
-      lac_invert_mat4(pointat_mat, &lookat_mat);
+      vec3 v_up = { 0.0f, 1.0f, 0.0f };
+      vec3 v_target = { 0.0f, 0.0f, 1.0f };
+
+      // Temporarily convert to vec4
+      vec4 tmp_target, tmp_look_dir;
+      memcpy(tmp_target, v_target, sizeof(v_target));
+      memcpy(tmp_look_dir, v_look_dir, sizeof(v_look_dir));
+      tmp_target[3] = 1.0f;
+      tmp_look_dir[3] = 1.0f;
+
+      lac_get_rotation_mat4(&m_cam_rot, lac_deg_to_rad(cam_roll), lac_deg_to_rad(cam_pitch), 0.0f);
+      lac_multiply_mat4_vec4(&tmp_look_dir, m_cam_rot, tmp_target);
+      memcpy(v_target, tmp_target, sizeof(v_target));
+      memcpy(v_look_dir, tmp_look_dir, sizeof(v_look_dir));
+      lac_add_vec3(&v_target, v_eye, v_look_dir);
+      lac_get_point_at_mat4(&m_point_at, v_eye, v_target, v_up);
+      lac_invert_mat4(&m_view, m_point_at);
 
       int viewLocation = glGetUniformLocation(shader, "view");
-      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, lookat_mat);
+      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, m_view);
 
-      // Projection matrix
-      lac_get_projection_mat4(&proj_mat, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);
-
+      // Projection matrix (translate to projection space)
+      lac_get_projection_mat4(&m_proj, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);
+      
       int projLocation = glGetUniformLocation(shader, "proj");
-      glUniformMatrix4fv(projLocation, 1, GL_TRUE, proj_mat);
+      glUniformMatrix4fv(projLocation, 1, GL_TRUE, m_proj);
 
       // Draw call
       glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
