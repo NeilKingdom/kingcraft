@@ -1,2 +1,5 @@
 Try moving XEvent loop to separate thread
-Implement camera
+Implement camera as a class
+Create builder class for cubes + chunks
+ImGui for debugging
+Camera movement via pointer

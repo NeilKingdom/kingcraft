@@ -48,6 +48,8 @@ GLXContext              glx;        // The OpenGL context for X11
 static float fov = lac_deg_to_rad(90.0f);
 static float znear = 1.0f;
 static float zfar = 1000.0f;
+static float mouse_x = 0.0f;
+static float mouse_y = 0.0f;
 
 void CalculateFrameRate(int &fps, int &fps_inc, steady_clock::time_point &time_prev)
 {
@@ -436,11 +438,12 @@ int main(int argc, char **argv)
    mat4 m_proj = { 0 };
 
    vec3 v_eye = { 0 };
-   vec3 v_forward = { 0 };
+   vec3 v_fwd_vel = { 0 };
+   vec3 v_right_vel = { 0 };
    vec3 v_look_dir = { 0.0f, 0.0f, 1.0f };
-
-   float cam_roll = 0.0f;
-   float cam_pitch = 0.0f;
+   vec3 v_up = { 0.0f, 1.0f, 0.0f };
+   vec3 v_right = { 1.0, 0.0f, 0.0f };
+   vec3 v_target = { 0.0f, 0.0f, 1.0f };
 
    int fps_inc = 0;
    int fps = 0;
@@ -453,7 +456,9 @@ int main(int argc, char **argv)
    while (true)
    {
       auto time_prev_frame = steady_clock::now();
-      lac_multiply_vec3(&v_forward, v_look_dir, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
+      lac_multiply_vec3(&v_fwd_vel, v_look_dir, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
+      lac_calc_cross_prod(&v_right_vel, v_look_dir, v_up);
+      lac_multiply_vec3(&v_right_vel, v_right_vel, -3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
 
       /*** Process events ***/
 
@@ -470,12 +475,40 @@ int main(int argc, char **argv)
                glViewport(0, 0, xwa.width, xwa.height);
                break;
             }
-            case MotionNotify:
-            {
-               int x_pos, y_pos, inop;
+            case MotionNotify: // Mouse pointer movement
+            { 
+               int x, y, inop;
+               float x_norm, y_norm;
                Window wnop;
-               XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x_pos, &y_pos, (unsigned int*)&inop);
-               std::cout << "x: " << x_pos << "y: " << y_pos << std::endl;
+
+               XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
+               x_norm = (float)x / (float)xwa.width;
+               y_norm = (float)y / (float)xwa.height;
+
+               if (x_norm >= 0.90f && x_norm <= 1.0f) 
+               {
+                  mouse_x += x_norm;
+                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, 200.0f, y);
+               }
+               if (x_norm >= 0.0f && x_norm <= 0.10f) 
+               {
+                  mouse_x -= 1.0f - x_norm;
+                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, xwa.width - 200.0f, y);
+               }
+
+               if (y_norm >= 0.90f && y_norm <= 1.0f) 
+               {
+                  mouse_y += y_norm;
+                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, x, 200.0f);
+               }
+               if (y_norm >= 0.0f && y_norm <= 0.10f) 
+               {
+                  mouse_y -= 1.0f - y_norm;
+                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, x, xwa.height - 200.0f);
+               }
+
+               v_look_dir[0] = (mouse_x + x_norm) * 2; 
+               v_look_dir[1] = 1.0f / ((mouse_y + y_norm) * 2);
                break;
             }
             case KeyPress:
@@ -483,26 +516,24 @@ int main(int argc, char **argv)
                KeySym sym = XLookupKeysym(&xev.xkey, 0);
                switch (sym)
                {
-                  case XK_a: // Left
-                  {
-                     //v_eye[0] -= 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
-                     cam_pitch += 5 * time_elapsed * (1.0f / 1000 / 1000 / 100);
-                     break;
-                  }
-                  case XK_d: // Right 
-                  {
-                     //v_eye[0] += 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
-                     cam_pitch -= 5 * time_elapsed * (1.0f / 1000 / 1000 / 100);
-                     break;
-                  }
                   case XK_w: // Forward
                   {
-                     lac_add_vec3(&v_eye, v_eye, v_forward);
+                     lac_add_vec3(&v_eye, v_eye, v_fwd_vel);
                      break;
                   }
                   case XK_s: // Backward
                   {
-                     lac_subtract_vec3(&v_eye, v_eye, v_forward);
+                     lac_subtract_vec3(&v_eye, v_eye, v_fwd_vel);
+                     break;
+                  }
+                  case XK_d: // Right 
+                  {
+                     lac_add_vec3(&v_eye, v_eye, v_right_vel);
+                     break;
+                  }
+                  case XK_a: // Left
+                  {
+                     lac_subtract_vec3(&v_eye, v_eye, v_right_vel);
                      break;
                   }
                   case XK_space: // Up
@@ -547,20 +578,6 @@ int main(int argc, char **argv)
       glUniformMatrix4fv(modelLocation, 1, GL_TRUE, m_model);
 
       // View matrix (translate to view space)
-      vec3 v_up = { 0.0f, 1.0f, 0.0f };
-      vec3 v_target = { 0.0f, 0.0f, 1.0f };
-
-      // Temporarily convert to vec4
-      vec4 tmp_target, tmp_look_dir;
-      memcpy(tmp_target, v_target, sizeof(v_target));
-      memcpy(tmp_look_dir, v_look_dir, sizeof(v_look_dir));
-      tmp_target[3] = 1.0f;
-      tmp_look_dir[3] = 1.0f;
-
-      lac_get_rotation_mat4(&m_cam_rot, lac_deg_to_rad(cam_roll), lac_deg_to_rad(cam_pitch), 0.0f);
-      lac_multiply_mat4_vec4(&tmp_look_dir, m_cam_rot, tmp_target);
-      memcpy(v_target, tmp_target, sizeof(v_target));
-      memcpy(v_look_dir, tmp_look_dir, sizeof(v_look_dir));
       lac_add_vec3(&v_target, v_eye, v_look_dir);
       lac_get_point_at_mat4(&m_point_at, v_eye, v_target, v_up);
       lac_invert_mat4(&m_view, m_point_at);
