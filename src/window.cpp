@@ -63,6 +63,8 @@ static uint16_t key_mask = 0;
 #define KEY_UP          (1 << 4)
 #define KEY_DOWN        (1 << 5)
 
+#define SET_KEY(mask, key)    ((mask) |= (key))
+#define UNSET_KEY(mask, key)  ((mask) &= (~key))
 #define TOGGLE_KEY(mask, key) ((mask) ^= (key))
 #define IS_KEY_SET(mask, key) ((((mask) & (key)) == (key)) ? (true) : (false))
 
@@ -512,9 +514,10 @@ int main(int argc, char **argv)
             }
             case MotionNotify: 
             {
-               motion_sample_count++;
-               if (motion_sample_count == 3) 
+               if (motion_sample_count++ == 3) // Need to give cursor time to travel
                {
+                  motion_sample_count = 0;
+
                   int x, y, inop;
                   Window wnop;
                   float center_x, center_y, norm_dx, norm_dy;
@@ -525,48 +528,85 @@ int main(int argc, char **argv)
                   norm_dx = ((float)x - center_x) / (float)xwa.width;
                   norm_dy = ((float)y - center_y) / (float)xwa.height;
 
-                  float camera_pitch = -norm_dx * camera_base_speed;
-                  float camera_roll = -norm_dy * camera_base_speed;
-                  lac_get_rotation_mat4(&m_cam_rot, lac_deg_to_rad(camera_roll), lac_deg_to_rad(camera_pitch), 0.0f);
+                  float camera_pitch = norm_dx * camera_base_speed;
+                  float camera_roll = norm_dy * camera_base_speed;
+                  lac_get_rotation_mat4(&m_cam_rot, lac_deg_to_rad(-camera_roll), lac_deg_to_rad(-camera_pitch), 0.0f);
 
-                  motion_sample_count = 0;
                   XWarpPointer(dpy, win, win, 0, 0, xwa.width, xwa.height, center_x, center_y);
                }
                break;
             }
-            case (KeyPress | KeyRelease):
+            case (KeyPress):
             {
                KeySym sym = XLookupKeysym(&xev.xkey, 0);
                switch (sym)
                {
                   case XK_w:
                   {
-                     TOGGLE_KEY(key_mask, KEY_FORWARD);
+                     SET_KEY(key_mask, KEY_FORWARD);
                      break;
                   }
                   case XK_s:
                   {
-                     TOGGLE_KEY(key_mask, KEY_BACKWARD);
+                     SET_KEY(key_mask, KEY_BACKWARD);
                      break;
                   }
                   case XK_a:
                   {
-                     TOGGLE_KEY(key_mask, KEY_LEFT);
+                     SET_KEY(key_mask, KEY_LEFT);
                      break;
                   }
                   case XK_d:
                   {
-                     TOGGLE_KEY(key_mask, KEY_RIGHT);
+                     SET_KEY(key_mask, KEY_RIGHT);
                      break;
                   }
                   case XK_space:
                   {
-                     TOGGLE_KEY(key_mask, KEY_UP);
+                     SET_KEY(key_mask, KEY_UP);
                      break;
                   }
                   case XK_BackSpace:
                   {
-                     TOGGLE_KEY(key_mask, KEY_DOWN);
+                     SET_KEY(key_mask, KEY_DOWN);
+                     break;
+                  }
+               }
+               break;
+            }
+            case (KeyRelease):
+            {
+               KeySym sym = XLookupKeysym(&xev.xkey, 0);
+               switch (sym)
+               {
+                  case XK_w:
+                  {
+                     UNSET_KEY(key_mask, KEY_FORWARD);
+                     break;
+                  }
+                  case XK_s:
+                  {
+                     UNSET_KEY(key_mask, KEY_BACKWARD);
+                     break;
+                  }
+                  case XK_a:
+                  {
+                     UNSET_KEY(key_mask, KEY_LEFT);
+                     break;
+                  }
+                  case XK_d:
+                  {
+                     UNSET_KEY(key_mask, KEY_RIGHT);
+                     break;
+                  }
+                  case XK_space:
+                  {
+                     UNSET_KEY(key_mask, KEY_UP);
+                     break;
+                  }
+                  case XK_BackSpace:
+                  {
+                     UNSET_KEY(key_mask, KEY_DOWN);
                      break;
                   }
                }
