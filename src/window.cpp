@@ -1,6 +1,8 @@
 // C++ APIs
 #include <X11/X.h>
+#include <X11/extensions/XI2.h>
 #include <common.h>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
@@ -14,6 +16,7 @@
 
 // C APIs
 #include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -23,7 +26,7 @@
 
 #include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers
 #include <GL/gl.h>   // General OpenGL APIs
-#include <GL/glx.h>  // X11-specific APIs
+#include <GL/glx.h>  // X11-specific OpenGL APIs
 
 // My APIs
 #include "../include/callbacks.hpp"
@@ -34,6 +37,8 @@
 #define APP_TITLE "KingCraft"
 
 using namespace std::chrono;
+
+constexpr float sec_as_nano = 1.0f / 1000.0f / 1000.0f / 1000.0f;
 
 // X11 variables
 Display                *dpy;        // The target monitor/display (assuming we might have multiple displays)
@@ -48,8 +53,18 @@ GLXContext              glx;        // The OpenGL context for X11
 static float fov = lac_deg_to_rad(90.0f);
 static float znear = 1.0f;
 static float zfar = 1000.0f;
-static float mouse_x = 0.0f;
-static float mouse_y = 0.0f;
+
+static uint16_t key_mask = 0;
+
+#define KEY_FORWARD     (1 << 0)
+#define KEY_BACKWARD    (1 << 1)
+#define KEY_LEFT        (1 << 2)
+#define KEY_RIGHT       (1 << 3) 
+#define KEY_UP          (1 << 4)
+#define KEY_DOWN        (1 << 5)
+
+#define TOGGLE_KEY(mask, key) ((mask) ^= (key))
+#define IS_KEY_SET(mask, key) ((((mask) & (key)) == (key)) ? (true) : (false))
 
 void CalculateFrameRate(int &fps, int &fps_inc, steady_clock::time_point &time_prev)
 {
@@ -118,7 +133,7 @@ static unsigned CreateShader(const std::string vertexShader, const std::string f
    return program;
 }
 
-static bool isExtensionSupported(const char *extList, const char *extName) 
+static bool isGLXExtensionSupported(const char *extList, const char *extName) 
 {
 	const char *start, *where, *terminator;
 
@@ -156,9 +171,10 @@ int main(int argc, char **argv)
 
    // Open the X11 display
    dpy = XOpenDisplay(NULL); // NULL = first monitor
-   if (dpy == NULL) {
+   if (dpy == NULL) 
+   {
       std::cerr << "Cannot connect to X server" << std::endl;
-      exit(-1);
+      exit(EXIT_FAILURE);
    }
    scrn = DefaultScreenOfDisplay(dpy);
    scrn_id = DefaultScreen(dpy);
@@ -205,7 +221,8 @@ int main(int argc, char **argv)
    int best_num_samp = -1;  
    int worst_num_samp = 999;
 
-	for (int i = 0; i < fbcount; ++i) {
+	for (int i = 0; i < fbcount; ++i) 
+   {
 		xvi = glXGetVisualFromFBConfig(dpy, fbc[i]);
 		if (xvi != 0) 
       {
@@ -253,7 +270,10 @@ int main(int argc, char **argv)
 	windowAttribs.background_pixel = WhitePixel(dpy, scrn_id);
 	windowAttribs.override_redirect = true;
 	windowAttribs.colormap = XCreateColormap(dpy, RootWindow(dpy, scrn_id), xvi->visual, AllocNone);
-	windowAttribs.event_mask = (ExposureMask | PointerMotionMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
+	windowAttribs.event_mask = (
+      ExposureMask   | PointerMotionMask | KeyPressMask | 
+      KeyReleaseMask | ButtonPressMask   | ButtonReleaseMask
+   );
 	win = XCreateWindow(
       dpy, RootWindow(dpy, scrn_id), 
       0, 0, 600, 600, 0, 
@@ -282,7 +302,7 @@ int main(int argc, char **argv)
 
 	const char *glxExts = glXQueryExtensionsString(dpy, scrn_id);
 	std::cout << "Late extensions:\n\t" << glxExts << std::endl;
-   if (!isExtensionSupported(glxExts, "GLX_ARB_create_context")) 
+   if (!isGLXExtensionSupported(glxExts, "GLX_ARB_create_context")) 
    {
       glx = glXCreateNewContext(dpy, bestFbc, GLX_RGBA_TYPE, 0, true);
    } 
@@ -424,14 +444,20 @@ int main(int argc, char **argv)
 
    /*** Initialize some variables ***/
 
+   int motion_sample_count = 0;
+
+   double mx_prev = 0.0;
+   double my_prev = 0.0;
+
    float cube_rot_rad = 0.0f;
    float cube_rot_deg = 0.0f;
 
    mat4 m_cube_trn = { 0 };
    mat4 m_cube_rot = { 0 };
 
-   mat4 m_cam_rot = { 0 };
    mat4 m_point_at = { 0 };
+   mat4 m_cam_rot = { 0 };
+   memcpy(m_cam_rot, lac_ident_mat4, sizeof(m_cam_rot));
 
    mat4 m_model = { 0 };
    mat4 m_view = { 0 };
@@ -445,20 +471,29 @@ int main(int argc, char **argv)
    vec3 v_right = { 1.0, 0.0f, 0.0f };
    vec3 v_target = { 0.0f, 0.0f, 1.0f };
 
-   int fps_inc = 0;
+   const float player_base_speed = 3;
+   const float camera_base_speed = 20;
+
+   int fps_counter = 0;
    int fps = 0;
 
    time_point<steady_clock> time_prev_fps = steady_clock::now();
-   std::chrono::nanoseconds::rep time_elapsed = 0L;
+   std::chrono::nanoseconds::rep elapsed_time = 0L;
 
    /*** Game loop ***/
 
    while (true)
    {
-      auto time_prev_frame = steady_clock::now();
-      lac_multiply_vec3(&v_fwd_vel, v_look_dir, 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
+      /*** Frame begin ***/
+
+      auto frame_start_time = steady_clock::now();
+
+      float player_speed = player_base_speed * elapsed_time * sec_as_nano;
+      // Calculate forward camera velocity
+      lac_multiply_vec3(&v_fwd_vel, v_look_dir, player_speed); 
+      // Calculate right camera velocity
       lac_calc_cross_prod(&v_right_vel, v_look_dir, v_up);
-      lac_multiply_vec3(&v_right_vel, v_right_vel, -3 * time_elapsed * (1.0f / 1000 / 1000 / 1000));
+      lac_multiply_vec3(&v_right_vel, v_right_vel, -player_speed);
 
       /*** Process events ***/
 
@@ -475,75 +510,63 @@ int main(int argc, char **argv)
                glViewport(0, 0, xwa.width, xwa.height);
                break;
             }
-            case MotionNotify: // Mouse pointer movement
-            { 
-               int x, y, inop;
-               float x_norm, y_norm;
-               Window wnop;
-
-               XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
-               x_norm = (float)x / (float)xwa.width;
-               y_norm = (float)y / (float)xwa.height;
-
-               if (x_norm >= 0.90f && x_norm <= 1.0f) 
+            case MotionNotify: 
+            {
+               motion_sample_count++;
+               if (motion_sample_count == 3) 
                {
-                  mouse_x += x_norm;
-                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, 200.0f, y);
-               }
-               if (x_norm >= 0.0f && x_norm <= 0.10f) 
-               {
-                  mouse_x -= 1.0f - x_norm;
-                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, xwa.width - 200.0f, y);
-               }
+                  int x, y, inop;
+                  Window wnop;
+                  float center_x, center_y, norm_dx, norm_dy;
 
-               if (y_norm >= 0.90f && y_norm <= 1.0f) 
-               {
-                  mouse_y += y_norm;
-                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, x, 200.0f);
-               }
-               if (y_norm >= 0.0f && y_norm <= 0.10f) 
-               {
-                  mouse_y -= 1.0f - y_norm;
-                  XWarpPointer(dpy, win, win, x, y, xwa.width, xwa.height, x, xwa.height - 200.0f);
-               }
+                  XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
+                  center_x = (float)xwa.width / 2.0f;
+                  center_y = (float)xwa.height / 2.0f;
+                  norm_dx = ((float)x - center_x) / (float)xwa.width;
+                  norm_dy = ((float)y - center_y) / (float)xwa.height;
 
-               v_look_dir[0] = (mouse_x + x_norm) * 2; 
-               v_look_dir[1] = 1.0f / ((mouse_y + y_norm) * 2);
+                  float camera_pitch = -norm_dx * camera_base_speed;
+                  float camera_roll = -norm_dy * camera_base_speed;
+                  lac_get_rotation_mat4(&m_cam_rot, lac_deg_to_rad(camera_roll), lac_deg_to_rad(camera_pitch), 0.0f);
+
+                  motion_sample_count = 0;
+                  XWarpPointer(dpy, win, win, 0, 0, xwa.width, xwa.height, center_x, center_y);
+               }
                break;
             }
-            case KeyPress:
+            case (KeyPress | KeyRelease):
             {
                KeySym sym = XLookupKeysym(&xev.xkey, 0);
                switch (sym)
                {
-                  case XK_w: // Forward
+                  case XK_w:
                   {
-                     lac_add_vec3(&v_eye, v_eye, v_fwd_vel);
+                     TOGGLE_KEY(key_mask, KEY_FORWARD);
                      break;
                   }
-                  case XK_s: // Backward
+                  case XK_s:
                   {
-                     lac_subtract_vec3(&v_eye, v_eye, v_fwd_vel);
+                     TOGGLE_KEY(key_mask, KEY_BACKWARD);
                      break;
                   }
-                  case XK_d: // Right 
+                  case XK_a:
                   {
-                     lac_add_vec3(&v_eye, v_eye, v_right_vel);
+                     TOGGLE_KEY(key_mask, KEY_LEFT);
                      break;
                   }
-                  case XK_a: // Left
+                  case XK_d:
                   {
-                     lac_subtract_vec3(&v_eye, v_eye, v_right_vel);
+                     TOGGLE_KEY(key_mask, KEY_RIGHT);
                      break;
                   }
-                  case XK_space: // Up
+                  case XK_space:
                   {
-                     v_eye[1] += 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     TOGGLE_KEY(key_mask, KEY_UP);
                      break;
                   }
-                  case XK_BackSpace: // Down
+                  case XK_BackSpace:
                   {
-                     v_eye[1] -= 3 * time_elapsed * (1.0f / 1000 / 1000 / 1000);
+                     TOGGLE_KEY(key_mask, KEY_DOWN);
                      break;
                   }
                }
@@ -555,6 +578,31 @@ int main(int argc, char **argv)
                break;
             }
          }
+      }
+
+      if (IS_KEY_SET(key_mask, KEY_FORWARD)) 
+      {
+         lac_add_vec3(&v_eye, v_eye, v_fwd_vel);
+      }
+      if (IS_KEY_SET(key_mask, KEY_BACKWARD)) 
+      {
+         lac_subtract_vec3(&v_eye, v_eye, v_fwd_vel);
+      }
+      if (IS_KEY_SET(key_mask, KEY_LEFT)) 
+      {
+         lac_subtract_vec3(&v_eye, v_eye, v_right_vel);
+      }
+      if (IS_KEY_SET(key_mask, KEY_RIGHT)) 
+      {
+         lac_add_vec3(&v_eye, v_eye, v_right_vel);
+      }
+      if (IS_KEY_SET(key_mask, KEY_UP)) 
+      {
+         v_eye[1] += player_speed;
+      }
+      if (IS_KEY_SET(key_mask, KEY_DOWN)) 
+      {
+         v_eye[1] -= player_speed;
       }
 
       /*** Render ***/
@@ -569,8 +617,8 @@ int main(int argc, char **argv)
       cube_rot_rad = lac_deg_to_rad(cube_rot_deg);
 
       // Model matrix (translate to world space)
-      //lac_get_rotation_mat4(&m_cube_rot, cube_rot_rad, (cube_rot_rad * 0.9f), (cube_rot_rad * 0.8f)); 
       lac_get_rotation_mat4(&m_cube_rot, 0.0f, 0.0f, 0.0f); 
+      //lac_get_rotation_mat4(&m_cube_rot, cube_rot_rad, (cube_rot_rad * 0.9f), (cube_rot_rad * 0.8f)); 
       lac_get_translation_mat4(&m_cube_trn, 0.0f, 0.0f, 1.5f); 
       lac_multiply_mat4(&m_model, m_cube_trn, m_cube_rot);
 
@@ -578,6 +626,12 @@ int main(int argc, char **argv)
       glUniformMatrix4fv(modelLocation, 1, GL_TRUE, m_model);
 
       // View matrix (translate to view space)
+      vec4 tmp_look_dir = { 1 };
+      vec4 result = { 0 };
+      memcpy(tmp_look_dir, v_look_dir, 3 * sizeof(float));
+      lac_multiply_mat4_vec4(&result, m_cam_rot, v_look_dir);
+      memcpy(v_look_dir, result, 3 * sizeof(float));
+
       lac_add_vec3(&v_target, v_eye, v_look_dir);
       lac_get_point_at_mat4(&m_point_at, v_eye, v_target, v_up);
       lac_invert_mat4(&m_view, m_point_at);
@@ -595,9 +649,9 @@ int main(int argc, char **argv)
       glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
       glXSwapBuffers(dpy, win);
 
-      auto time_now_frame = steady_clock::now();
-      time_elapsed = duration_cast<nanoseconds>(time_now_frame - time_prev_frame).count();
-      //CalculateFrameRate(fps, fps_inc, time_prev_fps);
+      auto frame_end_time = steady_clock::now();
+      elapsed_time = duration_cast<nanoseconds>(frame_end_time - frame_start_time).count();
+      //CalculateFrameRate(fps, fps_counter, time_prev_fps);
    }
 
    glDeleteVertexArrays(1, &vao);
