@@ -15,7 +15,7 @@ OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -Wall -Wextra -Wformat -std=c++20 #-Werror
 LDFLAGS += -lX11 -lXi -lGL -lGLEW -llac
 
-BIN := KingCraft
+BIN := kingcraft
 
 # Default rule
 all: $(BIN)

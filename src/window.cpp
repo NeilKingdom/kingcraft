@@ -1,7 +1,4 @@
 // C++ APIs
-#include <X11/X.h>
-#include <X11/extensions/XI2.h>
-#include <common.h>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -16,7 +13,6 @@
 
 // C APIs
 #include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -30,21 +26,20 @@
 
 // My APIs
 #include "../include/callbacks.hpp"
+#include "../include/camera.hpp"
 #include <matmath.h>
 #include <vecmath.h>
 #include <transforms.h>
 
 #define APP_TITLE "KingCraft"
 
-using namespace std::chrono;
-
-constexpr float sec_as_nano = 1.0f / 1000.0f / 1000.0f / 1000.0f;
+constexpr long sec_as_nano = 1000L * 1000L * 1000L;
 
 // X11 variables
 Display                *dpy;        // The target monitor/display (assuming we might have multiple displays)
 Window                  win;        // The application's parent window
 Screen                 *scrn;       // The entire screen of the selected display
-int                     scrn_id;    // The screen's unique ID
+int                     scrnId;    // The screen's unique ID
 XVisualInfo            *xvi;        // Struct containing additional info about the window
 XWindowAttributes       xwa;        // Struct containing the window's attributes
 XEvent                  xev;        // Stores the event type of the most recently received event
@@ -68,21 +63,22 @@ static uint16_t key_mask = 0;
 #define TOGGLE_KEY(mask, key) ((mask) ^= (key))
 #define IS_KEY_SET(mask, key) ((((mask) & (key)) == (key)) ? (true) : (false))
 
-void CalculateFrameRate(int &fps, int &fps_inc, steady_clock::time_point &time_prev)
+static void CalculateFrameRate(int &fps, int &fps_inc, std::chrono::steady_clock::time_point &time_prev)
 {
-    auto time_now = steady_clock::now();
-    auto time_elapsed = duration_cast<nanoseconds>(time_now - time_prev).count();
-    constexpr long sec_as_nano = 1 * 1000 * 1000 * 1000;
-    ++fps_inc; // Increment each frame
+   using namespace std::chrono;
 
-    if (time_elapsed > sec_as_nano) // Wait until at least a second has elapsed
-    {
-        time_prev = time_now;
-        fps = fps_inc;
-        fps_inc = 0;
+   auto time_now = steady_clock::now();
+   auto time_elapsed = duration_cast<nanoseconds>(time_now - time_prev).count();
+   ++fps_inc; // Increment each frame
 
-        std::cout << "FPS: " << fps << std::endl;
-    }
+   if (time_elapsed > sec_as_nano) // Wait until at least a second has elapsed
+   {
+       time_prev = time_now;
+       fps = fps_inc;
+       fps_inc = 0;
+
+       std::cout << "FPS: " << fps << std::endl;
+   }
 }
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(
@@ -172,21 +168,21 @@ int main(int argc, char **argv)
    /*** Setup X11 window ***/
 
    // Open the X11 display
-   dpy = XOpenDisplay(NULL); // NULL = first monitor
+   dpy = XOpenDisplay(NULL); 
    if (dpy == NULL) 
    {
       std::cerr << "Cannot connect to X server" << std::endl;
       exit(EXIT_FAILURE);
    }
    scrn = DefaultScreenOfDisplay(dpy);
-   scrn_id = DefaultScreen(dpy);
+   scrnId = DefaultScreen(dpy);
 
    // Get OpenGL version
-   int vmajor, vminor;
-   glXQueryVersion(dpy, &vmajor, &vminor);
+   int vMajor, vMinor;
+   glXQueryVersion(dpy, &vMajor, &vMinor);
 
    // Specify attributes for the OpenGL context
-   int glx_attribs[] = {
+   int glxAttribs[] = {
       GLX_X_RENDERABLE,    True,
       GLX_DRAWABLE_TYPE,   GLX_WINDOW_BIT,
       GLX_RENDER_TYPE,     GLX_RGBA_BIT,
@@ -207,49 +203,49 @@ int main(int argc, char **argv)
    };
 
    // Create a framebuffer (FB) configuration
-   int fbcount;
-   GLXFBConfig *fbc = glXChooseFBConfig(dpy, win, glx_attribs, &fbcount);
-   if (fbc == NULL)
+   int FBCount;
+   GLXFBConfig *FBConfig = glXChooseFBConfig(dpy, win, glxAttribs, &FBCount);
+   if (FBConfig == NULL)
    {
-      std::cerr << "Failed to retrieve framebuffer" << std::endl;
+      std::cerr << "Failed to retrieve framebuffer configuration" << std::endl;
       XCloseDisplay(dpy);
       exit(EXIT_FAILURE);
    }
 
    // Pick the FB config/visual with the most samples per-pixel
 	std::cout << "Getting best XVisualInfo\n";
-	int best_fbc = -1; 
-   int worst_fbc = -1; 
-   int best_num_samp = -1;  
-   int worst_num_samp = 999;
+	int bestFBIdx = -1; 
+   int worstFBIdx = -1; 
+   int bestSampCount = -1;  
+   int worstSampCount = 999;
 
-	for (int i = 0; i < fbcount; ++i) 
+	for (int i = 0; i < FBCount; ++i) 
    {
-		xvi = glXGetVisualFromFBConfig(dpy, fbc[i]);
+		xvi = glXGetVisualFromFBConfig(dpy, FBConfig[i]);
 		if (xvi != 0) 
       {
-			int samp_buf, samples;
-			glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf);
-			glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLES, &samples);
+			int sampBuf, samples;
+			glXGetFBConfigAttrib(dpy, FBConfig[i], GLX_SAMPLE_BUFFERS, &sampBuf);
+			glXGetFBConfigAttrib(dpy, FBConfig[i], GLX_SAMPLES, &samples);
 
-			if (best_fbc < 0 || (samp_buf && samples > best_num_samp)) 
+			if (bestFBIdx < 0 || sampBuf && samples > bestSampCount) 
          {
-				best_fbc = i;
-				best_num_samp = samples;
+				bestFBIdx = i;
+				bestSampCount = samples;
 			}
 
-			if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp) 
+			if (worstFBIdx < 0 || !sampBuf || samples < worstSampCount) 
          {
-				worst_fbc = i;
+				worstFBIdx = i;
          }
-			worst_num_samp = samples;
+			worstSampCount = samples;
 		}
 		XFree(xvi);
 	}
 
-	std::cout << "Best visual info index: " << best_fbc << std::endl;
-	GLXFBConfig bestFbc = fbc[best_fbc];
-	XFree(fbc);
+	std::cout << "Best frame buffer config index: " << bestFBIdx << std::endl;
+	GLXFBConfig bestFbc = FBConfig[bestFBIdx];
+	XFree(FBConfig);
 
    xvi = glXGetVisualFromFBConfig(dpy, bestFbc);
    if (xvi == NULL) 
@@ -258,32 +254,33 @@ int main(int argc, char **argv)
       XCloseDisplay(dpy);
       exit(EXIT_FAILURE);
    }
-   if (scrn_id != xvi->screen) 
+   if (scrnId != xvi->screen) 
    {
-      std::cerr << "scrn_id(" << scrn_id << ") does not match vi->screen(" << xvi->screen << ")" << std::endl;
+      std::cerr << "scrnId (" << scrnId << ") does not match vi->screen (" << xvi->screen << ")" << std::endl;
       XCloseDisplay(dpy);
       exit(EXIT_FAILURE);
    }
 
    /*** Open an X11 window ***/
 
-	XSetWindowAttributes windowAttribs;
-	windowAttribs.border_pixel = BlackPixel(dpy, scrn_id);
-	windowAttribs.background_pixel = WhitePixel(dpy, scrn_id);
-	windowAttribs.override_redirect = true;
-	windowAttribs.colormap = XCreateColormap(dpy, RootWindow(dpy, scrn_id), xvi->visual, AllocNone);
-	windowAttribs.event_mask = (
+	XSetWindowAttributes xswa;
+	xswa.border_pixel = BlackPixel(dpy, scrnId);
+	xswa.background_pixel = WhitePixel(dpy, scrnId);
+	xswa.override_redirect = true;
+	xswa.colormap = XCreateColormap(dpy, RootWindow(dpy, scrnId), xvi->visual, AllocNone);
+	xswa.event_mask = (
       ExposureMask   | PointerMotionMask | KeyPressMask | 
       KeyReleaseMask | ButtonPressMask   | ButtonReleaseMask
    );
+
 	win = XCreateWindow(
-      dpy, RootWindow(dpy, scrn_id), 
+      dpy, RootWindow(dpy, scrnId), 
       0, 0, 600, 600, 0, 
       xvi->depth, 
       InputOutput, 
       xvi->visual, 
       (CWBackPixel | CWColormap | CWBorderPixel | CWEventMask), 
-      &windowAttribs
+      &xswa
    );
 
 	/*** Create GLX OpenGL context ***/
@@ -294,15 +291,15 @@ int main(int argc, char **argv)
       proc_name matches with an existing ARB extension function, a function pointer to that extension
       function is returned.
    */
-   const unsigned char* proc_name = (const unsigned char*)"glXCreateContextAttribsARB";
+   const unsigned char* procName = (const unsigned char*)"glXCreateContextAttribsARB";
 	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 
-      (glXCreateContextAttribsARBProc)glXGetProcAddressARB(proc_name);
+      (glXCreateContextAttribsARBProc)glXGetProcAddressARB(procName);
 	if (glXCreateContextAttribsARB == 0) 
    {
 		std::cout << "glXCreateContextAttribsARB() not found" << std::endl;
 	}
 
-	const char *glxExts = glXQueryExtensionsString(dpy, scrn_id);
+	const char *glxExts = glXQueryExtensionsString(dpy, scrnId);
 	std::cout << "Late extensions:\n\t" << glxExts << std::endl;
    if (!isGLXExtensionSupported(glxExts, "GLX_ARB_create_context")) 
    {
@@ -310,13 +307,13 @@ int main(int argc, char **argv)
    } 
    else 
    {
-      int glx_attribs[] = {
+      int glxAttribs[] = {
          GLX_CONTEXT_MAJOR_VERSION_ARB,   3,
          GLX_CONTEXT_MINOR_VERSION_ARB,   3,
          GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
          None
       };
-      glx = glXCreateContextAttribsARB(dpy, bestFbc, 0, true, glx_attribs);
+      glx = glXCreateContextAttribsARB(dpy, bestFbc, 0, true, glxAttribs);
    }
    XSync(dpy, false);
 
@@ -349,11 +346,11 @@ int main(int argc, char **argv)
 
    /*** Setup debugging ***/
 
-   glDepthFunc(GL_LESS);                     // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
-   glCullFace(GL_FRONT);                     // Use if triangles are rasterized in clockwise ordering
-   glEnable(GL_DEPTH_TEST);                  // Enable z-ordering via depth buffer
-   glEnable(GL_CULL_FACE);                   // Cull faces which are not visible to the camera
-   glEnable(GL_DEBUG_OUTPUT);                // Enable debug output
+   glDepthFunc(GL_LESS);         // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
+   glCullFace(GL_FRONT);         // Use if triangles are rasterized in clockwise ordering
+   glEnable(GL_DEPTH_TEST);      // Enable z-ordering via depth buffer
+   glEnable(GL_CULL_FACE);       // Cull faces which are not visible to the camera
+   glEnable(GL_DEBUG_OUTPUT);    // Enable debug output
 
    if (glDebugMessageCallback)
    {
@@ -446,41 +443,31 @@ int main(int argc, char **argv)
 
    /*** Initialize some variables ***/
 
-   int motion_sample_count = 0;
+   Camera camera = Camera();
 
-   double mx_prev = 0.0;
-   double my_prev = 0.0;
+   int motionSampleCount = 0;
 
-   float cube_rot_rad = 0.0f;
-   float cube_rot_deg = 0.0f;
+   float cubeRotRad = 0.0f;
+   float cubeRotDeg = 0.0f;
 
-   mat4 m_cube_trn = { 0 };
-   mat4 m_cube_rot = { 0 };
+   mat4 mCubeTrn = { 0 };
+   mat4 mCubeRot = { 0 };
 
-   mat4 m_point_at = { 0 };
-   mat4 m_cam_rot = { 0 };
-   memcpy(m_cam_rot, lac_ident_mat4, sizeof(m_cam_rot));
+   mat4 mModel = { 0 };
+   mat4 mProj = { 0 };
 
-   mat4 m_model = { 0 };
-   mat4 m_view = { 0 };
-   mat4 m_proj = { 0 };
+   vec3 vFwdVel = { 0 };
+   vec3 vRightVel = { 0 };
 
-   vec3 v_eye = { 0 };
-   vec3 v_fwd_vel = { 0 };
-   vec3 v_right_vel = { 0 };
-   vec3 v_look_dir = { 0.0f, 0.0f, 1.0f };
-   vec3 v_up = { 0.0f, 1.0f, 0.0f };
-   vec3 v_right = { 1.0, 0.0f, 0.0f };
-   vec3 v_target = { 0.0f, 0.0f, 1.0f };
-
-   const float player_base_speed = 3;
-   const float camera_base_speed = 20;
+   const float PLAYER_BASE_SPEED = 3;
 
    int fps_counter = 0;
    int fps = 0;
 
+   using namespace std::chrono;
+
    time_point<steady_clock> time_prev_fps = steady_clock::now();
-   std::chrono::nanoseconds::rep elapsed_time = 0L;
+   nanoseconds::rep elapsed_time = 0L;
 
    /*** Game loop ***/
 
@@ -490,12 +477,8 @@ int main(int argc, char **argv)
 
       auto frame_start_time = steady_clock::now();
 
-      float player_speed = player_base_speed * elapsed_time * sec_as_nano;
-      // Calculate forward camera velocity
-      lac_multiply_vec3(&v_fwd_vel, v_look_dir, player_speed); 
-      // Calculate right camera velocity
-      lac_calc_cross_prod(&v_right_vel, v_look_dir, v_up);
-      lac_multiply_vec3(&v_right_vel, v_right_vel, -player_speed);
+      float player_speed = PLAYER_BASE_SPEED * (elapsed_time / (float)sec_as_nano);
+      camera.updateVelocity(vFwdVel, vRightVel, player_speed);
 
       /*** Process events ***/
 
@@ -514,25 +497,10 @@ int main(int argc, char **argv)
             }
             case MotionNotify: 
             {
-               if (motion_sample_count++ == 3) // Need to give cursor time to travel
+               if (motionSampleCount++ == 3) // Need to give cursor time to travel
                {
-                  motion_sample_count = 0;
-
-                  int x, y, inop;
-                  Window wnop;
-                  float center_x, center_y, norm_dx, norm_dy;
-
-                  XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
-                  center_x = (float)xwa.width / 2.0f;
-                  center_y = (float)xwa.height / 2.0f;
-                  norm_dx = ((float)x - center_x) / (float)xwa.width;
-                  norm_dy = ((float)y - center_y) / (float)xwa.height;
-
-                  float camera_pitch = norm_dx * camera_base_speed;
-                  float camera_roll = norm_dy * camera_base_speed;
-                  lac_get_rotation_mat4(&m_cam_rot, lac_deg_to_rad(-camera_roll), lac_deg_to_rad(-camera_pitch), 0.0f);
-
-                  XWarpPointer(dpy, win, win, 0, 0, xwa.width, xwa.height, center_x, center_y);
+                  motionSampleCount = 0;
+                  camera.rotateFromPointer(dpy, win, xwa);
                }
                break;
             }
@@ -622,27 +590,27 @@ int main(int argc, char **argv)
 
       if (IS_KEY_SET(key_mask, KEY_FORWARD)) 
       {
-         lac_add_vec3(&v_eye, v_eye, v_fwd_vel);
+         lac_add_vec3(&camera.vEye, camera.vEye, vFwdVel);
       }
       if (IS_KEY_SET(key_mask, KEY_BACKWARD)) 
       {
-         lac_subtract_vec3(&v_eye, v_eye, v_fwd_vel);
+         lac_subtract_vec3(&camera.vEye, camera.vEye, vFwdVel);
       }
       if (IS_KEY_SET(key_mask, KEY_LEFT)) 
       {
-         lac_subtract_vec3(&v_eye, v_eye, v_right_vel);
+         lac_subtract_vec3(&camera.vEye, camera.vEye, vRightVel);
       }
       if (IS_KEY_SET(key_mask, KEY_RIGHT)) 
       {
-         lac_add_vec3(&v_eye, v_eye, v_right_vel);
+         lac_add_vec3(&camera.vEye, camera.vEye, vRightVel);
       }
       if (IS_KEY_SET(key_mask, KEY_UP)) 
       {
-         v_eye[1] += player_speed;
+         camera.vEye[1] += player_speed;
       }
       if (IS_KEY_SET(key_mask, KEY_DOWN)) 
       {
-         v_eye[1] -= player_speed;
+         camera.vEye[1] -= player_speed;
       }
 
       /*** Render ***/
@@ -653,37 +621,28 @@ int main(int argc, char **argv)
       glUseProgram(shader); // Bind shader program for draw call
       glBindVertexArray(vao);
 
-      cube_rot_deg += (1 % 360);
-      cube_rot_rad = lac_deg_to_rad(cube_rot_deg);
+      cubeRotDeg += (1 % 360);
+      cubeRotRad = lac_deg_to_rad(cubeRotDeg);
 
       // Model matrix (translate to world space)
-      lac_get_rotation_mat4(&m_cube_rot, 0.0f, 0.0f, 0.0f); 
+      lac_get_rotation_mat4(&mCubeRot, 0.0f, 0.0f, 0.0f); 
       //lac_get_rotation_mat4(&m_cube_rot, cube_rot_rad, (cube_rot_rad * 0.9f), (cube_rot_rad * 0.8f)); 
-      lac_get_translation_mat4(&m_cube_trn, 0.0f, 0.0f, 1.5f); 
-      lac_multiply_mat4(&m_model, m_cube_trn, m_cube_rot);
+      lac_get_translation_mat4(&mCubeTrn, 0.0f, 0.0f, 1.5f); 
+      lac_multiply_mat4(&mModel, mCubeTrn, mCubeRot);
 
       int modelLocation = glGetUniformLocation(shader, "model");
-      glUniformMatrix4fv(modelLocation, 1, GL_TRUE, m_model);
+      glUniformMatrix4fv(modelLocation, 1, GL_TRUE, mModel);
 
       // View matrix (translate to view space)
-      vec4 tmp_look_dir = { 1 };
-      vec4 result = { 0 };
-      memcpy(tmp_look_dir, v_look_dir, 3 * sizeof(float));
-      lac_multiply_mat4_vec4(&result, m_cam_rot, v_look_dir);
-      memcpy(v_look_dir, result, 3 * sizeof(float));
-
-      lac_add_vec3(&v_target, v_eye, v_look_dir);
-      lac_get_point_at_mat4(&m_point_at, v_eye, v_target, v_up);
-      lac_invert_mat4(&m_view, m_point_at);
-
+      camera.calculateViewMatrix();
       int viewLocation = glGetUniformLocation(shader, "view");
-      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, m_view);
+      glUniformMatrix4fv(viewLocation, 1, GL_TRUE, camera.mView);
 
       // Projection matrix (translate to projection space)
-      lac_get_projection_mat4(&m_proj, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);
+      lac_get_projection_mat4(&mProj, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);
       
       int projLocation = glGetUniformLocation(shader, "proj");
-      glUniformMatrix4fv(projLocation, 1, GL_TRUE, m_proj);
+      glUniformMatrix4fv(projLocation, 1, GL_TRUE, mProj);
 
       // Draw call
       glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
@@ -692,6 +651,8 @@ int main(int argc, char **argv)
       auto frame_end_time = steady_clock::now();
       elapsed_time = duration_cast<nanoseconds>(frame_end_time - frame_start_time).count();
       //CalculateFrameRate(fps, fps_counter, time_prev_fps);
+      
+      std::cout << "vUp - x: " << camera.vUp[0] << " y: " << camera.vUp[1] << " z: " << camera.vUp[2] << std::endl;
    }
 
    glDeleteVertexArrays(1, &vao);
