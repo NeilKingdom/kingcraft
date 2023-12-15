@@ -13,21 +13,28 @@ class Camera
 public:
     const float CAMERA_BASE_SPEED = 20;
 
-    vec3 vEye;  // Camera's origin point
-    mat4 mView; // View matrix
-    vec3 vUp;   // Orthogonal to vLookDir and vRight     
+    const vec3 vFwd = { 0.0f, 0.0f, 1.0f };
+    const vec3 vRight = { 1.0, 0.0f, 0.0f };
+    const vec3 vUp = { 0.0f, 1.0f, 0.0f };
 
+    vec3 vEye;          // Camera's origin point
+    vec3 vFwdVel;       // Forward velocity vector 
+    vec3 vRightVel;     // Right velocity vector
+    mat4 mView;         // View matrix
+
+    // Constructor/Destructor
     Camera();
     ~Camera();
 
-    void updateVelocity(vec3 &vFwdVel, vec3 &vRightVel, float playerSpeed);
+    // Member functions
+    void updateVelocity(float playerSpeed);
     void rotateFromPointer(Display *dpy, Window win, XWindowAttributes xwa);
     void calculateViewMatrix();
 
 private:
-    vec3 vLookDir;    // The direction that the camera is facing
-    vec3 vRight;      // Orthogonal to vLookDir and vUp
+    vec3 vLookDir;    // The direction that the camera is facing on the current frame
+    vec3 vNewLookDir; // The direction that the camera will be facing on the next frame
 
     mat4 mPointAt;    // The point-at matrix which becomes the view matrix after inversion
-    mat4 mCamRot;     // Rotation matrix used for transforming vTarget
+    mat4 mCamRot;     // Rotation matrix used for transforming vLookDir
 };

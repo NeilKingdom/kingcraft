@@ -10,8 +10,9 @@
 Camera::Camera() :
     vEye{ 0 },
     vLookDir{ 0 },
-    vRight{ 1.0, 0.0f, 0.0f },
-    vUp{ 0.0f, 1.0f, 0.0f },
+    vNewLookDir{ 0 },
+    vFwdVel{ 0 },
+    vRightVel{ 0 },
     mCamRot{ 0 },
     mPointAt{ 0 },
     mView{ 0 }
@@ -22,7 +23,7 @@ Camera::Camera() :
 Camera::~Camera() 
 {}
 
-void Camera::updateVelocity(vec3 &vFwdVel, vec3 &vRightVel, float playerSpeed)
+void Camera::updateVelocity(float playerSpeed)
 {
     // Calculate forward camera velocity
     lac_multiply_vec3(&vFwdVel, vLookDir, playerSpeed); 
@@ -31,7 +32,6 @@ void Camera::updateVelocity(vec3 &vFwdVel, vec3 &vRightVel, float playerSpeed)
     lac_multiply_vec3(&vRightVel, vRight, playerSpeed);
 }
 
-// TODO: Maybe add elapsed time to hopefully smooth out jumps
 void Camera::rotateFromPointer(Display *dpy, Window win, XWindowAttributes xwa) 
 {
     Window wnop;
@@ -59,20 +59,20 @@ void Camera::rotateFromPointer(Display *dpy, Window win, XWindowAttributes xwa)
 
 void Camera::calculateViewMatrix() 
 {
-    vec3 vTarget = { 0.0f, 0.0f, 1.0f }; 
+    std::memcpy(vNewLookDir, vFwd, sizeof(vNewLookDir));
 
     // Store vTarget as a vec4 with w component of 1
-    vec4 tmpVTarget = { 1.0f };
-    std::memcpy(tmpVTarget, vTarget, sizeof(vTarget));
+    vec4 tmpNewLookDir = { 1.0f };
+    std::memcpy(tmpNewLookDir, vNewLookDir, sizeof(vNewLookDir));
 
     // Multiply vTarget with camera's rotation matrix
-    lac_multiply_mat4_vec4(&tmpVTarget, mCamRot, vTarget);
+    lac_multiply_mat4_vec4(&tmpNewLookDir, mCamRot, vNewLookDir);
 
     // Revert back to using vec3s
-    std::memcpy(vLookDir, tmpVTarget, sizeof(vLookDir));
+    std::memcpy(vLookDir, tmpNewLookDir, sizeof(vLookDir));
 
     // TODO: Add comment
-    lac_add_vec3(&vTarget, vEye, vLookDir);
-    lac_get_point_at_mat4(&mPointAt, vEye, vTarget, vUp);
+    lac_add_vec3(&vNewLookDir, vEye, vLookDir);
+    lac_get_point_at_mat4(&mPointAt, vEye, vNewLookDir, vUp);
     lac_invert_mat4(&mView, mPointAt);
 }
