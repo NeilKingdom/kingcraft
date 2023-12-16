@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include <transforms.h>
+#include <vecmath.h>
 
 #include "../include/camera.hpp"
 
@@ -33,6 +34,7 @@ void Camera::updateVelocity(float playerSpeed)
     lac_multiply_vec3(&vFwdVel, vLookDir, playerSpeed); 
     // Calculate right camera velocity
     lac_calc_cross_prod(const_cast<vec3*>(&vRight), vLookDir, vUp);
+    lac_normalize_vec3(const_cast<vec3*>(&vRight), vRight);
     lac_multiply_vec3(&vRightVel, vRight, playerSpeed);
 }
 

@@ -308,7 +308,7 @@ void processEvents(Camera &camera, bool &getPtrLocation, float playerSpeed)
                 getPtrLocation = !getPtrLocation;
                 if (getPtrLocation) // Need to give cursor a frame of travel time
                 {
-                    camera.rotateFromPointer(dpy, win, xwa);
+                    camera.updateRotationFromPointer(dpy, win, xwa);
                 }
                 break;
             }
