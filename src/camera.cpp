@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <algorithm>
 #include <array>
 #include <cstring>
 
@@ -8,6 +9,8 @@
 #include "../include/camera.hpp"
 
 Camera::Camera() :
+    cameraRoll(0),
+    cameraPitch(0),
     vEye{ 0 },
     vLookDir{ 0 },
     vNewLookDir{ 0 },
@@ -33,12 +36,11 @@ void Camera::updateVelocity(float playerSpeed)
     lac_multiply_vec3(&vRightVel, vRight, playerSpeed);
 }
 
-void Camera::rotateFromPointer(Display *dpy, Window win, XWindowAttributes xwa) 
+void Camera::updateRotationFromPointer(Display *dpy, Window win, XWindowAttributes xwa) 
 {
     Window wnop;
     int x, y, inop;
     float centerX, centerY, normDx, normDy;
-    mat4 mRot;
 
     XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
     centerX = (float)xwa.width / 2.0f;
@@ -46,37 +48,36 @@ void Camera::rotateFromPointer(Display *dpy, Window win, XWindowAttributes xwa)
     normDx  = (centerX - (float)x) / (float)xwa.width;
     normDy  = (centerY - (float)y) / (float)xwa.height;
 
-    const float cameraRoll = normDx * CAMERA_BASE_SPEED;
-    const float cameraPitch = normDy * CAMERA_BASE_SPEED;
-
-    mat4 mRoll, mPitch;
-    lac_get_roll_mat4(&mRoll, lac_deg_to_rad(cameraRoll));
-    lac_get_pitch_mat4(&mPitch, lac_deg_to_rad(cameraPitch));
-    lac_multiply_mat4(&mRot, mRoll, mPitch);
-    lac_multiply_mat4(&mCamRot, mCamRot, mRot);
+    cameraRoll += normDx * CAMERA_BASE_SPEED;
+    cameraPitch += normDy * CAMERA_BASE_SPEED;
+    cameraPitch = std::clamp(cameraPitch, -89.0f, 89.0f);
 
     XWarpPointer(dpy, win, win, 0, 0, xwa.width, xwa.height, centerX, centerY);
 }
 
 void Camera::calculateViewMatrix() 
 {
+    // Rotation matrix from pointer location
+    mat4 mRoll, mPitch;
+    lac_get_roll_mat4(&mRoll, lac_deg_to_rad(cameraRoll));
+    lac_get_pitch_mat4(&mPitch, lac_deg_to_rad(cameraPitch));
+    lac_multiply_mat4(&mCamRot, mRoll, mPitch);
+
+    // Initialize vNewlookDir to vFwd
     std::memcpy(vNewLookDir, vFwd, sizeof(vNewLookDir));
 
-    // Store vTarget as a vec4 with w component of 1
+    // Store vNewLookDir as a vec4 with w component of 1
     vec4 tmpNewLookDir = { 1.0f };
     std::memcpy(tmpNewLookDir, vNewLookDir, sizeof(vNewLookDir));
 
-    // Multiply vTarget with camera's rotation matrix
+    // Multiply vNewLookDir with camera's rotation matrix
     lac_multiply_mat4_vec4(&tmpNewLookDir, mCamRot, vNewLookDir);
 
-    // Revert back to using vec3s
+    // Revert back to using vec3
     std::memcpy(vLookDir, tmpNewLookDir, sizeof(vLookDir));
 
-    // TODO: Add comment
+    // vNewLookDir is the rotated look vector + camera's current position
     lac_add_vec3(&vNewLookDir, vEye, vLookDir);
     lac_get_point_at_mat4(&mPointAt, vEye, vNewLookDir, vUp);
-    // TODO: Probably more idiomatic way of doing this
-    mat4 view;
-    std::memcpy(view, mView.get(), sizeof(view));
-    lac_invert_mat4(&view, mPointAt);
+    lac_invert_mat4(reinterpret_cast<mat4*>(mView->data()), mPointAt);
 }

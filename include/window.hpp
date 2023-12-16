@@ -90,7 +90,7 @@ void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_p
 unsigned compileShader(unsigned type, const std::string source);
 unsigned createShader(const std::string vertexShader, const std::string fragmentShader);
 bool isGLXExtensionSupported(const char *extList, const char *extName);
-GLXFBConfig createXWindow(std::string winName, size_t width, size_t height);
+GLXFBConfig createXWindow(const std::string winName, size_t winWidth = 1920, size_t winHeight = 1080);
 void createOpenGLContext(GLXFBConfig &bestFbConfig);
 void processEvents(Camera &camera, bool &getPtrLocation, float playerSpeed);
 void renderFrame(Mvp &mvp, glObjects &objs, Camera &camera, size_t indicesSize);

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <array>
 #include <chrono>
 #include <algorithm>
 #include <cstring>
@@ -119,7 +120,7 @@ bool isGLXExtensionSupported(const char *extList, const char *extName)
     }
 }
 
-GLXFBConfig createXWindow(const std::string winName, size_t width, size_t height)
+GLXFBConfig createXWindow(const std::string winName, size_t winWidth, size_t winHeight)
 {
     // Open the X11 display
     dpy = XOpenDisplay(NULL); 
@@ -220,7 +221,7 @@ GLXFBConfig createXWindow(const std::string winName, size_t width, size_t height
 
     win = XCreateWindow(
         dpy, RootWindow(dpy, xvi->screen), 
-        0, 0, width, height, 0, 
+        0, 0, winWidth, winHeight, 0, 
         xvi->depth, 
         InputOutput, 
         xvi->visual, 
@@ -444,7 +445,7 @@ void renderFrame(Mvp &mvp, glObjects &objs, Camera &camera, size_t indicesSize)
     // View matrix (translate to view space)
     camera.calculateViewMatrix();
     int viewLocation = glGetUniformLocation(objs.shader, "view");
-    glUniformMatrix4fv(viewLocation, 1, GL_TRUE, mvp.mView.get());
+    glUniformMatrix4fv(viewLocation, 1, GL_TRUE, mvp.mView->data());
 
     // Projection matrix (translate to projection space)
     lac_get_projection_mat4(&mvp.mProj, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);

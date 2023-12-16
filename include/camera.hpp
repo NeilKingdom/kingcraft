@@ -29,10 +29,13 @@ public:
 
     // Member functions
     void updateVelocity(float playerSpeed);
-    void rotateFromPointer(Display *dpy, Window win, XWindowAttributes xwa);
+    void updateRotationFromPointer(Display *dpy, Window win, XWindowAttributes xwa);
     void calculateViewMatrix();
 
 private:
+    float cameraRoll;
+    float cameraPitch;
+
     vec3 vLookDir;    // The direction that the camera is facing on the current frame
     vec3 vNewLookDir; // The direction that the camera will be facing on the next frame
 

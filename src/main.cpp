@@ -57,7 +57,6 @@ int main()
 
     /*** Variable declarations ***/
 
-    // TODO: Make mvp.mView a shared smart pointer with camera.mView
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
@@ -76,7 +75,7 @@ int main()
 
     /*** Setup ***/
 
-    GLXFBConfig bestFbConfig = createXWindow("KingCraft", 600, 600);
+    GLXFBConfig bestFbConfig = createXWindow("KingCraft");
     createOpenGLContext(bestFbConfig);
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
