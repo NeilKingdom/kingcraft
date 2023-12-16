@@ -1,9 +1,9 @@
-#include <cstring>
 #include <iostream>
+#include <memory>
+#include <array>
+#include <cstring>
 
-#include <matmath.h>
 #include <transforms.h>
-#include <vecmath.h>
 
 #include "../include/camera.hpp"
 
@@ -15,8 +15,9 @@ Camera::Camera() :
     vRightVel{ 0 },
     mCamRot{ 0 },
     mPointAt{ 0 },
-    mView{ 0 }
+    mView(std::make_shared<std::array<float, 16>>())
 {
+    std::fill(mView->begin(), mView->end(), 0.0f);
     std::memcpy(mCamRot, lac_ident_mat4, sizeof(mCamRot));
 }
 
@@ -74,5 +75,8 @@ void Camera::calculateViewMatrix()
     // TODO: Add comment
     lac_add_vec3(&vNewLookDir, vEye, vLookDir);
     lac_get_point_at_mat4(&mPointAt, vEye, vNewLookDir, vUp);
-    lac_invert_mat4(&mView, mPointAt);
+    // TODO: Probably more idiomatic way of doing this
+    mat4 view;
+    std::memcpy(view, mView.get(), sizeof(view));
+    lac_invert_mat4(&view, mPointAt);
 }

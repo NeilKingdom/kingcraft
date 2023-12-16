@@ -1,11 +1,43 @@
+// C++ APIs
+#include <iostream>
+#include <fstream>
+#include <iterator>
+#include <string>
+#include <chrono>
+#include <algorithm>
+#include <memory>
 #include <cstdlib>
+#include <cassert>
+#include <cstring>
+#include <cstdint>
 
-#include "../include/window.hpp"
+// X11 
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/keysymdef.h>
+
+// OpenGL
+#include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers
+#include <GL/gl.h>   // General OpenGL APIs
+#include <GL/glx.h>  // X11-specific OpenGL APIs
+
+// My APIs
+#include <transforms.h>
+
+#include "../include/callbacks.hpp"
+#include "../include/camera.hpp"
 #include "../include/constants.hpp"
+#include "../include/window.hpp"
+
+// ImGUI
+#include "../res/vendor/imgui/backends/imgui_impl_opengl3.h"
+#include "../res/vendor/imgui/backends/imgui_impl_x11.h"
 
 void cleanup(glObjects &objs) 
 {
-    //ImGui::End();
+    //ImGui_ImplOpenGL3_Shutdown();
+    //ImGui_ImplX11_Shutdown();
+    //ImGui::DestroyContext();
 
     glDeleteVertexArrays(1, &objs.vao);
     glDeleteBuffers(1, &objs.vbo);
@@ -26,9 +58,8 @@ int main()
     /*** Variable declarations ***/
 
     // TODO: Make mvp.mView a shared smart pointer with camera.mView
-    Mvp mvp = { 0 };
     Camera camera = Camera();
-    mvp.mView = &camera.mView;
+    Mvp mvp = Mvp(camera);
 
     glObjects objs;
 
@@ -45,7 +76,7 @@ int main()
 
     /*** Setup ***/
 
-    GLXFBConfig bestFbConfig = createXWindow();
+    GLXFBConfig bestFbConfig = createXWindow("KingCraft", 600, 600);
     createOpenGLContext(bestFbConfig);
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
@@ -56,7 +87,7 @@ int main()
     }
 
     glDepthFunc(GL_LESS);         // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
-    //glCullFace(GL_FRONT);         // Use if triangles are rasterized in clockwise ordering
+    //glCullFace(GL_FRONT);         // Specifies expected direction of the normals 
     glEnable(GL_DEPTH_TEST);      // Enable z-ordering via depth buffer
     glEnable(GL_CULL_FACE);       // Cull faces which are not visible to the camera
     glEnable(GL_DEBUG_OUTPUT);    // Enable debug output

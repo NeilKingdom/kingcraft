@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <memory>
 
 #include <X11/Xlib.h>
 
@@ -17,10 +18,10 @@ public:
     const vec3 vRight = { 1.0, 0.0f, 0.0f };
     const vec3 vUp = { 0.0f, 1.0f, 0.0f };
 
-    vec3 vEye;          // Camera's origin point
-    vec3 vFwdVel;       // Forward velocity vector 
-    vec3 vRightVel;     // Right velocity vector
-    mat4 mView;         // View matrix
+    vec3 vEye;                                      // Camera's origin point
+    vec3 vFwdVel;                                   // Forward velocity vector 
+    vec3 vRightVel;                                 // Right velocity vector
+    std::shared_ptr<std::array<float, 16>> mView;   // View matrix
 
     // Constructor/Destructor
     Camera();

@@ -1,0 +1,158 @@
+src/camera.cpp: In constructor ‘Camera::Camera()’:
+src/camera.cpp:17:33: error: no matching function for call to ‘make_shared<mat4>(float*)’
+   17 |     mView(std::make_shared<mat4>(new mat4))
+      |           ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+src/camera.cpp: In constructor ‘Camera::Camera()’:
+src/camera.cpp:17:33: error: no matching function for call to ‘make_shared<mat4>(float*)’
+   17 |     mView(std::make_shared<mat4>(new mat4))
+      |           ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+In file included from /usr/include/c++/13.2.1/memory:80,
+                 from src/camera.cpp:2:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: note: candidate: ‘template<class _Tp, class ... _Args> std::shared_ptr<std::_NonArray<_Tp> > std::make_shared(_Args&& ...)’
+ 1005 |     make_shared(_Args&&... __args)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: note:   template argument deduction/substitution failed:
+In file included from /usr/include/c++/13.2.1/memory:80,
+                 from src/camera.cpp:2:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: note: candidate: ‘template<class _Tp, class ... _Args> std::shared_ptr<std::_NonArray<_Tp> > std::make_shared(_Args&& ...)’
+ 1005 |     make_shared(_Args&&... __args)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp, class ... _Args> std::shared_ptr<std::_NonArray<_Tp> > std::make_shared(_Args&& ...) [with _Tp = float [16]; _Args = <missing>]’:
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: error: template constraint failure for ‘template<class _Tp>  requires !(is_array_v<_Tp>) using std::_NonArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: note: constraints not satisfied
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp, class ... _Args> std::shared_ptr<std::_NonArray<_Tp> > std::make_shared(_Args&& ...) [with _Tp = float [16]; _Args = <missing>]’:
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: error: template constraint failure for ‘template<class _Tp>  requires !(is_array_v<_Tp>) using std::_NonArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5: note: constraints not satisfied
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp>  requires !(is_array_v<_Tp>) using std::_NonArray = _Tp [with _Tp = float [16]]’:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5:   required by substitution of ‘template<class _Tp, class ... _Args> std::shared_ptr<std::_NonArray<_Tp> > std::make_shared(_Args&& ...) [with _Tp = float [16]; _Args = <missing>]’
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:109:11:   required by the constraints of ‘template<class _Tp>  requires !(is_array_v<_Tp>) using std::_NonArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:108:15: note: the expression ‘!(is_array_v<_Tp>) [with _Tp = float[16]]’ evaluated to ‘false’
+  108 |     requires (!is_array_v<_Tp>)
+      |              ~^~~~~~~~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp>  requires !(is_array_v<_Tp>) using std::_NonArray = _Tp [with _Tp = float [16]]’:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1005:5:   required by substitution of ‘template<class _Tp, class ... _Args> std::shared_ptr<std::_NonArray<_Tp> > std::make_shared(_Args&& ...) [with _Tp = float [16]; _Args = <missing>]’
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:109:11:   required by the constraints of ‘template<class _Tp>  requires !(is_array_v<_Tp>) using std::_NonArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:108:15: note: the expression ‘!(is_array_v<_Tp>) [with _Tp = float[16]]’ evaluated to ‘false’
+  108 |     requires (!is_array_v<_Tp>)
+      |              ~^~~~~~~~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: note: candidate: ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t)’
+ 1037 |     make_shared(size_t __n)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: note: candidate: ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t)’
+ 1037 |     make_shared(size_t __n)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t) [with _Tp = float [16]]’:
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: error: template constraint failure for ‘template<class _Tp>  requires (is_array_v<_Tp>) && (extent_v<_Tp>) == 0 using std::_UnboundedArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: note: constraints not satisfied
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t) [with _Tp = float [16]]’:
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: error: template constraint failure for ‘template<class _Tp>  requires (is_array_v<_Tp>) && (extent_v<_Tp>) == 0 using std::_UnboundedArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5: note: constraints not satisfied
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp>  requires (is_array_v<_Tp>) && (extent_v<_Tp>) == 0 using std::_UnboundedArray = _Tp [with _Tp = float [16]]’:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5:   required by substitution of ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t) [with _Tp = float [16]]’
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:120:11:   required by the constraints of ‘template<class _Tp>  requires (is_array_v<_Tp>) && (extent_v<_Tp>) == 0 using std::_UnboundedArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:119:48: note: the expression ‘(extent_v<_Tp>) == 0 [with _Tp = float[16]]’ evaluated to ‘false’
+  119 |     requires is_array_v<_Tp> && (extent_v<_Tp> == 0)
+      |                                 ~~~~~~~~~~~~~~~^~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h: In substitution of ‘template<class _Tp>  requires (is_array_v<_Tp>) && (extent_v<_Tp>) == 0 using std::_UnboundedArray = _Tp [with _Tp = float [16]]’:
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1037:5:   required by substitution of ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t) [with _Tp = float [16]]’
+src/camera.cpp:17:33:   required from here
+/usr/include/c++/13.2.1/bits/shared_ptr.h:120:11:   required by the constraints of ‘template<class _Tp>  requires (is_array_v<_Tp>) && (extent_v<_Tp>) == 0 using std::_UnboundedArray = _Tp’
+/usr/include/c++/13.2.1/bits/shared_ptr.h:119:48: note: the expression ‘(extent_v<_Tp>) == 0 [with _Tp = float[16]]’ evaluated to ‘false’
+  119 |     requires is_array_v<_Tp> && (extent_v<_Tp> == 0)
+      |                                 ~~~~~~~~~~~~~~~^~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1053:5: note: candidate: ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t, remove_extent_t<_Iter>&)’
+ 1053 |     make_shared(size_t __n, const remove_extent_t<_Tp>& __u)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1053:5: note: candidate: ‘template<class _Tp> std::shared_ptr<std::_UnboundedArray<_Tp> > std::make_shared(size_t, remove_extent_t<_Iter>&)’
+ 1053 |     make_shared(size_t __n, const remove_extent_t<_Tp>& __u)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1053:5: note:   candidate expects 2 arguments, 1 provided
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1053:5: note:   candidate expects 2 arguments, 1 provided
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1080:5: note: candidate: ‘template<class _Tp> std::shared_ptr<std::_BoundedArray<_Tp> > std::make_shared()’
+ 1080 |     make_shared()
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1080:5: note:   candidate expects 0 arguments, 1 provided
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1080:5: note: candidate: ‘template<class _Tp> std::shared_ptr<std::_BoundedArray<_Tp> > std::make_shared()’
+ 1080 |     make_shared()
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1080:5: note:   candidate expects 0 arguments, 1 provided
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1095:5: note: candidate: ‘std::shared_ptr<std::_BoundedArray<_Tp> > std::make_shared(remove_extent_t<_Iter>&) [with _Tp = float [16]; _BoundedArray<_Tp> = float [16]; remove_extent_t<_Iter> = float]’
+ 1095 |     make_shared(const remove_extent_t<_Tp>& __u)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1095:5: note: candidate: ‘std::shared_ptr<std::_BoundedArray<_Tp> > std::make_shared(remove_extent_t<_Iter>&) [with _Tp = float [16]; _BoundedArray<_Tp> = float [16]; remove_extent_t<_Iter> = float]’
+ 1095 |     make_shared(const remove_extent_t<_Tp>& __u)
+      |     ^~~~~~~~~~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1095:45: note:   no known conversion for argument 1 from ‘float*’ to ‘std::remove_extent_t<float [16]>&’ {aka ‘const float&’}
+ 1095 |     make_shared(const remove_extent_t<_Tp>& __u)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/usr/include/c++/13.2.1/bits/shared_ptr.h:1095:45: note:   no known conversion for argument 1 from ‘float*’ to ‘std::remove_extent_t<float [16]>&’ {aka ‘const float&’}
+ 1095 |     make_shared(const remove_extent_t<_Tp>& __u)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from src/camera.cpp:7:
+src/../include/camera.hpp:37:10: warning: ‘Camera::vNewLookDir’ will be initialized after [-Wreorder]
+   37 |     vec3 vNewLookDir; // The direction that the camera will be facing on the next frame
+      |          ^~~~~~~~~~~
+In file included from src/camera.cpp:7:
+src/../include/camera.hpp:37:10: warning: ‘Camera::vNewLookDir’ will be initialized after [-Wreorder]
+   37 |     vec3 vNewLookDir; // The direction that the camera will be facing on the next frame
+      |          ^~~~~~~~~~~
+src/../include/camera.hpp:22:10: warning:   ‘float Camera::vFwdVel [3]’ [-Wreorder]
+   22 |     vec3 vFwdVel;                   // Forward velocity vector
+      |          ^~~~~~~
+src/../include/camera.hpp:22:10: warning:   ‘float Camera::vFwdVel [3]’ [-Wreorder]
+   22 |     vec3 vFwdVel;                   // Forward velocity vector
+      |          ^~~~~~~
+src/camera.cpp:9:1: warning:   when initialized here [-Wreorder]
+    9 | Camera::Camera() :
+      | ^~~~~~
+src/camera.cpp:9:1: warning:   when initialized here [-Wreorder]
+    9 | Camera::Camera() :
+      | ^~~~~~
+src/../include/camera.hpp:40:10: warning: ‘Camera::mCamRot’ will be initialized after [-Wreorder]
+   40 |     mat4 mCamRot;     // Rotation matrix used for transforming vLookDir
+      |          ^~~~~~~
+src/../include/camera.hpp:40:10: warning: ‘Camera::mCamRot’ will be initialized after [-Wreorder]
+   40 |     mat4 mCamRot;     // Rotation matrix used for transforming vLookDir
+      |          ^~~~~~~
+src/../include/camera.hpp:39:10: warning:   ‘float Camera::mPointAt [16]’ [-Wreorder]
+   39 |     mat4 mPointAt;    // The point-at matrix which becomes the view matrix after inversion
+      |          ^~~~~~~~
+src/../include/camera.hpp:39:10: warning:   ‘float Camera::mPointAt [16]’ [-Wreorder]
+   39 |     mat4 mPointAt;    // The point-at matrix which becomes the view matrix after inversion
+      |          ^~~~~~~~
+src/camera.cpp:9:1: warning:   when initialized here [-Wreorder]
+    9 | Camera::Camera() :
+      | ^~~~~~
+src/camera.cpp:9:1: warning:   when initialized here [-Wreorder]
+    9 | Camera::Camera() :
+      | ^~~~~~
+src/../include/camera.hpp:39:10: warning: ‘Camera::mPointAt’ will be initialized after [-Wreorder]
+   39 |     mat4 mPointAt;    // The point-at matrix which becomes the view matrix after inversion
+      |          ^~~~~~~~
+src/../include/camera.hpp:39:10: warning: ‘Camera::mPointAt’ will be initialized after [-Wreorder]
+   39 |     mat4 mPointAt;    // The point-at matrix which becomes the view matrix after inversion
+      |          ^~~~~~~~
+src/../include/camera.hpp:24:27: warning:   ‘std::shared_ptr<float [16]> Camera::mView’ [-Wreorder]
+   24 |     std::shared_ptr<mat4> mView;    // View matrix
+      |                           ^~~~~
+src/../include/camera.hpp:24:27: warning:   ‘std::shared_ptr<float [16]> Camera::mView’ [-Wreorder]
+   24 |     std::shared_ptr<mat4> mView;    // View matrix
+      |                           ^~~~~
+src/camera.cpp:9:1: warning:   when initialized here [-Wreorder]
+    9 | Camera::Camera() :
+      | ^~~~~~
+src/camera.cpp:9:1: warning:   when initialized here [-Wreorder]
+    9 | Camera::Camera() :
+      | ^~~~~~
+make: *** [Makefile:36: obj/camera.o] Error 1
+make: *** [Makefile:36: obj/camera.o] Error 1

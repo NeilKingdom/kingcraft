@@ -1,22 +1,18 @@
 #pragma once 
 
 // C++ APIs
-#include <cstdint>
-#include <cstdlib>
 #include <iostream>
-#include <cassert>
 #include <fstream>
 #include <iterator>
-#include <cstring>
 #include <string>
 #include <chrono>
 #include <algorithm>
-#include <iomanip>
-
-// C APIs
-#include <stdlib.h>
-#include <unistd.h>
-#include <math.h>
+#include <memory>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
+#include <cstdint>
+#include <cstddef>
 
 // X11 
 #include <X11/Xlib.h>
@@ -28,17 +24,11 @@
 #include <GL/gl.h>   // General OpenGL APIs
 #include <GL/glx.h>  // X11-specific OpenGL APIs
 
-// TODO: For testing. Remove
-#include <GLFW/glfw3.h>
-
 // My APIs
-#include "../include/callbacks.hpp"
-#include "../include/camera.hpp"
-#include <matmath.h>
-#include <vecmath.h>
 #include <transforms.h>
 
-#define APP_TITLE "KingCraft"
+#include "../include/callbacks.hpp"
+#include "../include/camera.hpp"
 
 static uint16_t key_mask = 0;
 
@@ -67,6 +57,7 @@ static XEvent                  xev;    // Stores the event type of the most rece
 static Colormap               cmap;    // Colormap for the X window 
 static GLXContext              glx;    // The OpenGL context for X11
 
+// TODO: This is a dumb abstraction
 typedef struct {
     unsigned int vao;
     unsigned int vbo;
@@ -74,26 +65,32 @@ typedef struct {
     unsigned int shader;
 } glObjects;
 
-typedef struct {
+struct Mvp {
     mat4 mModel;
-    mat4 *mView;
+    std::shared_ptr<std::array<float, 16>> mView;
     mat4 mProj;
-} Mvp;
+
+    Mvp(Camera &camera) : 
+        mModel{ 0 },
+        mView(camera.mView),
+        mProj{ 0 }
+    {}
+};
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(
     Display *dpy, 
-    GLXFBConfig fb_conf, 
+    GLXFBConfig fbConf, 
     GLXContext glx, 
-    Bool is_fwd_compat, 
-    const int *glx_attribs
+    Bool isFwdCompat, 
+    const int *glxAttribs
 );
 
 // Forward function declarations
-void calculateFrameRate(int &fps, int &fps_inc, std::chrono::steady_clock::time_point &time_prev);
+void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_point &timePrev);
 unsigned compileShader(unsigned type, const std::string source);
 unsigned createShader(const std::string vertexShader, const std::string fragmentShader);
 bool isGLXExtensionSupported(const char *extList, const char *extName);
-GLXFBConfig createXWindow();
+GLXFBConfig createXWindow(std::string winName, size_t width, size_t height);
 void createOpenGLContext(GLXFBConfig &bestFbConfig);
 void processEvents(Camera &camera, bool &getPtrLocation, float playerSpeed);
 void renderFrame(Mvp &mvp, glObjects &objs, Camera &camera, size_t indicesSize);

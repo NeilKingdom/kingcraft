@@ -3,23 +3,16 @@
  */
 
 // C++ APIs
-#include <cstdint>
-#include <cstdlib>
 #include <iostream>
-#include <cassert>
 #include <fstream>
 #include <iterator>
-#include <cstring>
 #include <string>
 #include <chrono>
 #include <algorithm>
-#include <iomanip>
-
-// C APIs
-#include <stdlib.h>
-#include <tuple>
-#include <unistd.h>
-#include <math.h>
+#include <cstring>
+#include <cstdint>
+#include <cstddef>
+#include <cassert>
 
 // X11 
 #include <X11/Xlib.h>
@@ -31,23 +24,12 @@
 #include <GL/gl.h>   // General OpenGL APIs
 #include <GL/glx.h>  // X11-specific OpenGL APIs
 
-// TODO: For testing. Remove
-#include <GLFW/glfw3.h>
-
 // My APIs
-#include <matmath.h>
-#include <vecmath.h>
 #include <transforms.h>
 
-#include "../include/callbacks.hpp"
 #include "../include/camera.hpp"
 #include "../include/constants.hpp"
 #include "../include/window.hpp"
-
-// ImGUI
-#include "../res/vendor/imgui/imgui.h"
-#include "../res/vendor/imgui/backends/imgui_impl_opengl3.h"
-#include "../res/vendor/imgui/backends/imgui_impl_glfw.h"
 
 void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_point &timePrev)
 {
@@ -80,8 +62,8 @@ unsigned compileShader(unsigned type, const std::string source)
     {
         int length;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-        char* message = (char*)alloca(length * sizeof(char));
-        glGetShaderInfoLog(id, length, &length, message);
+        std::string message;
+        glGetShaderInfoLog(id, length, &length, const_cast<char*>(message.c_str()));
         std::cerr << "Failed to compile " 
             << (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
             << " shader: " << message << std::endl;
@@ -137,7 +119,7 @@ bool isGLXExtensionSupported(const char *extList, const char *extName)
     }
 }
 
-GLXFBConfig createXWindow()
+GLXFBConfig createXWindow(const std::string winName, size_t width, size_t height)
 {
     // Open the X11 display
     dpy = XOpenDisplay(NULL); 
@@ -201,7 +183,7 @@ GLXFBConfig createXWindow()
             glXGetFBConfigAttrib(dpy, fbConfig[i], GLX_SAMPLE_BUFFERS, &sampBuf);
             glXGetFBConfigAttrib(dpy, fbConfig[i], GLX_SAMPLES, &samples);
 
-            if ((bestFbIdx < 0) || sampBuf && (samples > bestSpp)) 
+            if ((bestFbIdx < 0) || (sampBuf && (samples > bestSpp))) 
             {
                 bestFbIdx = i;
                 bestSpp = samples;
@@ -238,7 +220,7 @@ GLXFBConfig createXWindow()
 
     win = XCreateWindow(
         dpy, RootWindow(dpy, xvi->screen), 
-        0, 0, 600, 600, 0, 
+        0, 0, width, height, 0, 
         xvi->depth, 
         InputOutput, 
         xvi->visual, 
@@ -252,7 +234,7 @@ GLXFBConfig createXWindow()
     }
 
     XFree(xvi);
-    XStoreName(dpy, win, APP_TITLE);
+    XStoreName(dpy, win, winName.c_str());
     XMapWindow(dpy, win);
 
     return bestFbConfig;
@@ -303,9 +285,6 @@ void createOpenGLContext(GLXFBConfig &bestFbConfig)
         std::cout << "Direct GLX rendering context obtained" << std::endl;
     }
     glXMakeCurrent(dpy, win, glx);
-
-    //XClearWindow(dpy, win);
-    //XMapRaised(dpy, win);
 }
 
 void processEvents(Camera &camera, bool &getPtrLocation, float playerSpeed)
@@ -465,7 +444,7 @@ void renderFrame(Mvp &mvp, glObjects &objs, Camera &camera, size_t indicesSize)
     // View matrix (translate to view space)
     camera.calculateViewMatrix();
     int viewLocation = glGetUniformLocation(objs.shader, "view");
-    glUniformMatrix4fv(viewLocation, 1, GL_TRUE, *mvp.mView);
+    glUniformMatrix4fv(viewLocation, 1, GL_TRUE, mvp.mView.get());
 
     // Projection matrix (translate to projection space)
     lac_get_projection_mat4(&mvp.mProj, ((float)xwa.height / (float)xwa.width), fov, znear, zfar);
