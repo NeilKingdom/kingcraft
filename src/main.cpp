@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstring>
 #include <cstdint>
+#include <thread>
 
 // X11 
 #include <X11/Xlib.h>
@@ -28,27 +29,28 @@
 #include "../include/camera.hpp"
 #include "../include/constants.hpp"
 #include "../include/window.hpp"
+#include "../include/debug_ctls.hpp"
 
 // ImGUI
 #include "../res/vendor/imgui/backends/imgui_impl_opengl3.h"
 #include "../res/vendor/imgui/backends/imgui_impl_x11.h"
 
-void cleanup(glObjects &objs) 
+void cleanup(xObjects &xObjs, glObjects &glObjs) 
 {
-    //ImGui_ImplOpenGL3_Shutdown();
-    //ImGui_ImplX11_Shutdown();
-    //ImGui::DestroyContext();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplX11_Shutdown();
+    ImGui::DestroyContext();
 
-    glDeleteVertexArrays(1, &objs.vao);
-    glDeleteBuffers(1, &objs.vbo);
-    glDeleteBuffers(1, &objs.ebo);
-    glDeleteProgram(objs.shader);
+    glDeleteVertexArrays(1, &glObjs.vao);
+    glDeleteBuffers(1, &glObjs.vbo);
+    glDeleteBuffers(1, &glObjs.ebo);
+    glDeleteProgram(glObjs.shader);
 
-    glXDestroyContext(dpy, glx);
+    glXDestroyContext(xObjs.dpy, xObjs.glx);
 
-    XDestroyWindow(dpy, win);
-    XFreeColormap(dpy, cmap);
-    XCloseDisplay(dpy);
+    XDestroyWindow(xObjs.dpy, xObjs.win);
+    XFreeColormap(xObjs.dpy, xObjs.cmap);
+    XCloseDisplay(xObjs.dpy);
 }
 
 int main() 
@@ -60,23 +62,18 @@ int main()
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
-    glObjects objs;
+    xObjects xObjs;
+    glObjects glObjs;
 
     bool getPtrLocation = true;
 
     int fpsCounter = 0;
     int fps = 0;
 
-    float cubeRotRad = 0.0f;
-    float cubeRotDeg = 0.0f;
-
-    mat4 mCubeTrn = { 0 };
-    mat4 mCubeRot = { 0 };
-
     /*** Setup ***/
 
-    GLXFBConfig bestFbConfig = createXWindow("KingCraft");
-    createOpenGLContext(bestFbConfig);
+    GLXFBConfig bestFbConfig = createXWindow(xObjs, "KingCraft");
+    createOpenGLContext(xObjs, bestFbConfig);
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
     if (glewInit() != GLEW_OK)
@@ -85,10 +82,11 @@ int main()
         exit(EXIT_FAILURE);
     }
 
+    //auto t = std::thread(initImGui, xObjs);
+
     glDepthFunc(GL_LESS);         // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
-    //glCullFace(GL_FRONT);         // Specifies expected direction of the normals 
+    glEnable(GL_CULL_FACE);       // Enable culling
     glEnable(GL_DEPTH_TEST);      // Enable z-ordering via depth buffer
-    glEnable(GL_CULL_FACE);       // Cull faces which are not visible to the camera
     glEnable(GL_DEBUG_OUTPUT);    // Enable debug output
 
     if (glDebugMessageCallback)
@@ -138,16 +136,16 @@ int main()
         3, 2, 6
     };
 
-    glGenVertexArrays(1, &objs.vao);
-    glGenBuffers(1, &objs.vbo);
-    glGenBuffers(1, &objs.ebo);
+    glGenVertexArrays(1, &glObjs.vao);
+    glGenBuffers(1, &glObjs.vbo);
+    glGenBuffers(1, &glObjs.ebo);
 
-    glBindVertexArray(objs.vao);
+    glBindVertexArray(glObjs.vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, objs.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, glObjs.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objs.ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glObjs.ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // Position attribute
@@ -176,12 +174,21 @@ int main()
                                      (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    objs.shader = createShader(vertexShader, fragmentShader);
+    glObjs.shader = createShader(vertexShader, fragmentShader);
 
     /*** Game loop ***/
 
     time_point<steady_clock> timePrevFps = steady_clock::now();
     nanoseconds::rep elapsedTime = 0L;
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplX11_Init(xObjs.dpy, &xObjs.win);
 
     while (true) 
     {
@@ -189,15 +196,29 @@ int main()
 
         float playerSpeed = PLAYER_BASE_SPEED * (elapsedTime / (float)SEC_AS_NANO);
         camera.updateVelocity(playerSpeed);
+        
+        // Start a new ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplX11_NewFrame();
+        ImGui::NewFrame();
 
-        processEvents(camera, getPtrLocation, playerSpeed);
-        renderFrame(mvp, objs, camera, sizeof(indices));
+        // Render ImGui content
+        ImGui::Begin("Hello, world!");
+        ImGui::Text("This is some content.");
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        processEvents(xObjs, camera, getPtrLocation, playerSpeed);
+        renderFrame(xObjs, glObjs, mvp, camera, sizeof(indices));
 
         auto frameEndTime = steady_clock::now();
         elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();
         //CalculateFrameRate(fps, fpsCounter, timePrevFps);
     }
 
-    cleanup(objs);
+    //t.join();
+    cleanup(xObjs, glObjs);
     return EXIT_SUCCESS;
 }

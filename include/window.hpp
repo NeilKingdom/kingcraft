@@ -30,7 +30,7 @@
 #include "../include/callbacks.hpp"
 #include "../include/camera.hpp"
 
-static uint16_t key_mask = 0;
+static uint16_t keyMask = 0;
 
 #define KEY_FORWARD     (1 << 0)
 #define KEY_BACKWARD    (1 << 1)
@@ -49,15 +49,17 @@ static float znear = 1.0f;
 static float zfar = 1000.0f;
 
 // X11 variables
-static Display                *dpy;    // The target monitor/display (assuming we might have multiple displays)
-static Window                  win;    // The application's parent window
-static XVisualInfo            *xvi;    // Struct containing additional info about the window
-static XWindowAttributes       xwa;    // Struct containing the window's attributes
-static XEvent                  xev;    // Stores the event type of the most recently received event
-static Colormap               cmap;    // Colormap for the X window 
-static GLXContext              glx;    // The OpenGL context for X11
+typedef struct {
+    Display                *dpy;    // The target monitor/display (assuming we might have multiple displays)
+    Window                  win;    // The application's parent window
+    XVisualInfo            *xvi;    // Struct containing additional info about the window
+    XWindowAttributes       xwa;    // Struct containing the window's attributes
+    XEvent                  xev;    // Stores the event type of the most recently received event
+    Colormap               cmap;    // Colormap for the X window 
+    GLXContext              glx;    // The OpenGL context for X11
+} xObjects;
 
-// TODO: This is a dumb abstraction
+// GL objects
 typedef struct {
     unsigned int vao;
     unsigned int vbo;
@@ -90,7 +92,7 @@ void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_p
 unsigned compileShader(unsigned type, const std::string source);
 unsigned createShader(const std::string vertexShader, const std::string fragmentShader);
 bool isGLXExtensionSupported(const char *extList, const char *extName);
-GLXFBConfig createXWindow(const std::string winName, size_t winWidth = 1920, size_t winHeight = 1080);
-void createOpenGLContext(GLXFBConfig &bestFbConfig);
-void processEvents(Camera &camera, bool &getPtrLocation, float playerSpeed);
-void renderFrame(Mvp &mvp, glObjects &objs, Camera &camera, size_t indicesSize);
+GLXFBConfig createXWindow(xObjects &xObjs, const std::string winName, size_t winWidth = 1920, size_t winHeight = 1080);
+void createOpenGLContext(xObjects &xObjs, GLXFBConfig &bestFbConfig);
+void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float playerSpeed);
+void renderFrame(xObjects &xObjs, glObjects &glObjs, Mvp &mvp, Camera &camera, size_t indicesSize);
