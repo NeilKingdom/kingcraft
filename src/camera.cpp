@@ -1,12 +1,3 @@
-#include <iostream>
-#include <memory>
-#include <algorithm>
-#include <array>
-#include <cstring>
-
-#include <transforms.h>
-#include <vecmath.h>
-
 #include "../include/camera.hpp"
 
 Camera::Camera() :

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <GL/gl.h>
+#include "common.hpp"
 
 inline void GLAPIENTRY debugCallback(
    GLenum source,

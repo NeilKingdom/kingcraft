@@ -1,39 +1,4 @@
-// C++ APIs
-#include <iostream>
-#include <fstream>
-#include <iterator>
-#include <string>
-#include <chrono>
-#include <algorithm>
-#include <memory>
-#include <thread>
-#include <cstdlib>
-#include <cassert>
-#include <cstring>
-#include <cstdint>
-
-// X11 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysymdef.h>
-
-// OpenGL
-#include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers
-#include <GL/gl.h>   // General OpenGL APIs
-#include <GL/glx.h>  // X11-specific OpenGL APIs
-
-// My APIs
-#include <transforms.h>
-
-#include "../include/callbacks.hpp"
-#include "../include/camera.hpp"
-#include "../include/constants.hpp"
-#include "../include/window.hpp"
-#include "../include/debug_ctls.hpp"
-
-// ImGUI
-#include "../res/vendor/imgui/backends/imgui_impl_opengl3.h"
-#include "../res/vendor/imgui/backends/imgui_impl_x11.h"
+#include "../include/main.hpp"
 
 void cleanup(xObjects &xObjs, glObjects &glObjs) 
 {
@@ -68,7 +33,7 @@ int main()
     Mvp mvp = Mvp(camera);
 
     xObjects xObjs;
-    xObjects imGuiXObjs;
+    xObjects imObjs;
     glObjects glObjs;
 
     bool getPtrLocation = true;
@@ -78,7 +43,7 @@ int main()
 
     /*** Setup ***/
 
-    (void)createXWindow(imGuiXObjs, "ImGui");
+    (void)createXWindow(imObjs, "ImGui", 400, 400);
     GLXFBConfig bestFbConfig = createXWindow(xObjs, "KingCraft");
     createOpenGLContext(xObjs, bestFbConfig);
 
@@ -88,8 +53,6 @@ int main()
         std::cerr << "Failed to initialize GLEW" << std::endl;
         exit(EXIT_FAILURE);
     }
-
-    //auto t = std::thread(initImGui, xObjs);
 
     glDepthFunc(GL_LESS);         // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
     glEnable(GL_CULL_FACE);       // Enable culling
@@ -188,7 +151,7 @@ int main()
     time_point<steady_clock> timePrevFps = steady_clock::now();
     nanoseconds::rep elapsedTime = 0L;
 
-    initImGui(imGuiXObjs);
+    initImGui(imObjs.dpy, imObjs.win);
 
     while (true) 
     {
@@ -198,14 +161,13 @@ int main()
         camera.updateVelocity(playerSpeed);
 
         processEvents(xObjs, camera, getPtrLocation, playerSpeed);
-        renderFrame(xObjs, imGuiXObjs, glObjs, mvp, camera, sizeof(indices));
+        renderFrame(xObjs, glObjs, mvp, camera, sizeof(indices), imObjs.dpy, imObjs.win);
 
         auto frameEndTime = steady_clock::now();
         elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();
         //CalculateFrameRate(fps, fpsCounter, timePrevFps);
     }
 
-    //t.join();
     cleanup(xObjs, glObjs);
     return EXIT_SUCCESS;
 }

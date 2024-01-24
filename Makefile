@@ -12,8 +12,8 @@ SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 DEPS := $(wildcard $(INC_DIR)/*.hpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -Wall -Wextra -Wformat -std=c++20 #-Werror
-LDFLAGS += -lX11 -lXi -lGL -lGLEW -lglfw -llac -lgui 
+CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -std=c++20 -Wall -Wextra -Wformat #-Werror
+LDFLAGS += -lX11 -lGL -lGLEW -llac
 
 BIN := kingcraft
 

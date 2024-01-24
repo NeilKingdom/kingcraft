@@ -1,24 +1,6 @@
-// C++ APIs
-#include <iostream>
+#include "../include/impl_imgui.hpp"
 
-// X11
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysymdef.h>
-
-// My APIs
-#include "../include/debug_ctls.hpp"
-
-// OpenGL
-#include <GL/gl.h>   // General OpenGL APIs
-#include <GL/glx.h>  // X11-specific OpenGL APIs
-
-// ImGUI
-#include "../res/vendor/imgui/imgui.h"
-#include "../res/vendor/imgui/backends/imgui_impl_opengl3.h"
-#include "../res/vendor/imgui/backends/imgui_impl_x11.h"
-
-void initImGui(xObjects xObjs) 
+void initImGui(Display *dpy, Window win) 
 {
     XEvent xev;
 
@@ -30,9 +12,9 @@ void initImGui(xObjects xObjs)
     
     ImGui::StyleColorsDark();
 
-    // Initialize Dear ImGui's backend for X11 and OpenGL
+    // Initialize ImGui's backend for X11 and OpenGL
     ImGui_ImplOpenGL3_Init();
-    ImGui_ImplX11_Init(xObjs.dpy, (void*)xObjs.win); 
+    ImGui_ImplX11_Init(dpy, (void*)win); 
 }
 
 void renderImGuiFrame() 

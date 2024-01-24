@@ -1,34 +1,32 @@
 #pragma once
 
-#include <cstring>
-#include <memory>
+#include "common.hpp"
 
-#include <X11/Xlib.h>
-
-#include <vecmath.h>
+/* Only transforms.h is required, but LSP gets confused */
+#include <vecmath.h> 
 #include <matmath.h>
 #include <transforms.h>
 
 class Camera
 {
 public:
-    const float CAMERA_BASE_SPEED = 20;
+    const float CAMERA_BASE_SPEED = 20.0f;
 
-    const vec3 vFwd = { 0.0f, 0.0f, 1.0f };
+    const vec3 vFwd   = { 0.0f, 0.0f, 1.0f };
     const vec3 vRight = { 1.0, 0.0f, 0.0f };
-    const vec3 vUp = { 0.0f, 1.0f, 0.0f };
+    const vec3 vUp    = { 0.0f, 1.0f, 0.0f };
 
     vec3 vEye;                                      // Camera's origin point
     vec3 vFwdVel;                                   // Forward velocity vector 
     vec3 vRightVel;                                 // Right velocity vector
     std::shared_ptr<std::array<float, 16>> mView;   // View matrix
 
-    // Constructor/Destructor
+    // Constructor(s)/Destructor(s)
     Camera();
     ~Camera();
 
-    // Member functions
-    void updateVelocity(float playerSpeed);
+    // General
+    void updateVelocity(const float playerSpeed);
     void updateRotationFromPointer(Display *dpy, Window win, XWindowAttributes xwa);
     void calculateViewMatrix();
 

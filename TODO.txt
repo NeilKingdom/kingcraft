@@ -1,5 +1,4 @@
+Makefile for building imgui
 Pretty bad vsync issues
 Try moving XEvent loop to separate thread
-Implement player movement code into a class
 Create builder class for cubes + chunks
-ImGui for debugging

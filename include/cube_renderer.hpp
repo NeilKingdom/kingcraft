@@ -1,25 +1,22 @@
 #pragma once
 
-#include "../include/cube_factory.hpp"
-#include "../include/cube.hpp"
+#include "common.hpp"
+#include "cube_renderer.hpp"
 
 typedef struct 
 {
-   float x;
-   float y;
-   float z;
+    float x;
+    float y;
+    float z;
 } Point;
 
 class CubeFactory 
 {
 public:
-   CubeFactory();
-   ~CubeFactory();
-
-   makeCube()
+    // TODO: Delete constructor and make this a singleton
+    CubeFactory();
+    ~CubeFactory();
 
 private:  
-   static CubeFactory cubeFactory;
-
-
+    static CubeFactory cubeFactory;
 };

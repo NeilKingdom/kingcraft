@@ -2,36 +2,7 @@
  * Reference: https://www.khronos.org/opengl/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
  */
 
-// C++ APIs
-#include <iostream>
-#include <fstream>
-#include <iterator>
-#include <string>
-#include <array>
-#include <chrono>
-#include <algorithm>
-#include <cstring>
-#include <cstdint>
-#include <cstddef>
-#include <cassert>
-
-// X11 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysymdef.h>
-
-// OpenGL
-#include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers
-#include <GL/gl.h>   // General OpenGL APIs
-#include <GL/glx.h>  // X11-specific OpenGL APIs
-
-// My APIs
-#include <transforms.h>
-
-#include "../include/camera.hpp"
-#include "../include/constants.hpp"
 #include "../include/window.hpp"
-#include "../include/debug_ctls.hpp"
 
 void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_point &timePrev)
 {
@@ -429,16 +400,22 @@ void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float 
     }
 }
 
-void renderFrame(xObjects &xObjs, xObjects &xObjs2, glObjects &objs, Mvp &mvp, Camera &camera, size_t indicesSize)
+void renderFrame(
+    xObjects &xObjs, 
+    glObjects &objs, 
+    Mvp &mvp, 
+    Camera &camera, 
+    size_t indicesSize, 
+    Display *imGuiDpy,
+    Window imGuiWin
+)
 {
     glClearColor(0.2f, 0.4f, 0.4f, 1.0); // Set background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Switch OpenGL context to ImGui window
-    glXMakeCurrent(xObjs2.dpy, xObjs2.win, xObjs.glx);
-    // ImGui Window
+    glXMakeCurrent(imGuiDpy, imGuiWin, xObjs.glx);
     renderImGuiFrame();
-
     glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
 
     glUseProgram(objs.shader); // Bind shader program for draw call
@@ -465,5 +442,5 @@ void renderFrame(xObjects &xObjs, xObjects &xObjs2, glObjects &objs, Mvp &mvp, C
     // Issue draw call
     glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0);
     glXSwapBuffers(xObjs.dpy, xObjs.win);
-    glXSwapBuffers(xObjs2.dpy, xObjs2.win);
+    glXSwapBuffers(imGuiDpy, imGuiWin);
 }
