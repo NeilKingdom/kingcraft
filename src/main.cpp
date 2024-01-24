@@ -6,11 +6,11 @@
 #include <chrono>
 #include <algorithm>
 #include <memory>
+#include <thread>
 #include <cstdlib>
 #include <cassert>
 #include <cstring>
 #include <cstdint>
-#include <thread>
 
 // X11 
 #include <X11/Xlib.h>
@@ -37,17 +37,22 @@
 
 void cleanup(xObjects &xObjs, glObjects &glObjs) 
 {
+    // ImGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
     ImGui::DestroyContext();
 
+    // VAO, VBO, EBO 
     glDeleteVertexArrays(1, &glObjs.vao);
     glDeleteBuffers(1, &glObjs.vbo);
     glDeleteBuffers(1, &glObjs.ebo);
     glDeleteProgram(glObjs.shader);
 
+    // OpenGL context
+    glXMakeCurrent(xObjs.dpy, 0, 0);
     glXDestroyContext(xObjs.dpy, xObjs.glx);
 
+    // X11
     XDestroyWindow(xObjs.dpy, xObjs.win);
     XFreeColormap(xObjs.dpy, xObjs.cmap);
     XCloseDisplay(xObjs.dpy);
@@ -63,6 +68,7 @@ int main()
     Mvp mvp = Mvp(camera);
 
     xObjects xObjs;
+    xObjects imGuiXObjs;
     glObjects glObjs;
 
     bool getPtrLocation = true;
@@ -72,6 +78,7 @@ int main()
 
     /*** Setup ***/
 
+    (void)createXWindow(imGuiXObjs, "ImGui");
     GLXFBConfig bestFbConfig = createXWindow(xObjs, "KingCraft");
     createOpenGLContext(xObjs, bestFbConfig);
 
@@ -181,14 +188,7 @@ int main()
     time_point<steady_clock> timePrevFps = steady_clock::now();
     nanoseconds::rep elapsedTime = 0L;
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplOpenGL3_Init();
-    ImGui_ImplX11_Init(xObjs.dpy, &xObjs.win);
+    initImGui(imGuiXObjs);
 
     while (true) 
     {
@@ -196,22 +196,9 @@ int main()
 
         float playerSpeed = PLAYER_BASE_SPEED * (elapsedTime / (float)SEC_AS_NANO);
         camera.updateVelocity(playerSpeed);
-        
-        // Start a new ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplX11_NewFrame();
-        ImGui::NewFrame();
-
-        // Render ImGui content
-        ImGui::Begin("Hello, world!");
-        ImGui::Text("This is some content.");
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         processEvents(xObjs, camera, getPtrLocation, playerSpeed);
-        renderFrame(xObjs, glObjs, mvp, camera, sizeof(indices));
+        renderFrame(xObjs, imGuiXObjs, glObjs, mvp, camera, sizeof(indices));
 
         auto frameEndTime = steady_clock::now();
         elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();

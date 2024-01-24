@@ -31,6 +31,7 @@
 #include "../include/camera.hpp"
 #include "../include/constants.hpp"
 #include "../include/window.hpp"
+#include "../include/debug_ctls.hpp"
 
 void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_point &timePrev)
 {
@@ -428,10 +429,17 @@ void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float 
     }
 }
 
-void renderFrame(xObjects &xObjs, glObjects &objs, Mvp &mvp, Camera &camera, size_t indicesSize)
+void renderFrame(xObjects &xObjs, xObjects &xObjs2, glObjects &objs, Mvp &mvp, Camera &camera, size_t indicesSize)
 {
     glClearColor(0.2f, 0.4f, 0.4f, 1.0); // Set background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Switch OpenGL context to ImGui window
+    glXMakeCurrent(xObjs2.dpy, xObjs2.win, xObjs.glx);
+    // ImGui Window
+    renderImGuiFrame();
+
+    glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
 
     glUseProgram(objs.shader); // Bind shader program for draw call
     glBindVertexArray(objs.vao);
@@ -454,7 +462,8 @@ void renderFrame(xObjects &xObjs, glObjects &objs, Mvp &mvp, Camera &camera, siz
     int projLocation = glGetUniformLocation(objs.shader, "proj");
     glUniformMatrix4fv(projLocation, 1, GL_TRUE, mvp.mProj);
 
-    // Draw call
+    // Issue draw call
     glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0);
     glXSwapBuffers(xObjs.dpy, xObjs.win);
+    glXSwapBuffers(xObjs2.dpy, xObjs2.win);
 }

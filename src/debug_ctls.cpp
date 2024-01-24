@@ -23,34 +23,30 @@ void initImGui(xObjects xObjs)
     XEvent xev;
 
     // Initialize Dear ImGui
+    IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    
+    ImGui::StyleColorsDark();
 
     // Initialize Dear ImGui's backend for X11 and OpenGL
-    ImGui_ImplX11_Init(&xObjs.dpy, &xObjs.win); 
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplX11_Init(xObjs.dpy, (void*)xObjs.win); 
+}
 
-    while (true) {
-        while (XPending(xObjs.dpy) > 0) 
-        {
-            XNextEvent(xObjs.dpy, &xev);
-            switch (xev.type) 
-            {
-            }
-        }
+void renderImGuiFrame() 
+{
+    // Start a new ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplX11_NewFrame();
+    ImGui::NewFrame();
 
-        // Start a new ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplX11_NewFrame();
-        ImGui::NewFrame();
+    // Render your ImGui content
+    ImGui::Begin("Hello, world!");
+    ImGui::Text("This is some content.");
+    ImGui::End();
 
-        // Render your ImGui content
-        ImGui::Begin("Hello, world!");
-        ImGui::Text("This is some content.");
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    }
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

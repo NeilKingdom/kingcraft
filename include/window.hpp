@@ -42,7 +42,7 @@ static uint16_t keyMask = 0;
 #define SET_KEY(mask, key)    ((mask) |= (key))
 #define UNSET_KEY(mask, key)  ((mask) &= (~key))
 #define TOGGLE_KEY(mask, key) ((mask) ^= (key))
-#define IS_KEY_SET(mask, key) ((((mask) & (key)) == (key)) ? (true) : (false))
+#define IS_KEY_SET(mask, key) ((((mask) & (key)) == (key)) ? true : false)
 
 static float fov = lac_deg_to_rad(90.0f);
 static float znear = 1.0f;
@@ -88,6 +88,7 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(
 );
 
 // Forward function declarations
+
 void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_point &timePrev);
 unsigned compileShader(unsigned type, const std::string source);
 unsigned createShader(const std::string vertexShader, const std::string fragmentShader);
@@ -95,4 +96,4 @@ bool isGLXExtensionSupported(const char *extList, const char *extName);
 GLXFBConfig createXWindow(xObjects &xObjs, const std::string winName, size_t winWidth = 1920, size_t winHeight = 1080);
 void createOpenGLContext(xObjects &xObjs, GLXFBConfig &bestFbConfig);
 void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float playerSpeed);
-void renderFrame(xObjects &xObjs, glObjects &glObjs, Mvp &mvp, Camera &camera, size_t indicesSize);
+void renderFrame(xObjects &xObjs, xObjects &xObjs2, glObjects &glObjs, Mvp &mvp, Camera &camera, size_t indicesSize);
