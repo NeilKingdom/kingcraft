@@ -1,5 +1,6 @@
 #include "../include/main.hpp"
 
+// TODO: Cleanup imObjs
 void cleanup(xObjects &xObjs, glObjects &glObjs) 
 {
     // ImGUI
@@ -14,7 +15,7 @@ void cleanup(xObjects &xObjs, glObjects &glObjs)
     glDeleteProgram(glObjs.shader);
 
     // OpenGL context
-    glXMakeCurrent(xObjs.dpy, 0, 0);
+    glXMakeCurrent(xObjs.dpy, None, NULL);
     glXDestroyContext(xObjs.dpy, xObjs.glx);
 
     // X11
