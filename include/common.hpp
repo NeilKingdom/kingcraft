@@ -8,6 +8,8 @@
 #include <chrono>
 #include <algorithm>
 #include <memory>
+#include <vector>
+#include <array>
 
 // C APIs
 #include <cstdlib>

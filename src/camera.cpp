@@ -64,7 +64,7 @@ void Camera::calculateViewMatrix()
     std::memcpy(tmpNewLookDir, vNewLookDir, sizeof(vNewLookDir));
 
     // Multiply vNewLookDir with camera's rotation matrix
-    lac_multiply_mat4_vec4(&tmpNewLookDir, mCamRot, vNewLookDir);
+    lac_multiply_vec4_mat4(&tmpNewLookDir, vNewLookDir, mCamRot);
 
     // Revert back to using vec3
     std::memcpy(vLookDir, tmpNewLookDir, sizeof(vLookDir));
