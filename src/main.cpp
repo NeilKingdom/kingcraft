@@ -1,12 +1,29 @@
 #include "../include/main.hpp"
 
-// TODO: Cleanup imObjs
-void cleanup(xObjects &xObjs, glObjects &glObjs) 
+/**
+ * @brief Cleanup all of the application's resources
+ * @since 03-02-2024
+ * @param glObjs An instance of glObjs containing OpenGL-related resources
+ * @param xObjs An instance of xObjects containing X11-related resources
+ * @param imObjs An optional instance of xObjects containing ImGui-related resources
+ */
+static void cleanup(
+    glObjects &glObjs, 
+    xObjects &xObjs, 
+    const std::optional<xObjects> &imObjs
+) 
 {
     // ImGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
     ImGui::DestroyContext();
+
+    if (imObjs != std::nullopt) 
+    {
+        XDestroyWindow(imObjs->dpy, imObjs->win);
+        XFreeColormap(imObjs->dpy, imObjs->cmap);
+        XCloseDisplay(imObjs->dpy);
+    }
 
     // VAO, VBO, EBO 
     glDeleteVertexArrays(1, &glObjs.vao);
@@ -30,6 +47,8 @@ int main()
 
     /*** Variable declarations ***/
 
+    gameState state;
+
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
@@ -39,8 +58,8 @@ int main()
 
     bool getPtrLocation = true;
 
-    int fpsCounter = 0;
     int fps = 0;
+    int fElapsed = 0;
 
     /*** Setup ***/
 
@@ -152,23 +171,23 @@ int main()
     time_point<steady_clock> timePrevFps = steady_clock::now();
     nanoseconds::rep elapsedTime = 0L;
 
-    initImGui(imObjs.dpy, imObjs.win);
+    initImGui(imObjs);
 
     while (true) 
     {
         auto frameStartTime = steady_clock::now();
 
-        float playerSpeed = PLAYER_BASE_SPEED * (elapsedTime / (float)SEC_AS_NANO);
-        camera.updateVelocity(playerSpeed);
+        state.playerSpeed = PLAYER_BASE_SPEED * (elapsedTime / (float)SEC_AS_NANO);
+        camera.updateVelocity(state.playerSpeed);
 
-        processEvents(xObjs, camera, getPtrLocation, playerSpeed);
-        renderFrame(xObjs, glObjs, mvp, camera, sizeof(indices), imObjs.dpy, imObjs.win);
+        processEvents(state, xObjs, camera, getPtrLocation);
+        renderFrame(state, xObjs, imObjs, glObjs, camera, mvp, sizeof(indices));
 
         auto frameEndTime = steady_clock::now();
         elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();
         //CalculateFrameRate(fps, fpsCounter, timePrevFps);
     }
 
-    cleanup(xObjs, glObjs);
+    cleanup(glObjs, xObjs, imObjs);
     return EXIT_SUCCESS;
 }

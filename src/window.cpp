@@ -4,41 +4,58 @@
 
 #include "../include/window.hpp"
 
-void calculateFrameRate(int &fps, int &fpsInc, std::chrono::steady_clock::time_point &timePrev)
+/**
+ * @brief Calculate the framerate and display it once per second (must be called once per frame)
+ * @since 02-03-2024
+ * @param[in/out] fps The actual FPS count
+ * @param[in/out] fElapsed The amount of frames that have elapsed thus far 
+ * @param[in/out] timePrev The previous time stamp (used to check if one second has elapsed)
+ */
+void calculateFrameRate(int &fps, int &fElapsed, std::chrono::steady_clock::time_point &timePrev)
 {
     using namespace std::chrono;
 
     auto timeNow = steady_clock::now();
     auto timeElapsed = duration_cast<nanoseconds>(timeNow - timePrev).count();
-    ++fpsInc; // Increment each frame
+    ++fElapsed; 
 
-    if (timeElapsed > SEC_AS_NANO) // Wait until at least a second has elapsed
+    if (timeElapsed > SEC_AS_NANO) 
     {
         timePrev = timeNow;
-        fps = fpsInc;
-        fpsInc = 0;
+        fps = fElapsed;
+        fElapsed = 0;
 
         std::cout << "FPS: " << fps << std::endl;
     }
 }
 
-unsigned compileShader(unsigned type, const std::string source)
+/**
+ * @brief Compiles a GLSL shader and returns its id
+ * @since 02-03-2024
+ * @param[in] type The type of shader being compiled (GL_VERTEX_SHADER or GL_FRAGMENT_SHADER)
+ * @param[in] source The GLSL source code for the shader as a std::string
+ * @returns The shader id
+ */
+unsigned compileShader(const unsigned type, const std::string source)
 {
+    assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
+
+    int res;
     unsigned id = glCreateShader(type);
     const char *src = source.c_str();
     glShaderSource(id, 1, &src, NULL);
     glCompileShader(id);
 
-    int result;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &result); 
-    if (result == GL_FALSE) 
+    glGetShaderiv(id, GL_COMPILE_STATUS, &res); 
+    if (res == GL_FALSE) 
     {
         int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         std::string message;
+
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         glGetShaderInfoLog(id, length, &length, const_cast<char*>(message.c_str()));
         std::cerr << "Failed to compile " 
-            << (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
+            << ((type == GL_VERTEX_SHADER) ? "vertex" : "fragment")
             << " shader: " << message << std::endl;
         glDeleteShader(id);
         return 0;
@@ -47,6 +64,13 @@ unsigned compileShader(unsigned type, const std::string source)
     return id;
 }
 
+/**
+ * @brief Attaches and links the vertex and fragment shaders into a shader program
+ * @since 02-03-2024
+ * @param[in] vertexShader The vertex shader to be attached (as a std::string)
+ * @param[in] fragmentShader The fragment shader to be attached (as a std::string)
+ * @returns The program id
+ */
 unsigned createShader(const std::string vertexShader, const std::string fragmentShader)
 {
     unsigned int program = glCreateProgram();
@@ -64,6 +88,13 @@ unsigned createShader(const std::string vertexShader, const std::string fragment
     return program;
 }
 
+/**
+ * @brief Checks to see if the X11 extension function is supported by OpenGL
+ * @since 02-03-2024
+ * @param extList The list of supported extensions to be checked
+ * @param extName The name of the extension being searched for in extList
+ * @returns True if the extension is supported or false otherwise
+ */
 bool isGLXExtensionSupported(const char *extList, const char *extName) 
 {
     const char *start, *where, *terminator;
@@ -92,7 +123,21 @@ bool isGLXExtensionSupported(const char *extList, const char *extName)
     }
 }
 
-GLXFBConfig createXWindow(xObjects &xObjs, const std::string winName, size_t winWidth, size_t winHeight)
+/**
+ * @brief Creates a new X11 window
+ * @since 02-03-2024
+ * @param[in/out] xObjs An instance of xObjects containing X11-related data
+ * @param[in] winName The name of the new window
+ * @param[in] winWidth The width of the new window
+ * @param[in] winHeight The height of the new window 
+ * @returns The best available frame buffer configuration for the new window
+ */
+GLXFBConfig createXWindow(
+    xObjects &xObjs, 
+    const std::string winName, 
+    const size_t winWidth, 
+    const size_t winHeight
+)
 {
     // Open the X11 display
     xObjs.dpy = XOpenDisplay(NULL); 
@@ -218,7 +263,13 @@ GLXFBConfig createXWindow(xObjects &xObjs, const std::string winName, size_t win
     return bestFbConfig;
 }
 
-void createOpenGLContext(xObjects &xObjs, GLXFBConfig &bestFbConfig)
+/**
+ * @brief Create an OpenGL context for the given X window
+ * @since 02-03-2024
+ * @param[in/out] xObjs An instance of xObjects containing X-related data
+ * @param[in] fbConfig The frame buffer configuration that shall be bound to the OpenGL context
+ */
+void createOpenGLContext(xObjects &xObjs, const GLXFBConfig &fbConfig)
 {
     /*
       The OpenGL Architecture Review Board (ARB) has developed certain extension functions (usually 
@@ -239,7 +290,7 @@ void createOpenGLContext(xObjects &xObjs, GLXFBConfig &bestFbConfig)
     if (!isGLXExtensionSupported(glxExts, "GLX_ARB_create_context") || !glXCreateContextAttribsARB) 
     {
         std::cerr << "glXCreateContextAttribsARB() not found. Using old GLX context" << std::endl;
-        xObjs.glx = glXCreateNewContext(xObjs.dpy, bestFbConfig, GLX_RGBA_TYPE, 0, true);
+        xObjs.glx = glXCreateNewContext(xObjs.dpy, fbConfig, GLX_RGBA_TYPE, 0, true);
     }
     else 
     {
@@ -249,7 +300,7 @@ void createOpenGLContext(xObjects &xObjs, GLXFBConfig &bestFbConfig)
             GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
             None
         };
-        xObjs.glx = glXCreateContextAttribsARB(xObjs.dpy, bestFbConfig, 0, true, glxAttribs);
+        xObjs.glx = glXCreateContextAttribsARB(xObjs.dpy, fbConfig, 0, true, glxAttribs);
     }
 
     XSync(xObjs.dpy, false);
@@ -266,7 +317,15 @@ void createOpenGLContext(xObjects &xObjs, GLXFBConfig &bestFbConfig)
     glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
 }
 
-void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float playerSpeed)
+/**
+ * @brief Processes X events in the queue until there aren't any left
+ * @since 02-03-2024
+ * @param[in/out] xObjs An instance of xObjects containing X-related data
+ * @param[in/out] camera The active camera which will be updated on MotionNotify events
+ * @param[in/out] getPtrLocation The pointer location is retrieved every other frame
+ * @param[in] playerSpeed The player's current speed
+ */
+void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool &getPtrLocation)
 {
     while (XPending(xObjs.dpy) > 0)
     {
@@ -281,12 +340,12 @@ void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float 
                 glViewport(0, 0, xObjs.xwa.width, xObjs.xwa.height);
                 break;
             }
-            case MotionNotify: 
+            case MotionNotify: // Mouse was moved
             {
                 getPtrLocation = !getPtrLocation;
                 if (getPtrLocation) // Need to give cursor a frame of travel time
                 {
-                    camera.updateRotationFromPointer(xObjs.dpy, xObjs.win, xObjs.xwa);
+                    camera.updateRotationFromPointer(xObjs);
                 }
                 break;
             }
@@ -392,55 +451,66 @@ void processEvents(xObjects &xObjs, Camera &camera, bool &getPtrLocation, float 
     }
     if (IS_KEY_SET(keyMask, KEY_UP)) 
     {
-        camera.vEye[1] += playerSpeed;
+        camera.vEye[1] += state.playerSpeed;
     }
     if (IS_KEY_SET(keyMask, KEY_DOWN)) 
     {
-        camera.vEye[1] -= playerSpeed;
+        camera.vEye[1] -= state.playerSpeed;
     }
 }
 
+/**
+ * @brief Renders the current frame for both OpenGL and optionally ImGui
+ * @param[in/out] state A struct containing variables associated with the game state
+ * @param[in/out] xObjs An instance of xObjects containing X-related data
+ * @param[in/out] glObjs An instance of glObjects containing OpenGL-related data
+ * @param[in/out] imObjs An optional instance of xObjs containing ImGui-related data
+ * @param[in/out] camera The currently active camera used for calculating perspective
+ * @param[in/out] mvp The model-view-projection matrix 
+ */
 void renderFrame(
-    xObjects &xObjs, 
-    glObjects &objs, 
-    Mvp &mvp, 
+    const gameState &state,
+    const xObjects &xObjs, 
+    const std::optional<xObjects> &imObjs, 
+    const glObjects &glObjs, 
     Camera &camera, 
-    size_t indicesSize, 
-    Display *imGuiDpy,
-    Window imGuiWin
+    Mvp &mvp,
+    const size_t indicesSize
 )
 {
     glClearColor(0.2f, 0.4f, 0.4f, 1.0); // Set background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Switch OpenGL context to ImGui window
-    glXMakeCurrent(imGuiDpy, imGuiWin, xObjs.glx);
-    renderImGuiFrame();
-    glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
+    if (imObjs != std::nullopt)
+    {
+        // Switch OpenGL context to ImGui window
+        glXMakeCurrent(imObjs->dpy, imObjs->win, xObjs.glx);
+        renderImGuiFrame(state, *imObjs);
+        glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
+    }
 
-    glUseProgram(objs.shader); // Bind shader program for draw call
-    glBindVertexArray(objs.vao);
+    glUseProgram(glObjs.shader); // Bind shader program for draw call
+    glBindVertexArray(glObjs.vao);
 
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.mModel, 0.0f, 0.0f, -1.5f); 
 
-    int modelLocation = glGetUniformLocation(objs.shader, "model");
+    int modelLocation = glGetUniformLocation(glObjs.shader, "model");
     glUniformMatrix4fv(modelLocation, 1, GL_TRUE, mvp.mModel);
 
     // View matrix (translate to view space)
     camera.calculateViewMatrix();
-    int viewLocation = glGetUniformLocation(objs.shader, "view");
+    int viewLocation = glGetUniformLocation(glObjs.shader, "view");
     glUniformMatrix4fv(viewLocation, 1, GL_TRUE, mvp.mView->data());
 
     // Projection matrix (translate to projection space)
     float aspect = ((float)xObjs.xwa.height / (float)xObjs.xwa.width);
-    lac_get_projection_mat4(&mvp.mProj, aspect, fov, znear, zfar);
+    lac_get_projection_mat4(&mvp.mProj, aspect, state.fov, state.znear, state.zfar);
 
-    int projLocation = glGetUniformLocation(objs.shader, "proj");
+    int projLocation = glGetUniformLocation(glObjs.shader, "proj");
     glUniformMatrix4fv(projLocation, 1, GL_TRUE, mvp.mProj);
 
     // Issue draw call
     glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0);
     glXSwapBuffers(xObjs.dpy, xObjs.win);
-    glXSwapBuffers(imGuiDpy, imGuiWin);
 }

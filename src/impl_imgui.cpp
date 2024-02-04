@@ -1,10 +1,9 @@
 #include "../include/impl_imgui.hpp"
 
-void initImGui(Display *dpy, Window win) 
+void initImGui(const xObjects &imObjs) 
 {
     XEvent xev;
 
-    // Initialize Dear ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -14,10 +13,10 @@ void initImGui(Display *dpy, Window win)
 
     // Initialize ImGui's backend for X11 and OpenGL
     ImGui_ImplOpenGL3_Init();
-    ImGui_ImplX11_Init(dpy, (void*)win); 
+    ImGui_ImplX11_Init(imObjs.dpy, (void*)imObjs.win); 
 }
 
-void renderImGuiFrame() 
+void renderImGuiFrame(const gameState &state, const xObjects &imObjs) 
 {
     // Start a new ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
@@ -31,4 +30,5 @@ void renderImGuiFrame()
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glXSwapBuffers(imObjs.dpy, imObjs.win);
 }

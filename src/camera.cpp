@@ -1,5 +1,9 @@
 #include "../include/camera.hpp"
 
+/**
+ * @brief Default constructor for the Camera class
+ * @since 03-02-2024
+ */
 Camera::Camera() :
     cameraRoll(0),
     cameraPitch(0),
@@ -16,10 +20,19 @@ Camera::Camera() :
     std::memcpy(mCamRot, lac_ident_mat4, sizeof(mCamRot));
 }
 
+/**
+ * @brief Default destructor for the Camera class
+ * @since 03-02-2024
+ */
 Camera::~Camera() 
 {}
 
-void Camera::updateVelocity(float playerSpeed)
+/**
+ * @brief Update Camera's velocity vector given the scalar value of playerSpeed
+ * @since 03-02-2024
+ * @param playerSpeed The scalar value used to multiply the Camera's velocity vector
+ */
+void Camera::updateVelocity(const float playerSpeed)
 {
     // Calculate forward camera velocity
     lac_multiply_vec3(&vFwdVel, vLookDir, playerSpeed); 
@@ -29,23 +42,29 @@ void Camera::updateVelocity(float playerSpeed)
     lac_multiply_vec3(&vRightVel, vRight, playerSpeed);
 }
 
-void Camera::updateRotationFromPointer(Display *dpy, Window win, XWindowAttributes xwa) 
+/**
+ * @brief Update the Camera's rotation matrix given the position of the mouse pointer on screen
+ * @since 03-02-2024
+ * @param dpy The X Display used for getting the pointer's position
+ * @param win The X Window used for getting the pointer's position
+ */
+void Camera::updateRotationFromPointer(const xObjects &xObjs) 
 {
     Window wnop;
     int x, y, inop;
     float centerX, centerY, normDx, normDy;
 
-    XQueryPointer(dpy, win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
-    centerX = (float)xwa.width / 2.0f;
-    centerY = (float)xwa.height / 2.0f;
-    normDx  = (centerX - (float)x) / (float)xwa.width;
-    normDy  = (centerY - (float)y) / (float)xwa.height;
+    XQueryPointer(xObjs.dpy, xObjs.win, &wnop, &wnop, &inop, &inop, &x, &y, (unsigned int*)&inop);
+    centerX = (float)xObjs.xwa.width / 2.0f;
+    centerY = (float)xObjs.xwa.height / 2.0f;
+    normDx  = (centerX - (float)x) / (float)xObjs.xwa.width;
+    normDy  = (centerY - (float)y) / (float)xObjs.xwa.height;
 
-    cameraRoll += normDx * CAMERA_BASE_SPEED;
-    cameraPitch += normDy * CAMERA_BASE_SPEED;
+    cameraRoll += normDx * Camera::CAMERA_BASE_SPEED;
+    cameraPitch += normDy * Camera::CAMERA_BASE_SPEED;
     cameraPitch = std::clamp(cameraPitch, -89.0f, 89.0f);
 
-    XWarpPointer(dpy, win, win, 0, 0, xwa.width, xwa.height, centerX, centerY);
+    XWarpPointer(xObjs.dpy, xObjs.win, xObjs.win, 0, 0, xObjs.xwa.width, xObjs.xwa.height, centerX, centerY);
 }
 
 void Camera::calculateViewMatrix() 

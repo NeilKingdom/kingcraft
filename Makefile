@@ -1,7 +1,7 @@
 CC = g++
 PROFILE ?= DEBUG
 
-CCFLAGS_DEBUG = -DDEBUG -O0 -g -fno-builtin
+CCFLAGS_DEBUG = -DDEBUG -O0 -ggdb -fno-builtin
 CCFLAGS_RELEASE = -O2
 
 SRC_DIR = src

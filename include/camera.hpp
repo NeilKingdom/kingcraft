@@ -2,15 +2,10 @@
 
 #include "common.hpp"
 
-/* Only transforms.h is required, but LSP gets confused */
-#include <vecmath.h> 
-#include <matmath.h>
-#include <transforms.h>
-
 class Camera
 {
 public:
-    const float CAMERA_BASE_SPEED = 20.0f;
+    static constexpr float CAMERA_BASE_SPEED = 20.0f;
 
     const vec3 vFwd   = { 0.0f, 0.0f, 1.0f };
     const vec3 vRight = { 1.0, 0.0f, 0.0f };
@@ -27,11 +22,11 @@ public:
 
     // General
     void updateVelocity(const float playerSpeed);
-    void updateRotationFromPointer(Display *dpy, Window win, XWindowAttributes xwa);
+    void updateRotationFromPointer(const xObjects &xObjs);
     void calculateViewMatrix();
 
 private:
-    float cameraRoll;
+    float cameraRoll; 
     float cameraPitch;
 
     vec3 vLookDir;    // The direction that the camera is facing on the current frame
