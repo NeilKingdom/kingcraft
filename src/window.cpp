@@ -463,16 +463,14 @@ void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool
  * @param[in/out] state A struct containing variables associated with the game state
  * @param[in/out] glObjs An instance of glObjects containing OpenGL-related data
  * @param[in/out] xObjs An instance of xObjects containing X-related data
- * @param[in/out] imObjs An optional instance of xObjs containing ImGui-related data
  * @param[in/out] camera The currently active camera used for calculating perspective
  * @param[in/out] mvp The model-view-projection matrix 
  * @param[in] The number of elements within the Element Array Object
  */
 void renderFrame(
-    const gameState &state,
+    gameState &state,
     const glObjects &glObjs, 
     const xObjects &xObjs, 
-    const std::optional<xObjects> &imObjs, 
     Camera &camera, 
     Mvp &mvp,
     const size_t indicesSize
@@ -480,14 +478,6 @@ void renderFrame(
 {
     glClearColor(0.2f, 0.4f, 0.4f, 1.0); // Set background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    if (imObjs != std::nullopt)
-    {
-        // Switch OpenGL context to ImGui window
-        glXMakeCurrent(imObjs->dpy, imObjs->win, xObjs.glx);
-        renderImGuiFrame(state, *imObjs);
-        glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
-    }
 
     glUseProgram(glObjs.shader); // Bind shader program for draw call
     glBindVertexArray(glObjs.vao);
@@ -505,7 +495,7 @@ void renderFrame(
 
     // Projection matrix (translate to projection space)
     float aspect = ((float)xObjs.xwa.height / (float)xObjs.xwa.width);
-    lac_get_projection_mat4(&mvp.mProj, aspect, state.fov, state.znear, state.zfar);
+    lac_get_projection_mat4(&mvp.mProj, aspect, lac_deg_to_rad(state.fov), state.znear, state.zfar);
 
     int projLocation = glGetUniformLocation(glObjs.shader, "proj");
     glUniformMatrix4fv(projLocation, 1, GL_TRUE, mvp.mProj);

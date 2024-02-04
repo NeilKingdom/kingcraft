@@ -5,10 +5,16 @@
 
 typedef struct _gameState
 {
-    // Projection variables
+    // Game Logic-related variables
     struct 
     {
-        float fov = lac_deg_to_rad(90.0f);
+        bool isRunning = true;
+    };
+
+    // Camera-related variables
+    struct 
+    {
+        float fov = 90.0f;
         float znear = 1.0f;
         float zfar = 1000.0f;
     };

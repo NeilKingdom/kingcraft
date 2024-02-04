@@ -49,4 +49,4 @@ unsigned createShader(const std::string vertexShader, const std::string fragment
 GLXFBConfig createXWindow(xObjects &xObjs, const std::string winName, const size_t winWidth = 1920, const size_t winHeight = 1080);
 void createOpenGLContext(xObjects &xObjs, const GLXFBConfig &bestFbConfig);
 void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool &getPtrLocation);
-void renderFrame(const gameState &state, const glObjects &glObjs, const xObjects &xObjs, const std::optional<xObjects> &imObjs, Camera &camera, Mvp &mvp, const size_t indicesSize);
+void renderFrame(gameState &state, const glObjects &glObjs, const xObjects &xObjs, Camera &camera, Mvp &mvp, const size_t indicesSize);

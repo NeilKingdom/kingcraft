@@ -67,7 +67,9 @@ int main()
 
     GLXFBConfig bestFbConfig = createXWindow(xObjs, "KingCraft");
     createOpenGLContext(xObjs, bestFbConfig);
+#ifdef DEBUG
     (void)createXWindow(imObjs, "ImGui", 400, 400);
+#endif
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
     if (glewInit() != GLEW_OK)
@@ -175,7 +177,7 @@ int main()
 
     /*** Game loop ***/
 
-    while (true) 
+    while (state.isRunning) 
     {
         auto frameStartTime = steady_clock::now();
 
@@ -183,13 +185,26 @@ int main()
         camera.updateVelocity(state.playerSpeed);
 
         processEvents(state, xObjs, camera, getPtrLocation);
-        renderFrame(state, glObjs, xObjs, imObjs, camera, mvp, sizeof(indices));
+        renderFrame(state, glObjs, xObjs, camera, mvp, sizeof(indices));
 
         auto frameEndTime = steady_clock::now();
         elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();
         //CalculateFrameRate(fps, fpsCounter, timePrevFps);
+
+#ifdef DEBUG
+        // Switch OpenGL context to ImGui window
+        glXMakeCurrent(imObjs.dpy, imObjs.win, xObjs.glx);
+        processImGuiEvents(imObjs);
+        renderImGuiFrame(state, imObjs, camera);
+        glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
+#endif
     }
 
+#ifdef DEBUG
     cleanup(glObjs, xObjs, imObjs);
+#else
+    cleanup(glObjs, xObjs, std::nullopt);
+#endif
+
     return EXIT_SUCCESS;
 }
