@@ -60,12 +60,14 @@ int main()
 
     int fps = 0;
     int fElapsed = 0;
+    time_point<steady_clock> timePrevFps = steady_clock::now();
+    nanoseconds::rep elapsedTime = 0L;
 
     /*** Setup ***/
 
-    (void)createXWindow(imObjs, "ImGui", 400, 400);
     GLXFBConfig bestFbConfig = createXWindow(xObjs, "KingCraft");
     createOpenGLContext(xObjs, bestFbConfig);
+    (void)createXWindow(imObjs, "ImGui", 400, 400);
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
     if (glewInit() != GLEW_OK)
@@ -74,10 +76,15 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    glDepthFunc(GL_LESS);         // Culling algorithm (GL_LESS = lower zbuffer values are rendered on top)
-    glEnable(GL_CULL_FACE);       // Enable culling
-    glEnable(GL_DEPTH_TEST);      // Enable z-ordering via depth buffer
-    glEnable(GL_DEBUG_OUTPUT);    // Enable debug output
+    initImGui(imObjs);
+
+    glEnable(GL_DEBUG_OUTPUT);      // Enable debug output
+    glEnable(GL_CULL_FACE);         // Enable culling
+    glEnable(GL_DEPTH_TEST);        // Enable z-ordering via depth buffer
+    
+    glCullFace(GL_BACK);            // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
+    glFrontFace(GL_CCW);            // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise) 
+    glDepthFunc(GL_LESS);           // Depth algorithm (GL_LESS = lower zbuffer pixels are rendered on top)
 
     if (glDebugMessageCallback)
     {
@@ -91,39 +98,39 @@ int main()
     /*** Setup VAO, VBO, and EBO ***/
 
     float vertices[] = {
-         // positions         // colors
-         0.5f,  0.5f, -0.5f,  0.3f,  0.7f,  0.6f,  // top right (front)
-         0.5f, -0.5f, -0.5f,  1.0f,  1.0f,  0.9f,  // bottom right (front)
-        -0.5f, -0.5f, -0.5f,  0.4f,  1.0f,  0.3f,  // bottom left (front)
-        -0.5f,  0.5f, -0.5f,  0.7f,  0.7f,  1.0f,  // top left (front)
-
-         0.5f,  0.5f,  0.5f,  0.9f,  0.5f,  0.1f,  // top right (back)
-         0.5f, -0.5f,  0.5f,  1.0f,  0.4f,  0.2f,  // bottom right (back)
-        -0.5f, -0.5f,  0.5f,  0.2f,  1.0f,  0.3f,  // bottom left (back)
-        -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f   // top left (back)
+         // Positions         // Colors
+        -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // top left (front)
+         0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // top right (front)
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // bottom left (front)
+         0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  0.0f,  // bottom right (front)
+        
+        -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  1.0f,  // top left (back)
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  1.0f,  // top right (back)
+        -0.5f,  0.5f, -0.5f,  1.0f,  1.0f,  1.0f,  // bottom left (back)
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  0.0f   // bottom right (back)
     };
 
     /*
-    *   7____4
+    *   4____5
     *  /|   /|
-    * 3-+--0 |
-    * | 6__|_5
+    * 0-+--1 |
+    * | 6__|_7
     * |/   |/
-    * 2----1
+    * 2----3
     */
     unsigned int indices[] = {
-        3, 0, 2,
-        0, 1, 2,
-        7, 4, 3,
-        4, 0, 3,
-        6, 5, 7,
-        5, 4, 7,
-        2, 1, 6,
-        1, 5, 6,
-        0, 4, 1,
-        4, 5, 1,
-        7, 3, 6,
-        3, 2, 6
+        0, 3, 2,
+        3, 0, 1,
+        4, 1, 0,
+        1, 4, 5,
+        5, 6, 7,
+        6, 5, 4,
+        7, 6, 3,
+        2, 3, 6,
+        1, 7, 3,
+        7, 1, 5,
+        4, 2, 6,
+        2, 4, 0
     };
 
     glGenVertexArrays(1, &glObjs.vao);
@@ -168,11 +175,6 @@ int main()
 
     /*** Game loop ***/
 
-    time_point<steady_clock> timePrevFps = steady_clock::now();
-    nanoseconds::rep elapsedTime = 0L;
-
-    initImGui(imObjs);
-
     while (true) 
     {
         auto frameStartTime = steady_clock::now();
@@ -181,7 +183,7 @@ int main()
         camera.updateVelocity(state.playerSpeed);
 
         processEvents(state, xObjs, camera, getPtrLocation);
-        renderFrame(state, xObjs, imObjs, glObjs, camera, mvp, sizeof(indices));
+        renderFrame(state, glObjs, xObjs, imObjs, camera, mvp, sizeof(indices));
 
         auto frameEndTime = steady_clock::now();
         elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();

@@ -8,7 +8,7 @@ public:
     static constexpr float CAMERA_BASE_SPEED = 20.0f;
 
     const vec3 vFwd   = { 0.0f, 0.0f, 1.0f };
-    const vec3 vRight = { 1.0, 0.0f, 0.0f };
+    const vec3 vRight = { 1.0f, 0.0f, 0.0f };
     const vec3 vUp    = { 0.0f, 1.0f, 0.0f };
 
     vec3 vEye;                                      // Camera's origin point

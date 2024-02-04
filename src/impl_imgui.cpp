@@ -24,7 +24,7 @@ void renderImGuiFrame(const gameState &state, const xObjects &imObjs)
     ImGui::NewFrame();
 
     // Render your ImGui content
-    ImGui::Begin("Hello, world!");
+    ImGui::Begin("KingCraft");
     ImGui::Text("This is some content.");
     ImGui::End();
 

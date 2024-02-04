@@ -323,7 +323,6 @@ void createOpenGLContext(xObjects &xObjs, const GLXFBConfig &fbConfig)
  * @param[in/out] xObjs An instance of xObjects containing X-related data
  * @param[in/out] camera The active camera which will be updated on MotionNotify events
  * @param[in/out] getPtrLocation The pointer location is retrieved every other frame
- * @param[in] playerSpeed The player's current speed
  */
 void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool &getPtrLocation)
 {
@@ -462,17 +461,18 @@ void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool
 /**
  * @brief Renders the current frame for both OpenGL and optionally ImGui
  * @param[in/out] state A struct containing variables associated with the game state
- * @param[in/out] xObjs An instance of xObjects containing X-related data
  * @param[in/out] glObjs An instance of glObjects containing OpenGL-related data
+ * @param[in/out] xObjs An instance of xObjects containing X-related data
  * @param[in/out] imObjs An optional instance of xObjs containing ImGui-related data
  * @param[in/out] camera The currently active camera used for calculating perspective
  * @param[in/out] mvp The model-view-projection matrix 
+ * @param[in] The number of elements within the Element Array Object
  */
 void renderFrame(
     const gameState &state,
+    const glObjects &glObjs, 
     const xObjects &xObjs, 
     const std::optional<xObjects> &imObjs, 
-    const glObjects &glObjs, 
     Camera &camera, 
     Mvp &mvp,
     const size_t indicesSize
