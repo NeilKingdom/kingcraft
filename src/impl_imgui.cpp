@@ -33,6 +33,11 @@ void processImGuiEvents(xObjects &imObjs)
     }
 }
 
+void updatePlayerPosition(Camera &camera)
+{
+    lac_add_vec3(&camera.vEye, camera.vEye, camera.vRightVel);
+}
+
 void renderImGuiFrame(gameState &state, xObjects &imObjs, Camera &camera) 
 {
     // Start a new ImGui frame
