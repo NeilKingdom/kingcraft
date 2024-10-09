@@ -1,8 +1,8 @@
-#include "../include/impl_imgui.hpp"
+#include "impl_imgui.hpp"
 
 extern IMGUI_IMPL_API int ImGui_ImplX11_EventHandler(XEvent &event, XEvent *next_event);
 
-void initImGui(const xObjects &imObjs) 
+void initImGui(const xObjects &imObjs)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -10,12 +10,12 @@ void initImGui(const xObjects &imObjs)
     (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    
+
     ImGui::StyleColorsDark();
 
     // Initialize ImGui's backend for X11 and OpenGL
     ImGui_ImplOpenGL3_Init();
-    ImGui_ImplX11_Init(imObjs.dpy, (void*)imObjs.win); 
+    ImGui_ImplX11_Init(imObjs.dpy, (void*)imObjs.win);
 }
 
 void processImGuiEvents(xObjects &imObjs)
@@ -38,7 +38,7 @@ void updatePlayerPosition(Camera &camera)
     lac_add_vec3(&camera.vEye, camera.vEye, camera.vRightVel);
 }
 
-void renderImGuiFrame(gameState &state, xObjects &imObjs, Camera &camera) 
+void renderImGuiFrame(GameState &state, xObjects &imObjs, Camera &camera)
 {
     // Start a new ImGui frame
     ImGui_ImplOpenGL3_NewFrame();

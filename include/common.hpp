@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 // C++ APIs
 #include <iostream>
@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <cstddef>
 
-// X11 
+// X11
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysymdef.h>
@@ -31,25 +31,23 @@
 
 // liblac (Only transforms.h is required, but LSP gets confused)
 #include <transforms.h>
-#include <vecmath.h>
-#include <matmath.h>
 
 // X11 data
-typedef struct {
+struct xObjects {
     Display                *dpy;    // The target monitor/display (assuming we might have multiple displays)
     Window                  win;    // The application's parent window
     XVisualInfo            *xvi;    // Struct containing additional info about the window
     XWindowAttributes       xwa;    // Struct containing the window's attributes
     XEvent                  xev;    // Stores the event type of the most recently received event
-    Colormap               cmap;    // Colormap for the X window 
+    Colormap               cmap;    // Colormap for the X window
     GLXContext              glx;    // The OpenGL context for X11
-} xObjects;
+};
 
 // OpenGL data
-typedef struct {
-    unsigned int vao;
-    unsigned int vbo;
-    unsigned int ebo;
-    unsigned int shader;
-} glObjects;
+struct glObjects {
+    unsigned vao;
+    unsigned vbo;
+    unsigned ebo;
+    unsigned shader;
+};
 

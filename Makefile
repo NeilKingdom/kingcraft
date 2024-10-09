@@ -20,7 +20,7 @@ LDFLAGS += -lX11 -lGL -lGLEW -llac
 
 BIN := kingcraft
 
-# Default rule
+# Default goal
 all: $(BIN)
 
 # Remove object files and binaries

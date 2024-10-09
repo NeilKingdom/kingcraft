@@ -12,13 +12,13 @@ public:
     const vec3 vUp    = { 0.0f, 1.0f, 0.0f };
 
     vec3 vEye;                                      // Camera's origin point
-    vec3 vFwdVel;                                   // Forward velocity vector 
+    vec3 vFwdVel;                                   // Forward velocity vector
     vec3 vRightVel;                                 // Right velocity vector
     std::shared_ptr<std::array<float, 16>> mView;   // View matrix
 
-    // Constructor(s)/Destructor(s)
+    // Special member functions
     Camera();
-    ~Camera();
+    ~Camera() = default;
 
     // General
     void updateVelocity(const float playerSpeed);
@@ -26,7 +26,7 @@ public:
     void calculateViewMatrix();
 
 private:
-    float cameraRoll; 
+    float cameraRoll;
     float cameraPitch;
 
     vec3 vLookDir;    // The direction that the camera is facing on the current frame

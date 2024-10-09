@@ -1,3 +1,2 @@
-Pretty bad vsync issues
 Try moving XEvent loop to separate thread
 Create builder class for cubes + chunks

@@ -1,4 +1,4 @@
-#include "../include/main.hpp"
+#include "main.hpp"
 
 /**
  * @brief Cleanup all of the application's resources
@@ -8,24 +8,24 @@
  * @param imObjs An optional instance of xObjects containing ImGui-related resources
  */
 static void cleanup(
-    glObjects &glObjs, 
-    xObjects &xObjs, 
+    glObjects &glObjs,
+    xObjects &xObjs,
     const std::optional<xObjects> &imObjs
-) 
+)
 {
     // ImGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
     ImGui::DestroyContext();
 
-    if (imObjs != std::nullopt) 
+    if (imObjs != std::nullopt)
     {
         XDestroyWindow(imObjs->dpy, imObjs->win);
         XFreeColormap(imObjs->dpy, imObjs->cmap);
         XCloseDisplay(imObjs->dpy);
     }
 
-    // VAO, VBO, EBO 
+    // VAO, VBO, EBO
     glDeleteVertexArrays(1, &glObjs.vao);
     glDeleteBuffers(1, &glObjs.vbo);
     glDeleteBuffers(1, &glObjs.ebo);
@@ -41,13 +41,13 @@ static void cleanup(
     XCloseDisplay(xObjs.dpy);
 }
 
-int main() 
+int main()
 {
     using namespace std::chrono;
 
     /*** Variable declarations ***/
 
-    gameState state;
+    GameState state;
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
@@ -83,14 +83,14 @@ int main()
     glEnable(GL_DEBUG_OUTPUT);      // Enable debug output
     glEnable(GL_CULL_FACE);         // Enable culling
     glEnable(GL_DEPTH_TEST);        // Enable z-ordering via depth buffer
-    
+
     glCullFace(GL_BACK);            // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
-    glFrontFace(GL_CCW);            // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise) 
+    glFrontFace(GL_CCW);            // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise)
     glDepthFunc(GL_LESS);           // Depth algorithm (GL_LESS = lower zbuffer pixels are rendered on top)
 
     if (glDebugMessageCallback)
     {
-        glDebugMessageCallback(debugCallback, nullptr); 
+        glDebugMessageCallback(debugCallback, nullptr);
     }
     else
     {
@@ -100,12 +100,12 @@ int main()
     /*** Setup VAO, VBO, and EBO ***/
 
     float vertices[] = {
-         // Positions         // Colors
+    //   Positions            Colors
         -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // top left (front)
          0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // top right (front)
         -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // bottom left (front)
          0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  0.0f,  // bottom right (front)
-        
+
         -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  1.0f,  // top left (back)
          0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  1.0f,  // top right (back)
         -0.5f,  0.5f, -0.5f,  1.0f,  1.0f,  1.0f,  // bottom left (back)
@@ -164,20 +164,21 @@ int main()
 
     /*** Setup vertex/fragment shaders ***/
 
-    std::ifstream ifs("res/shader/vertex.shader");
-    const std::string vertexShader((std::istreambuf_iterator<char>(ifs)),
-                                   (std::istreambuf_iterator<char>()));
+    auto ifs = std::ifstream();
+
+    ifs.open("res/shader/vertex.shader");
+    const std::string vertexShader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
+
     ifs.open("res/shader/fragment.shader");
-    const std::string fragmentShader((std::istreambuf_iterator<char>(ifs)),
-                                     (std::istreambuf_iterator<char>()));
+    const std::string fragmentShader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
     glObjs.shader = createShader(vertexShader, fragmentShader);
 
     /*** Game loop ***/
 
-    while (state.isRunning) 
+    while (state.isRunning)
     {
         auto frameStartTime = steady_clock::now();
 
