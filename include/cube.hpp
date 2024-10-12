@@ -1,10 +1,9 @@
 #pragma once
 
-class Cube
+struct Cube
 {
-public:
    float positions;
-   float texCoords;
+   float tex_coords;
    float colors;
    float indices;
 };

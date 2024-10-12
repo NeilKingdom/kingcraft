@@ -61,4 +61,3 @@ struct GLObjects
     unsigned ebo;
     unsigned shader;
 };
-

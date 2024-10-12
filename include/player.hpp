@@ -5,12 +5,12 @@
 class Player
 {
 public:
-    static constexpr float PLAYER_BASE_SPEED = 0.2f;
+    static constexpr float PLAYER_BASE_SPEED = 0.2f; // Normalized speed
 
     float speed;
 
     Player();
-    ~Player();
+    ~Player() = default;
 
 private:
 };

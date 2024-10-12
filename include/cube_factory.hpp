@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "cube_renderer.hpp"
+#include "cube_factory.hpp"
 
 class CubeFactory
 {

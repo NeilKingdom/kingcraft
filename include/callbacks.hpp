@@ -8,14 +8,14 @@ inline void GLAPIENTRY debug_callback(
    GLuint id,
    GLenum severity,
    GLsizei length,
-   const GLchar *message,
-   const void *userParam
+   const GLchar *msg,
+   const void *args
 )
 {
    std::cerr
        << "GL Callback: "
        << "\ntype = " << (type == GL_DEBUG_TYPE_ERROR ? "GL ERROR" : "N/A")
        << "\nseverity = " << severity
-       << "\nmessage = " << message
+       << "\nmessage = " << msg
        << std::endl;
 }

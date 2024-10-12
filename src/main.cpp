@@ -1,11 +1,20 @@
+/**
+ * @file main.cpp
+ * @author Neil Kingdom
+ * @version 1.0
+ * @since 02-03-2024
+ * @brief Entry point of the program.
+ * Initializes everything and maintains the gameplay loop.
+ */
+
 #include "main.hpp"
 
 /**
- * @brief Cleanup all of the application's resources
- * @since 03-02-2024
- * @param glObjs An instance of glObjs containing OpenGL-related resources
- * @param xObjs An instance of xObjects containing X11-related resources
- * @param imObjs An optional instance of xObjects containing ImGui-related resources
+ * @brief Cleanup all of the application's resources.
+ * @since 02-03-2024
+ * @param[in] gl_objs An instance of GLObjects containing OpenGL-related resources
+ * @param[in] x_objs An instance of XObjects containing X11-related resources
+ * @param[in] im_objs An optional instance of XObjects containing ImGui-related resources
  */
 static void cleanup(
     GLObjects &gl_objs,
@@ -13,13 +22,16 @@ static void cleanup(
     const std::optional<XObjects> &im_objs
 )
 {
-    // ImGUI
+    // ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
-    ImGui::DestroyContext();
 
     if (im_objs != std::nullopt)
     {
+        // OpenGL context
+        ImGui::DestroyContext();
+
+        // X11
         XDestroyWindow(im_objs->dpy, im_objs->win);
         XFreeColormap(im_objs->dpy, im_objs->cmap);
         XCloseDisplay(im_objs->dpy);
@@ -50,26 +62,23 @@ int main()
 
     /*** Variable declarations ***/
 
-    Camera camera = Camera(90.0f, (9.0f / 16.0f), 1.0f, 1000.0f);
+    Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
     XObjects x_objs;
     XObjects im_objs;
     GLObjects gl_objs;
 
-    bool get_ptr_location = true;
-
-    int curr_fps = 0;
     int frames_elapsed = 0;
-    time_point<steady_clock> prev_fps = steady_clock::now();
-    nanoseconds::rep time_elapsed = 0L;
+    time_point<steady_clock> since = steady_clock::now();
+    nanoseconds::rep frame_duration = 0L;
 
     /*** Setup ***/
 
-    GLXFBConfig best_fb_config = create_xwindow(x_objs, "KingCraft");
+    GLXFBConfig best_fb_config = create_window(x_objs, "KingCraft", 1920, 1080);
     create_opengl_context(x_objs, best_fb_config);
 #ifdef DEBUG
-    (void)create_xwindow(im_objs, "ImGui", 400, 400);
+    (void)create_window(im_objs, "ImGui", 400, 400);
 #endif
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
@@ -99,7 +108,6 @@ int main()
     }
 
     /*** Setup VAO, VBO, and EBO ***/
-
 
     /*
      *             z (up)
@@ -188,16 +196,15 @@ int main()
 
     while (GameState::is_running)
     {
-        auto frame_start_time = steady_clock::now();
+        auto frame_start = steady_clock::now();
+        GameState::player.speed = Player::PLAYER_BASE_SPEED * (frame_duration / (float)SEC_AS_NANO);
 
-        GameState::player.speed = Player::PLAYER_BASE_SPEED * (time_elapsed / (float)SEC_AS_NANO);
-
-        process_events(x_objs, camera, get_ptr_location);
+        process_events(x_objs, camera);
         render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices));
 
-        auto frame_end_time = steady_clock::now();
-        time_elapsed = duration_cast<nanoseconds>(frame_end_time - frame_start_time).count();
-        //CalculateFrameRate(fps, fpsCounter, timePrevFps);
+        auto frame_end = steady_clock::now();
+        frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
+        //calculate_frame_rate(fps, frames_elapsed, since);
 
 #ifdef DEBUG
         // Switch OpenGL context to ImGui window
