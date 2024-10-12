@@ -18,8 +18,9 @@ public:
     const float zfar;                               // Far clipping plane
 
     vec3 v_eye;                                     // Camera's origin point
-    vec3 v_fwd_vel;                                 // Forward velocity vector
-    vec3 v_right_vel;                               // Right velocity vector
+    vec3 v_look_dir;        // The direction that the camera is facing on the current frame
+    //vec3 v_fwd_vel;                                 // Forward velocity vector
+    //vec3 v_right_vel;                               // Right velocity vector
     std::shared_ptr<std::array<float, 16>> m_view;  // View matrix
 
     // Special member functions
@@ -35,7 +36,6 @@ private:
     float camera_yaw;       // Rotation about the z axis
     float camera_pitch;     // Rotation about the y axis
 
-    vec3 v_look_dir;        // The direction that the camera is facing on the current frame
     vec3 v_new_look_dir;    // The direction that the camera will be facing on the next frame
 
     mat4 m_point_at;        // The point-at matrix which becomes the view matrix after inversion

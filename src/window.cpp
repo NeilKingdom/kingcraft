@@ -432,33 +432,52 @@ void process_events(XObjects &x_objs, Camera &camera, bool &get_ptr_location)
         }
     }
 
+    vec3 v_fwd      = { 0 };
+    vec3 v_right    = { 0 };
+    vec3 v_up       = { 0 };
+    vec3 v_velocity = { 0 };
+    float magnitude = 0.0f;
+
+    std::memcpy(v_fwd, camera.v_look_dir, sizeof(v_fwd));
+    lac_normalize_vec3(&v_fwd, v_fwd);
+
+    lac_calc_cross_prod(&v_right, camera.v_up, v_fwd);
+    lac_normalize_vec3(&v_right, v_right);
+
+    lac_calc_cross_prod(&v_up, v_right, v_fwd);
+    lac_normalize_vec3(&v_up, v_up);
+
     if (IS_KEY_SET(key_mask, KEY_FORWARD))
     {
-        lac_subtract_vec3(&camera.v_eye, camera.v_eye, camera.v_fwd_vel);
+        lac_subtract_vec3(&v_velocity, v_velocity, v_fwd);
     }
-    if (IS_KEY_SET(key_mask, KEY_BACKWARD))
+    else if (IS_KEY_SET(key_mask, KEY_BACKWARD))
     {
-        lac_add_vec3(&camera.v_eye, camera.v_eye, camera.v_fwd_vel);
+        lac_add_vec3(&v_velocity, v_velocity, v_fwd);
     }
     if (IS_KEY_SET(key_mask, KEY_LEFT))
     {
-        lac_add_vec3(&camera.v_eye, camera.v_eye, camera.v_right_vel);
+        lac_subtract_vec3(&v_velocity, v_velocity, v_right);
     }
-    if (IS_KEY_SET(key_mask, KEY_RIGHT))
+    else if (IS_KEY_SET(key_mask, KEY_RIGHT))
     {
-        lac_subtract_vec3(&camera.v_eye, camera.v_eye, camera.v_right_vel);
-    }
-    if (IS_KEY_SET(key_mask, KEY_UP))
-    {
-        vec3 v_up_vel = { 0 };
-        lac_multiply_vec3(&v_up_vel, camera.v_up, GameState::player.speed);
-        lac_add_vec3(&camera.v_eye, camera.v_eye, v_up_vel);
+        lac_add_vec3(&v_velocity, v_velocity, v_right);
     }
     if (IS_KEY_SET(key_mask, KEY_DOWN))
     {
-        vec3 v_up_vel = { 0 };
-        lac_multiply_vec3(&v_up_vel, camera.v_up, GameState::player.speed);
-        lac_subtract_vec3(&camera.v_eye, camera.v_eye, v_up_vel);
+        lac_subtract_vec3(&v_velocity, v_velocity, v_up);
+    }
+    else if (IS_KEY_SET(key_mask, KEY_UP))
+    {
+        lac_add_vec3(&v_velocity, v_velocity, v_up);
+    }
+
+    lac_calc_magnitude_vec4(&magnitude, v_velocity);
+    if (magnitude > 0.0f)
+    {
+        lac_normalize_vec3(&v_velocity, v_velocity);
+        lac_multiply_vec3(&v_velocity, v_velocity, GameState::player.speed);
+        lac_add_vec3(&camera.v_eye, camera.v_eye, v_velocity);
     }
 }
 

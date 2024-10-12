@@ -188,7 +188,6 @@ int main()
         auto frame_start_time = steady_clock::now();
 
         GameState::player.speed = Player::PLAYER_BASE_SPEED * (time_elapsed / (float)SEC_AS_NANO);
-        camera.update_velocity();
 
         process_events(x_objs, camera, get_ptr_location);
         render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices));

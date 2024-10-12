@@ -19,8 +19,8 @@ Camera::Camera(
     v_eye{ 0 },
     v_look_dir{ 0 },
     v_new_look_dir{ 0 },
-    v_fwd_vel{ 0 },
-    v_right_vel{ 0 },
+    //v_fwd_vel{ 0 },
+    //v_right_vel{ 0 },
     m_cam_rot{ 0 },
     m_point_at{ 0 },
     m_view(std::make_shared<std::array<float, 16>>())
@@ -34,16 +34,16 @@ Camera::Camera(
  * @since 03-02-2024
  * @param[in] playerSpeed The scalar value used to multiply the Camera's velocity vector
  */
-void Camera::update_velocity()
-{
-    // Calculate forward camera velocity
-    lac_multiply_vec3(&v_fwd_vel, v_look_dir, GameState::player.speed);
-    // Calculate right camera velocity
-    lac_calc_cross_prod(const_cast<vec3*>(&v_right), v_look_dir, v_up);
-
-    lac_normalize_vec3(const_cast<vec3*>(&v_right), v_right);
-    lac_multiply_vec3(&v_right_vel, v_right, GameState::player.speed);
-}
+//void Camera::update_velocity()
+//{
+//    // Calculate forward camera velocity
+//    lac_multiply_vec3(&v_fwd_vel, v_look_dir, GameState::player.speed);
+//    // Calculate right camera velocity
+//    lac_calc_cross_prod(const_cast<vec3*>(&v_right), v_look_dir, v_up);
+//
+//    lac_normalize_vec3(const_cast<vec3*>(&v_right), v_right);
+//    lac_multiply_vec3(&v_right_vel, v_right, GameState::player.speed);
+//}
 
 /**
  * @brief Update the Camera's rotation matrix given the position of the mouse pointer on screen.
