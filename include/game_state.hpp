@@ -1,9 +1,13 @@
 #pragma once
 
-#include "common.hpp"
-#include "constants.hpp"
+#include <atomic>
 
-struct GameState
+#include "common.hpp"
+#include "player.hpp"
+
+namespace GameState
 {
-    static bool isRunning = true;
+    static std::atomic<bool> is_running = true;
+
+    static Player player = Player();
 };

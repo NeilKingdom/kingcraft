@@ -8,9 +8,9 @@
  * @param imObjs An optional instance of xObjects containing ImGui-related resources
  */
 static void cleanup(
-    glObjects &glObjs,
-    xObjects &xObjs,
-    const std::optional<xObjects> &imObjs
+    GLObjects &gl_objs,
+    XObjects &x_objs,
+    const std::optional<XObjects> &im_objs
 )
 {
     // ImGUI
@@ -18,27 +18,27 @@ static void cleanup(
     ImGui_ImplX11_Shutdown();
     ImGui::DestroyContext();
 
-    if (imObjs != std::nullopt)
+    if (im_objs != std::nullopt)
     {
-        XDestroyWindow(imObjs->dpy, imObjs->win);
-        XFreeColormap(imObjs->dpy, imObjs->cmap);
-        XCloseDisplay(imObjs->dpy);
+        XDestroyWindow(im_objs->dpy, im_objs->win);
+        XFreeColormap(im_objs->dpy, im_objs->cmap);
+        XCloseDisplay(im_objs->dpy);
     }
 
     // VAO, VBO, EBO
-    glDeleteVertexArrays(1, &glObjs.vao);
-    glDeleteBuffers(1, &glObjs.vbo);
-    glDeleteBuffers(1, &glObjs.ebo);
-    glDeleteProgram(glObjs.shader);
+    glDeleteVertexArrays(1, &gl_objs.vao);
+    glDeleteBuffers(1, &gl_objs.vbo);
+    glDeleteBuffers(1, &gl_objs.ebo);
+    glDeleteProgram(gl_objs.shader);
 
     // OpenGL context
-    glXMakeCurrent(xObjs.dpy, None, NULL);
-    glXDestroyContext(xObjs.dpy, xObjs.glx);
+    glXMakeCurrent(x_objs.dpy, None, NULL);
+    glXDestroyContext(x_objs.dpy, x_objs.glx);
 
     // X11
-    XDestroyWindow(xObjs.dpy, xObjs.win);
-    XFreeColormap(xObjs.dpy, xObjs.cmap);
-    XCloseDisplay(xObjs.dpy);
+    XDestroyWindow(x_objs.dpy, x_objs.win);
+    XFreeColormap(x_objs.dpy, x_objs.cmap);
+    XCloseDisplay(x_objs.dpy);
 }
 
 int main()
@@ -47,28 +47,26 @@ int main()
 
     /*** Variable declarations ***/
 
-    GameState state;
-
-    Camera camera = Camera();
+    Camera camera = Camera(90.0f, (9.0f / 16.0f), 1.0f, 1000.0f);
     Mvp mvp = Mvp(camera);
 
-    xObjects xObjs;
-    xObjects imObjs;
-    glObjects glObjs;
+    XObjects x_objs;
+    XObjects im_objs;
+    GLObjects gl_objs;
 
-    bool getPtrLocation = true;
+    bool get_ptr_location = true;
 
-    int fps = 0;
-    int fElapsed = 0;
-    time_point<steady_clock> timePrevFps = steady_clock::now();
-    nanoseconds::rep elapsedTime = 0L;
+    int curr_fps = 0;
+    int frames_elapsed = 0;
+    time_point<steady_clock> prev_fps = steady_clock::now();
+    nanoseconds::rep time_elapsed = 0L;
 
     /*** Setup ***/
 
-    GLXFBConfig bestFbConfig = createXWindow(xObjs, "KingCraft");
-    createOpenGLContext(xObjs, bestFbConfig);
+    GLXFBConfig best_fb_config = create_xwindow(x_objs, "KingCraft");
+    create_opengl_context(x_objs, best_fb_config);
 #ifdef DEBUG
-    (void)createXWindow(imObjs, "ImGui", 400, 400);
+    (void)create_xwindow(im_objs, "ImGui", 400, 400);
 #endif
 
     // NOTE: Must be placed after a valid OpenGL context has been made current
@@ -78,7 +76,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    initImGui(imObjs);
+    init_imgui(im_objs);
 
     glEnable(GL_DEBUG_OUTPUT);      // Enable debug output
     glEnable(GL_CULL_FACE);         // Enable culling
@@ -90,7 +88,7 @@ int main()
 
     if (glDebugMessageCallback)
     {
-        glDebugMessageCallback(debugCallback, nullptr);
+        glDebugMessageCallback(debug_callback, nullptr);
     }
     else
     {
@@ -135,16 +133,16 @@ int main()
         2, 4, 0
     };
 
-    glGenVertexArrays(1, &glObjs.vao);
-    glGenBuffers(1, &glObjs.vbo);
-    glGenBuffers(1, &glObjs.ebo);
+    glGenVertexArrays(1, &gl_objs.vao);
+    glGenBuffers(1, &gl_objs.vbo);
+    glGenBuffers(1, &gl_objs.ebo);
 
-    glBindVertexArray(glObjs.vao);
+    glBindVertexArray(gl_objs.vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, glObjs.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_objs.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glObjs.ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_objs.ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // Position attribute
@@ -167,44 +165,44 @@ int main()
     auto ifs = std::ifstream();
 
     ifs.open("res/shader/vertex.shader");
-    const std::string vertexShader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    const std::string vertex_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
     ifs.open("res/shader/fragment.shader");
-    const std::string fragmentShader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    const std::string fragment_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    glObjs.shader = createShader(vertexShader, fragmentShader);
+    gl_objs.shader = create_shader(vertex_shader, fragment_shader);
 
     /*** Game loop ***/
 
-    while (state.isRunning)
+    while (GameState::is_running)
     {
-        auto frameStartTime = steady_clock::now();
+        auto frame_start_time = steady_clock::now();
 
-        state.playerSpeed = PLAYER_BASE_SPEED * (elapsedTime / (float)SEC_AS_NANO);
-        camera.updateVelocity(state.playerSpeed);
+        GameState::player.speed = Player::PLAYER_BASE_SPEED * (time_elapsed / (float)SEC_AS_NANO);
+        camera.update_velocity(GameState::player.speed);
 
-        processEvents(state, xObjs, camera, getPtrLocation);
-        renderFrame(state, glObjs, xObjs, camera, mvp, sizeof(indices));
+        process_events(x_objs, camera, get_ptr_location);
+        render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices));
 
-        auto frameEndTime = steady_clock::now();
-        elapsedTime = duration_cast<nanoseconds>(frameEndTime - frameStartTime).count();
+        auto frame_end_time = steady_clock::now();
+        time_elapsed = duration_cast<nanoseconds>(frame_end_time - frame_start_time).count();
         //CalculateFrameRate(fps, fpsCounter, timePrevFps);
 
 #ifdef DEBUG
         // Switch OpenGL context to ImGui window
-        glXMakeCurrent(imObjs.dpy, imObjs.win, xObjs.glx);
-        processImGuiEvents(imObjs);
-        renderImGuiFrame(state, imObjs, camera);
-        glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
+        glXMakeCurrent(im_objs.dpy, im_objs.win, x_objs.glx);
+        process_imgui_events(im_objs);
+        render_imgui_frame(im_objs, camera);
+        glXMakeCurrent(x_objs.dpy, x_objs.win, x_objs.glx);
 #endif
     }
 
 #ifdef DEBUG
-    cleanup(glObjs, xObjs, imObjs);
+    cleanup(gl_objs, x_objs, im_objs);
 #else
-    cleanup(glObjs, xObjs, std::nullopt);
+    cleanup(gl_objs, x_objs, std::nullopt);
 #endif
 
     return EXIT_SUCCESS;

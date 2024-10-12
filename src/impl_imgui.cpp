@@ -2,12 +2,11 @@
 
 extern IMGUI_IMPL_API int ImGui_ImplX11_EventHandler(XEvent &event, XEvent *next_event);
 
-void initImGui(const xObjects &imObjs)
+void init_imgui(const XObjects &im_objs)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
+    //ImGuiIO &io = ImGui::GetIO();
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
@@ -15,44 +14,44 @@ void initImGui(const xObjects &imObjs)
 
     // Initialize ImGui's backend for X11 and OpenGL
     ImGui_ImplOpenGL3_Init();
-    ImGui_ImplX11_Init(imObjs.dpy, (void*)imObjs.win);
+    ImGui_ImplX11_Init(im_objs.dpy, (void*)im_objs.win);
 }
 
-void processImGuiEvents(xObjects &imObjs)
+void process_imgui_events(XObjects &im_objs)
 {
-    while (XPending(imObjs.dpy) > 0)
+    while (XPending(im_objs.dpy) > 0)
     {
-        XNextEvent(imObjs.dpy, &imObjs.xev);
-        ImGui_ImplX11_EventHandler(imObjs.xev, nullptr);
+        XNextEvent(im_objs.dpy, &im_objs.xev);
+        ImGui_ImplX11_EventHandler(im_objs.xev, nullptr);
 
         // TODO: Expose event
-        switch (imObjs.xev.type)
+        switch (im_objs.xev.type)
         {
             break;
         }
     }
 }
 
-void updatePlayerPosition(Camera &camera)
+void render_imgui_frame(XObjects &im_objs, Camera &camera)
 {
-    lac_add_vec3(&camera.vEye, camera.vEye, camera.vRightVel);
-}
+    bool is_running = GameState::is_running;
 
-void renderImGuiFrame(GameState &state, xObjects &imObjs, Camera &camera)
-{
     // Start a new ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplX11_NewFrame();
     ImGui::NewFrame();
 
-    // Render your ImGui content
+    // ImGui widgets
     ImGui::Begin("KingCraft");
-    ImGui::SliderFloat("FOV", &state.fov, 0.0f, 180.0f);
-    ImGui::SliderFloat("Player X Pos", &camera.vEye[0], camera.vEye[0] - 1.0f, camera.vEye[0] + 1.0f);
-    ImGui::Checkbox("Game Running", &state.isRunning);
+    ImGui::SliderFloat("FOV", const_cast<float*>(&camera.fov), 0.0f, 180.0f);
+    ImGui::SliderFloat("Player X Pos", &camera.v_eye[0], camera.v_eye[0] - 1.0f, camera.v_eye[0] + 1.0f);
+    ImGui::Checkbox("Game Running", &is_running);
     ImGui::End();
 
+    // Render frame
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glXSwapBuffers(imObjs.dpy, imObjs.win);
+    glXSwapBuffers(im_objs.dpy, im_objs.win);
+
+    GameState::is_running = is_running;
 }

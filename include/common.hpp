@@ -29,11 +29,11 @@
 #include <GL/gl.h>   // General OpenGL APIs
 #include <GL/glx.h>  // X11-specific OpenGL APIs
 
-// liblac (Only transforms.h is required, but LSP gets confused)
+// liblac
 #include <transforms.h>
 
 // X11 data
-struct xObjects {
+struct XObjects {
     Display                *dpy;    // The target monitor/display (assuming we might have multiple displays)
     Window                  win;    // The application's parent window
     XVisualInfo            *xvi;    // Struct containing additional info about the window
@@ -44,7 +44,7 @@ struct xObjects {
 };
 
 // OpenGL data
-struct glObjects {
+struct GLObjects {
     unsigned vao;
     unsigned vbo;
     unsigned ebo;

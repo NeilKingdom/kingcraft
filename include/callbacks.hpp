@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 
-inline void GLAPIENTRY debugCallback(
+inline void GLAPIENTRY debug_callback(
    GLenum source,
    GLenum type,
    GLuint id,
@@ -13,8 +13,9 @@ inline void GLAPIENTRY debugCallback(
 )
 {
    std::cerr
-       << "GL Callback: type = " << (type == GL_DEBUG_TYPE_ERROR ? "GL ERROR" : "")
-       << " severity = " << severity
-       << " message = " << message
+       << "GL Callback: "
+       << "\ntype = " << (type == GL_DEBUG_TYPE_ERROR ? "GL ERROR" : "N/A")
+       << "\nseverity = " << severity
+       << "\nmessage = " << message
        << std::endl;
 }

@@ -8,22 +8,22 @@
  * @brief Calculate the framerate and display it once per second (must be called once per frame)
  * @since 02-03-2024
  * @param[in/out] fps The actual FPS count
- * @param[in/out] fElapsed The amount of frames that have elapsed thus far
- * @param[in/out] timePrev The previous time stamp (used to check if one second has elapsed)
+ * @param[in/out] frames_elapsed The amount of frames that have elapsed thus far
+ * @param[in/out] prev_time The previous time stamp (used to check if one second has elapsed)
  */
-void calculateFrameRate(int &fps, int &fElapsed, std::chrono::steady_clock::time_point &timePrev)
+void calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono::steady_clock::time_point &prev_time)
 {
     using namespace std::chrono;
 
-    auto timeNow = steady_clock::now();
-    auto timeElapsed = duration_cast<nanoseconds>(timeNow - timePrev).count();
-    ++fElapsed;
+    auto curr_time = steady_clock::now();
+    auto time_elapsed = duration_cast<nanoseconds>(curr_time - prev_time).count();
+    ++frames_elapsed;
 
-    if (timeElapsed > SEC_AS_NANO)
+    if (time_elapsed > SEC_AS_NANO)
     {
-        timePrev = timeNow;
-        fps = fElapsed;
-        fElapsed = 0;
+        prev_time = curr_time;
+        fps = frames_elapsed;
+        frames_elapsed = 0;
 
         std::cout << "FPS: " << fps << std::endl;
     }
@@ -36,7 +36,7 @@ void calculateFrameRate(int &fps, int &fElapsed, std::chrono::steady_clock::time
  * @param[in] source The GLSL source code for the shader as a std::string
  * @returns The shader id
  */
-unsigned compileShader(const unsigned type, const std::string source)
+unsigned compile_shader(const unsigned type, const std::string source)
 {
     assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 
@@ -67,15 +67,15 @@ unsigned compileShader(const unsigned type, const std::string source)
 /**
  * @brief Attaches and links the vertex and fragment shaders into a shader program
  * @since 02-03-2024
- * @param[in] vertexShader The vertex shader to be attached (as a std::string)
- * @param[in] fragmentShader The fragment shader to be attached (as a std::string)
+ * @param[in] vertex_shader The vertex shader to be attached (as a std::string)
+ * @param[in] fragment_shader The fragment shader to be attached (as a std::string)
  * @returns The program id
  */
-unsigned createShader(const std::string vertexShader, const std::string fragmentShader)
+unsigned create_shader(const std::string vertex_shader, const std::string fragment_shader)
 {
     unsigned int program = glCreateProgram();
-    unsigned int vs = compileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
+    unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
+    unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
 
     glAttachShader(program, vs);
     glAttachShader(program, fs);
@@ -95,7 +95,7 @@ unsigned createShader(const std::string vertexShader, const std::string fragment
  * @param extName The name of the extension being searched for in extList
  * @returns True if the extension is supported or false otherwise
  */
-bool isGLXExtensionSupported(const char *extList, const char *extName)
+bool is_glx_extension_supported(const char *extList, const char *extName)
 {
     const char *start, *where, *terminator;
     where = strchr(extName, ' ');
@@ -132,27 +132,27 @@ bool isGLXExtensionSupported(const char *extList, const char *extName)
  * @param[in] winHeight The height of the new window
  * @returns The best available frame buffer configuration for the new window
  */
-GLXFBConfig createXWindow(
-    xObjects &xObjs,
-    const std::string winName,
-    const size_t winWidth,
-    const size_t winHeight
+GLXFBConfig create_xwindow(
+    XObjects &x_objs,
+    const std::string win_name,
+    const size_t win_width,
+    const size_t win_height
 )
 {
     // Open the X11 display
-    xObjs.dpy = XOpenDisplay(NULL);
-    if (xObjs.dpy == NULL)
+    x_objs.dpy = XOpenDisplay(NULL);
+    if (x_objs.dpy == NULL)
     {
         std::cerr << "Cannot connect to X server" << std::endl;
         exit(EXIT_FAILURE);
     }
 
     // Get OpenGL version
-    int vMajor, vMinor;
-    glXQueryVersion(xObjs.dpy, &vMajor, &vMinor);
+    int v_major, v_minor;
+    glXQueryVersion(x_objs.dpy, &v_major, &v_minor);
 
     // Specify the visual attributes for the frame buffer configuration
-    int viAttribs[] = {
+    int vi_attribs[] = {
         GLX_X_RENDERABLE,    true,
         GLX_DRAWABLE_TYPE,   GLX_WINDOW_BIT,
         GLX_RENDER_TYPE,     GLX_RGBA_BIT,
@@ -174,55 +174,55 @@ GLXFBConfig createXWindow(
 
     /*** Takes in our attributes and returns a list of frame buffers loosely matching the criteria ***/
 
-    int fbCount;
-    GLXFBConfig *fbConfig = glXChooseFBConfig(xObjs.dpy, DefaultScreen(xObjs.dpy), viAttribs, &fbCount);
-    if (fbConfig == NULL)
+    int fb_count;
+    GLXFBConfig *fb_config = glXChooseFBConfig(x_objs.dpy, DefaultScreen(x_objs.dpy), vi_attribs, &fb_count);
+    if (fb_config == NULL)
     {
         std::cerr << "Failed to retrieve framebuffer configuration" << std::endl;
-        XCloseDisplay(xObjs.dpy);
+        XCloseDisplay(x_objs.dpy);
         exit(EXIT_FAILURE);
     }
 
 #ifdef DEBUG
-    std::cout << "Found " << fbCount << " matching configs" << std::endl;
+    std::cout << "Found " << fb_count << " matching configs" << std::endl;
 #endif
 
     /*** Pick the XVisualInfo struct with the most samples per-pixel from the frame buffer list ***/
 
-    int bestFbIdx = 0;
-    int bestSpp = 0;
+    int best_fb_idx = 0;
+    int best_spp = 0;
 
-    for (int i = 0; i < fbCount; ++i)
+    for (int i = 0; i < fb_count; ++i)
     {
-        xObjs.xvi = glXGetVisualFromFBConfig(xObjs.dpy, fbConfig[i]);
-        if (xObjs.xvi != NULL)
+        x_objs.xvi = glXGetVisualFromFBConfig(x_objs.dpy, fb_config[i]);
+        if (x_objs.xvi != NULL)
         {
-            int sampBuf, samples;
-            glXGetFBConfigAttrib(xObjs.dpy, fbConfig[i], GLX_SAMPLE_BUFFERS, &sampBuf);
-            glXGetFBConfigAttrib(xObjs.dpy, fbConfig[i], GLX_SAMPLES, &samples);
+            int samp_buf, samples;
+            glXGetFBConfigAttrib(x_objs.dpy, fb_config[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+            glXGetFBConfigAttrib(x_objs.dpy, fb_config[i], GLX_SAMPLES, &samples);
 
-            if ((bestFbIdx < 0) || (sampBuf && (samples > bestSpp)))
+            if ((best_fb_idx < 0) || (samp_buf && (samples > best_spp)))
             {
-                bestFbIdx = i;
-                bestSpp = samples;
+                best_fb_idx = i;
+                best_spp = samples;
             }
 
-            XFree(xObjs.xvi);
+            XFree(x_objs.xvi);
         }
     }
-    GLXFBConfig bestFbConfig = fbConfig[bestFbIdx];
-    XFree(fbConfig);
+    GLXFBConfig best_fb_config = fb_config[best_fb_idx];
+    XFree(fb_config);
 
-    xObjs.xvi = glXGetVisualFromFBConfig(xObjs.dpy, bestFbConfig);
-    if (xObjs.xvi == NULL)
+    x_objs.xvi = glXGetVisualFromFBConfig(x_objs.dpy, best_fb_config);
+    if (x_objs.xvi == NULL)
     {
         std::cerr << "No appropriate visual found" << std::endl;
-        XCloseDisplay(xObjs.dpy);
+        XCloseDisplay(x_objs.dpy);
         exit(EXIT_FAILURE);
     }
 
 #ifdef DEBUG
-    std::cout << "Visual ID with greatest samples per-pixel: " << xObjs.xvi->visualid << std::endl;
+    std::cout << "Visual ID with greatest samples per-pixel: " << x_objs.xvi->visualid << std::endl;
 #endif
 
     /*** Set the XWindow attributes i.e. colormap and event mask ***/
@@ -230,10 +230,10 @@ GLXFBConfig createXWindow(
     XSetWindowAttributes xswa;
     xswa.border_pixel = 0;
     xswa.background_pixmap = None;
-    xswa.colormap = xObjs.cmap = XCreateColormap(
-        xObjs.dpy,
-        RootWindow(xObjs.dpy, xObjs.xvi->screen),
-        xObjs.xvi->visual,
+    xswa.colormap = x_objs.cmap = XCreateColormap(
+        x_objs.dpy,
+        RootWindow(x_objs.dpy, x_objs.xvi->screen),
+        x_objs.xvi->visual,
         AllocNone
     );
     xswa.event_mask = (
@@ -241,35 +241,35 @@ GLXFBConfig createXWindow(
         KeyReleaseMask | ButtonPressMask   | ButtonReleaseMask
     );
 
-    xObjs.win = XCreateWindow(
-        xObjs.dpy, RootWindow(xObjs.dpy, xObjs.xvi->screen),
-        0, 0, winWidth, winHeight, 0,
-        xObjs.xvi->depth,
+    x_objs.win = XCreateWindow(
+        x_objs.dpy, RootWindow(x_objs.dpy, x_objs.xvi->screen),
+        0, 0, win_width, win_height, 0,
+        x_objs.xvi->depth,
         InputOutput,
-        xObjs.xvi->visual,
+        x_objs.xvi->visual,
         (CWColormap | CWBorderPixel | CWEventMask),
         &xswa
     );
-    if (!xObjs.win)
+    if (!x_objs.win)
     {
         std::cerr << "Failed to create a window" << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    XFree(xObjs.xvi);
-    XStoreName(xObjs.dpy, xObjs.win, winName.c_str());
-    XMapWindow(xObjs.dpy, xObjs.win);
+    XFree(x_objs.xvi);
+    XStoreName(x_objs.dpy, x_objs.win, win_name.c_str());
+    XMapWindow(x_objs.dpy, x_objs.win);
 
-    return bestFbConfig;
+    return best_fb_config;
 }
 
 /**
- * @brief Create an OpenGL context for the given X window
+ * @brief Create an OpenGL context for the given X window.
  * @since 02-03-2024
  * @param[in/out] xObjs An instance of xObjects containing X-related data
  * @param[in] fbConfig The frame buffer configuration that shall be bound to the OpenGL context
  */
-void createOpenGLContext(xObjects &xObjs, const GLXFBConfig &fbConfig)
+void create_opengl_context(XObjects &x_objs, const GLXFBConfig &fb_config)
 {
     /*
       The OpenGL Architecture Review Board (ARB) has developed certain extension functions (usually
@@ -277,36 +277,36 @@ void createOpenGLContext(xObjects &xObjs, const GLXFBConfig &fbConfig)
       proc_name matches with an existing ARB extension function, a function pointer to that extension
       function is returned.
     */
-    const unsigned char* procName = (const unsigned char*)"glXCreateContextAttribsARB";
-    glXCreateContextAttribsARBProc glXCreateContextAttribsARB =
-        (glXCreateContextAttribsARBProc)glXGetProcAddressARB(procName);
+    const unsigned char* proc_name = (const unsigned char*)"glXCreateContextAttribsARB";
+    glXCreateContextAttribsARBProc glx_create_context_attribs_arb =
+        (glXCreateContextAttribsARBProc)glXGetProcAddressARB(proc_name);
 
-    const char *glxExts = glXQueryExtensionsString(xObjs.dpy, DefaultScreen(xObjs.dpy));
+    const char *glx_exts = glXQueryExtensionsString(x_objs.dpy, DefaultScreen(x_objs.dpy));
 
 #ifdef DEBUG
-    std::cout << "Late extensions: " << glxExts << std::endl;
+    std::cout << "Late extensions: " << glx_exts << std::endl;
 #endif
 
-    if (!isGLXExtensionSupported(glxExts, "GLX_ARB_create_context") || !glXCreateContextAttribsARB)
+    if (!is_glx_extension_supported(glx_exts, "GLX_ARB_create_context") || !glx_create_context_attribs_arb)
     {
         std::cerr << "glXCreateContextAttribsARB() not found. Using old GLX context" << std::endl;
-        xObjs.glx = glXCreateNewContext(xObjs.dpy, fbConfig, GLX_RGBA_TYPE, 0, true);
+        x_objs.glx = glXCreateNewContext(x_objs.dpy, fb_config, GLX_RGBA_TYPE, 0, true);
     }
     else
     {
-        int glxAttribs[] = {
+        int glx_attribs[] = {
             GLX_CONTEXT_MAJOR_VERSION_ARB,   3,
             GLX_CONTEXT_MINOR_VERSION_ARB,   3,
             GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
             None
         };
-        xObjs.glx = glXCreateContextAttribsARB(xObjs.dpy, fbConfig, 0, true, glxAttribs);
+        x_objs.glx = glx_create_context_attribs_arb(x_objs.dpy, fb_config, 0, true, glx_attribs);
     }
 
-    XSync(xObjs.dpy, false);
+    XSync(x_objs.dpy, false);
 
     // Verifying that context is a direct context
-    if (!glXIsDirect(xObjs.dpy, xObjs.glx)) {
+    if (!glXIsDirect(x_objs.dpy, x_objs.glx)) {
         std::cout << "Indirect GLX rendering context obtained" << std::endl;
     }
     else
@@ -314,73 +314,73 @@ void createOpenGLContext(xObjects &xObjs, const GLXFBConfig &fbConfig)
         std::cout << "Direct GLX rendering context obtained" << std::endl;
     }
 
-    glXMakeCurrent(xObjs.dpy, xObjs.win, xObjs.glx);
+    glXMakeCurrent(x_objs.dpy, x_objs.win, x_objs.glx);
 }
 
 /**
- * @brief Processes X events in the queue until there aren't any left
+ * @brief Processes X events in the queue until there aren't any left.
  * @since 02-03-2024
  * @param[in/out] xObjs An instance of xObjects containing X-related data
  * @param[in/out] camera The active camera which will be updated on MotionNotify events
  * @param[in/out] getPtrLocation The pointer location is retrieved every other frame
  */
-void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool &getPtrLocation)
+void process_events(XObjects &x_objs, Camera &camera, bool &get_ptr_location)
 {
-    while (XPending(xObjs.dpy) > 0)
+    while (XPending(x_objs.dpy) > 0)
     {
-        XNextEvent(xObjs.dpy, &xObjs.xev); // Blocks until event is received
+        XNextEvent(x_objs.dpy, &x_objs.xev); // Blocks until event is received
 
-        switch (xObjs.xev.type)
+        switch (x_objs.xev.type)
         {
             case Expose: // Window was being overlapped by another window, but is now exposed
             {
                 /* Set affine transform for viewport based on window width/height */
-                XGetWindowAttributes(xObjs.dpy, xObjs.win, &xObjs.xwa);
-                glViewport(0, 0, xObjs.xwa.width, xObjs.xwa.height);
+                XGetWindowAttributes(x_objs.dpy, x_objs.win, &x_objs.xwa);
+                glViewport(0, 0, x_objs.xwa.width, x_objs.xwa.height);
                 break;
             }
             case MotionNotify: // Mouse was moved
             {
-                getPtrLocation = !getPtrLocation;
-                if (getPtrLocation) // Need to give cursor a frame of travel time
+                get_ptr_location = !get_ptr_location;
+                if (get_ptr_location) // Need to give cursor a frame of travel time
                 {
-                    camera.updateRotationFromPointer(xObjs);
+                    camera.update_rotation_from_pointer(x_objs);
                 }
                 break;
             }
             case KeyPress:
             {
-                KeySym sym = XLookupKeysym(&xObjs.xev.xkey, 0);
+                KeySym sym = XLookupKeysym(&x_objs.xev.xkey, 0);
                 switch (sym)
                 {
                     case XK_w:
                     {
-                        SET_KEY(keyMask, KEY_FORWARD);
+                        SET_KEY(key_mask, KEY_FORWARD);
                         break;
                     }
                     case XK_s:
                     {
-                        SET_KEY(keyMask, KEY_BACKWARD);
+                        SET_KEY(key_mask, KEY_BACKWARD);
                         break;
                     }
                     case XK_a:
                     {
-                        SET_KEY(keyMask, KEY_LEFT);
+                        SET_KEY(key_mask, KEY_LEFT);
                         break;
                     }
                     case XK_d:
                     {
-                        SET_KEY(keyMask, KEY_RIGHT);
+                        SET_KEY(key_mask, KEY_RIGHT);
                         break;
                     }
                     case XK_space:
                     {
-                        SET_KEY(keyMask, KEY_UP);
+                        SET_KEY(key_mask, KEY_UP);
                         break;
                     }
                     case XK_BackSpace:
                     {
-                        SET_KEY(keyMask, KEY_DOWN);
+                        SET_KEY(key_mask, KEY_DOWN);
                         break;
                     }
                 }
@@ -388,37 +388,37 @@ void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool
             }
             case KeyRelease:
             {
-                KeySym sym = XLookupKeysym(&xObjs.xev.xkey, 0);
+                KeySym sym = XLookupKeysym(&x_objs.xev.xkey, 0);
                 switch (sym)
                 {
                     case XK_w:
                     {
-                        UNSET_KEY(keyMask, KEY_FORWARD);
+                        UNSET_KEY(key_mask, KEY_FORWARD);
                         break;
                     }
                     case XK_s:
                     {
-                        UNSET_KEY(keyMask, KEY_BACKWARD);
+                        UNSET_KEY(key_mask, KEY_BACKWARD);
                         break;
                     }
                     case XK_a:
                     {
-                        UNSET_KEY(keyMask, KEY_LEFT);
+                        UNSET_KEY(key_mask, KEY_LEFT);
                         break;
                     }
                     case XK_d:
                     {
-                        UNSET_KEY(keyMask, KEY_RIGHT);
+                        UNSET_KEY(key_mask, KEY_RIGHT);
                         break;
                     }
                     case XK_space:
                     {
-                        UNSET_KEY(keyMask, KEY_UP);
+                        UNSET_KEY(key_mask, KEY_UP);
                         break;
                     }
                     case XK_BackSpace:
                     {
-                        UNSET_KEY(keyMask, KEY_DOWN);
+                        UNSET_KEY(key_mask, KEY_DOWN);
                         break;
                     }
                 }
@@ -432,29 +432,31 @@ void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool
         }
     }
 
-    if (IS_KEY_SET(keyMask, KEY_FORWARD))
+    if (IS_KEY_SET(key_mask, KEY_FORWARD))
     {
-        lac_subtract_vec3(&camera.vEye, camera.vEye, camera.vFwdVel);
+        lac_subtract_vec3(&camera.v_eye, camera.v_eye, camera.v_fwd_vel);
     }
-    if (IS_KEY_SET(keyMask, KEY_BACKWARD))
+    if (IS_KEY_SET(key_mask, KEY_BACKWARD))
     {
-        lac_add_vec3(&camera.vEye, camera.vEye, camera.vFwdVel);
+        lac_add_vec3(&camera.v_eye, camera.v_eye, camera.v_fwd_vel);
     }
-    if (IS_KEY_SET(keyMask, KEY_LEFT))
+    if (IS_KEY_SET(key_mask, KEY_LEFT))
     {
-        lac_add_vec3(&camera.vEye, camera.vEye, camera.vRightVel);
+        lac_add_vec3(&camera.v_eye, camera.v_eye, camera.v_right_vel);
     }
-    if (IS_KEY_SET(keyMask, KEY_RIGHT))
+    if (IS_KEY_SET(key_mask, KEY_RIGHT))
     {
-        lac_subtract_vec3(&camera.vEye, camera.vEye, camera.vRightVel);
+        lac_subtract_vec3(&camera.v_eye, camera.v_eye, camera.v_right_vel);
     }
-    if (IS_KEY_SET(keyMask, KEY_UP))
+    if (IS_KEY_SET(key_mask, KEY_UP))
     {
-        camera.vEye[1] += state.playerSpeed;
+        //camera.v_eye[1] += GameState::player.speed;
+        lac_add_vec3(&camera.v_eye, camera.v_eye, vec3{ 0.0f, 0.25f, 0.0f });
     }
-    if (IS_KEY_SET(keyMask, KEY_DOWN))
+    if (IS_KEY_SET(key_mask, KEY_DOWN))
     {
-        camera.vEye[1] -= state.playerSpeed;
+        //camera.v_eye[1] -= GameState::player.speed;
+        lac_subtract_vec3(&camera.v_eye, camera.v_eye, vec3{ 0.0f, 0.25f, 0.0f });
     }
 }
 
@@ -467,40 +469,38 @@ void processEvents(const gameState &state, xObjects &xObjs, Camera &camera, bool
  * @param[in/out] mvp The model-view-projection matrix
  * @param[in] The number of elements within the Element Array Object
  */
-void renderFrame(
-    gameState &state,
-    const glObjects &glObjs,
-    const xObjects &xObjs,
+void render_frame(
+    const GLObjects &gl_objs,
+    const XObjects &x_objs,
     Camera &camera,
     Mvp &mvp,
-    const size_t indicesSize
+    const size_t indices_size
 )
 {
     glClearColor(0.2f, 0.4f, 0.4f, 1.0); // Set background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(glObjs.shader); // Bind shader program for draw call
-    glBindVertexArray(glObjs.vao);
+    glUseProgram(gl_objs.shader); // Bind shader program for draw call
+    glBindVertexArray(gl_objs.vao);
 
     // Model matrix (translate to world space)
-    lac_get_translation_mat4(&mvp.mModel, 0.0f, 0.0f, -1.5f);
+    lac_get_translation_mat4(&mvp.m_model, 0.0f, 0.0f, -1.5f);
 
-    int modelLocation = glGetUniformLocation(glObjs.shader, "model");
-    glUniformMatrix4fv(modelLocation, 1, GL_TRUE, mvp.mModel);
+    int model_location = glGetUniformLocation(gl_objs.shader, "model");
+    glUniformMatrix4fv(model_location, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
-    camera.calculateViewMatrix();
-    int viewLocation = glGetUniformLocation(glObjs.shader, "view");
-    glUniformMatrix4fv(viewLocation, 1, GL_TRUE, mvp.mView->data());
+    camera.calculate_view_matrix();
+    int view_location = glGetUniformLocation(gl_objs.shader, "view");
+    glUniformMatrix4fv(view_location, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
-    float aspect = ((float)xObjs.xwa.height / (float)xObjs.xwa.width);
-    lac_get_projection_mat4(&mvp.mProj, aspect, lac_deg_to_rad(state.fov), state.znear, state.zfar);
+    lac_get_projection_mat4(&mvp.m_proj, camera.aspect, camera.fov, camera.znear, camera.zfar);
 
-    int projLocation = glGetUniformLocation(glObjs.shader, "proj");
-    glUniformMatrix4fv(projLocation, 1, GL_TRUE, mvp.mProj);
+    int proj_location = glGetUniformLocation(gl_objs.shader, "proj");
+    glUniformMatrix4fv(proj_location, 1, GL_TRUE, mvp.m_proj);
 
     // Issue draw call
-    glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0);
-    glXSwapBuffers(xObjs.dpy, xObjs.win);
+    glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
+    glXSwapBuffers(x_objs.dpy, x_objs.win);
 }
