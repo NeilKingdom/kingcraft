@@ -225,6 +225,13 @@ GLXFBConfig create_xwindow(
     std::cout << "Visual ID with greatest samples per-pixel: " << x_objs.xvi->visualid << std::endl;
 #endif
 
+    /*** Create custom invisible cursor ***/
+
+    XColor color = { 0 };
+    x_objs.cur.cpmap  = XCreateBitmapFromData(x_objs.dpy, XDefaultRootWindow(x_objs.dpy), "\0", 1, 1);
+    x_objs.cur.cursor = XCreatePixmapCursor(x_objs.dpy, x_objs.cur.cpmap, x_objs.cur.cpmap, &color, &color, 0, 0);
+    XDefineCursor(x_objs.dpy, XDefaultRootWindow(x_objs.dpy), x_objs.cur.cursor);
+
     /*** Set the XWindow attributes i.e. colormap and event mask ***/
 
     XSetWindowAttributes xswa;

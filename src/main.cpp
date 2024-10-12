@@ -36,6 +36,9 @@ static void cleanup(
     glXDestroyContext(x_objs.dpy, x_objs.glx);
 
     // X11
+    XFreeCursor(x_objs.dpy, x_objs.cur.cursor);
+    XFreePixmap(x_objs.dpy, x_objs.cur.cpmap);
+
     XDestroyWindow(x_objs.dpy, x_objs.win);
     XFreeColormap(x_objs.dpy, x_objs.cmap);
     XCloseDisplay(x_objs.dpy);

@@ -23,6 +23,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysymdef.h>
+#include <X11/Xcursor/Xcursor.h>
 
 // OpenGL
 #include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers
@@ -32,8 +33,16 @@
 // liblac
 #include <transforms.h>
 
+// Custom X cursor
+struct XCursor
+{
+    Cursor cursor;
+    Pixmap cpmap;
+};
+
 // X11 data
-struct XObjects {
+struct XObjects
+{
     Display                *dpy;    // The target monitor/display (assuming we might have multiple displays)
     Window                  win;    // The application's parent window
     XVisualInfo            *xvi;    // Struct containing additional info about the window
@@ -41,10 +50,12 @@ struct XObjects {
     XEvent                  xev;    // Stores the event type of the most recently received event
     Colormap               cmap;    // Colormap for the X window
     GLXContext              glx;    // The OpenGL context for X11
+    XCursor                 cur;    // Custom cursor to hide the default one
 };
 
 // OpenGL data
-struct GLObjects {
+struct GLObjects
+{
     unsigned vao;
     unsigned vbo;
     unsigned ebo;
