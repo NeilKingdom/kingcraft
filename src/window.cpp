@@ -450,13 +450,15 @@ void process_events(XObjects &x_objs, Camera &camera, bool &get_ptr_location)
     }
     if (IS_KEY_SET(key_mask, KEY_UP))
     {
-        //camera.v_eye[1] += GameState::player.speed;
-        lac_add_vec3(&camera.v_eye, camera.v_eye, vec3{ 0.0f, 0.25f, 0.0f });
+        vec3 v_up_vel = { 0 };
+        lac_multiply_vec3(&v_up_vel, camera.v_up, GameState::player.speed);
+        lac_add_vec3(&camera.v_eye, camera.v_eye, v_up_vel);
     }
     if (IS_KEY_SET(key_mask, KEY_DOWN))
     {
-        //camera.v_eye[1] -= GameState::player.speed;
-        lac_subtract_vec3(&camera.v_eye, camera.v_eye, vec3{ 0.0f, 0.25f, 0.0f });
+        vec3 v_up_vel = { 0 };
+        lac_multiply_vec3(&v_up_vel, camera.v_up, GameState::player.speed);
+        lac_subtract_vec3(&camera.v_eye, camera.v_eye, v_up_vel);
     }
 }
 
@@ -484,7 +486,7 @@ void render_frame(
     glBindVertexArray(gl_objs.vao);
 
     // Model matrix (translate to world space)
-    lac_get_translation_mat4(&mvp.m_model, 0.0f, 0.0f, -1.5f);
+    lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
 
     int model_location = glGetUniformLocation(gl_objs.shader, "model");
     glUniformMatrix4fv(model_location, 1, GL_TRUE, mvp.m_model);
@@ -496,6 +498,7 @@ void render_frame(
 
     // Projection matrix (translate to projection space)
     lac_get_projection_mat4(&mvp.m_proj, camera.aspect, camera.fov, camera.znear, camera.zfar);
+    //std::memcpy(mvp.m_proj, lac_ortho_proj_mat4, sizeof(mvp.m_proj));
 
     int proj_location = glGetUniformLocation(gl_objs.shader, "proj");
     glUniformMatrix4fv(proj_location, 1, GL_TRUE, mvp.m_proj);

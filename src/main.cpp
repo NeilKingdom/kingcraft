@@ -82,7 +82,7 @@ int main()
     glEnable(GL_CULL_FACE);         // Enable culling
     glEnable(GL_DEPTH_TEST);        // Enable z-ordering via depth buffer
 
-    glCullFace(GL_BACK);            // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
+    glCullFace(GL_FRONT);           // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
     glFrontFace(GL_CCW);            // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise)
     glDepthFunc(GL_LESS);           // Depth algorithm (GL_LESS = lower zbuffer pixels are rendered on top)
 
@@ -97,17 +97,24 @@ int main()
 
     /*** Setup VAO, VBO, and EBO ***/
 
+
+    /*
+     *             z (up)
+     * (forward) x |
+     *            \|
+     *  (left) y---+
+     */
     float vertices[] = {
     //   Positions            Colors
-        -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // top left (front)
-         0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // top right (front)
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  // bottom left (front)
-         0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  0.0f,  // bottom right (front)
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // top left (front)
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // top right (front)
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f,  1.0f,  // bottom left (front)
+         0.5f,  0.5f, -0.5f,  1.0f,  1.0f,  0.0f,  // bottom right (front)
 
-        -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  1.0f,  // top left (back)
-         0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  1.0f,  // top right (back)
-        -0.5f,  0.5f, -0.5f,  1.0f,  1.0f,  1.0f,  // bottom left (back)
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  0.0f   // bottom right (back)
+        -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  1.0f,  // top left (back)
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  1.0f,  // top right (back)
+        -0.5f, -0.5f, -0.5f,  1.0f,  1.0f,  1.0f,  // bottom left (back)
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  0.0f   // bottom right (back)
     };
 
     /*
@@ -181,7 +188,7 @@ int main()
         auto frame_start_time = steady_clock::now();
 
         GameState::player.speed = Player::PLAYER_BASE_SPEED * (time_elapsed / (float)SEC_AS_NANO);
-        camera.update_velocity(GameState::player.speed);
+        camera.update_velocity();
 
         process_events(x_objs, camera, get_ptr_location);
         render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices));

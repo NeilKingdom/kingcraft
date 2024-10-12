@@ -1,15 +1,16 @@
 #pragma once
 
 #include "common.hpp"
+#include "game_state.hpp"
 
 class Camera
 {
 public:
-    static constexpr float CAMERA_BASE_SPEED = 20.0f;
+    static constexpr float CAMERA_ROTATION_SPEED = 0.5f; // 0.0 - 1.0
 
-    const vec3 v_fwd   = { 0.0f, 0.0f, 1.0f };
-    const vec3 v_right = { 1.0f, 0.0f, 0.0f };
-    const vec3 v_up    = { 0.0f, 1.0f, 0.0f };
+    const vec3 v_fwd   = { 1.0f, 0.0f, 0.0f };
+    const vec3 v_right = { 0.0f, 1.0f, 0.0f };
+    const vec3 v_up    = { 0.0f, 0.0f, 1.0f };
 
     const float fov;                                // Field of view
     const float aspect;                             // Aspect ratio
@@ -26,7 +27,7 @@ public:
     ~Camera() = default;
 
     // General
-    void update_velocity(const float player_speed);
+    void update_velocity();
     void update_rotation_from_pointer(const XObjects &x_objs);
     void calculate_view_matrix();
 

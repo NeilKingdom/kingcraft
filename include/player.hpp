@@ -5,7 +5,7 @@
 class Player
 {
 public:
-    static constexpr float PLAYER_BASE_SPEED = 3.0f;
+    static constexpr float PLAYER_BASE_SPEED = 0.2f;
 
     float speed;
 

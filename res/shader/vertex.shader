@@ -8,7 +8,6 @@ out vec3 myColor;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
-uniform mat4 u_MVP;
 
 void main()
 {

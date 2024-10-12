@@ -43,8 +43,8 @@ void render_imgui_frame(XObjects &im_objs, Camera &camera)
 
     // ImGui widgets
     ImGui::Begin("KingCraft");
-    ImGui::SliderFloat("FOV", const_cast<float*>(&camera.fov), 0.0f, 180.0f);
-    ImGui::SliderFloat("Player X Pos", &camera.v_eye[0], camera.v_eye[0] - 1.0f, camera.v_eye[0] + 1.0f);
+    ImGui::SliderFloat("FOV", const_cast<float*>(&camera.fov), camera.fov - 45.0f, camera.fov + 45.0f);
+    ImGui::SliderFloat("Player Y Pos", &camera.v_eye[1], camera.v_eye[1] - 1.0f, camera.v_eye[1] + 1.0f);
     ImGui::Checkbox("Game Running", &is_running);
     ImGui::End();
 
