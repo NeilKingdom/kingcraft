@@ -32,11 +32,11 @@ Camera::Camera() :
  */
 void Camera::update_rotation_from_pointer(const XObjects &x_objs)
 {
-    unsigned inop;
     int win_loc_x, win_loc_y, win_edge_x, win_edge_y;
     int win_off_x, win_off_y, root_off_x, root_off_y;
     float center_x, center_y, norm_dx, norm_dy, dist_x, dist_y;
-    Window wnop, root;
+    unsigned inop;
+    Window wnop;
 
     XQueryPointer(
         x_objs.dpy, x_objs.win, &wnop, &wnop,
@@ -96,7 +96,11 @@ void Camera::calculate_view_matrix()
     std::memcpy(v4_new_look_dir, v_fwd, sizeof(v_fwd));
     v4_new_look_dir[3] = 1.0f;
 
-    lac_multiply_vec4_mat4(&v4_new_look_dir, v4_new_look_dir, m_cam_rot);
+    // TODO: Should not need to make a copy of this. Bug with liblac where v_out and v_in point to same mem
+    vec4 v4_copy = {};
+    std::memcpy(v4_copy, v4_new_look_dir, sizeof(v4_copy));
+
+    lac_multiply_vec4_mat4(&v4_new_look_dir, v4_copy, m_cam_rot);
     std::memcpy(v_look_dir, v4_new_look_dir, sizeof(v_look_dir));
 
     // New look direction is the rotated look vector + camera's current position
