@@ -86,8 +86,6 @@ void Camera::calculate_view_matrix()
     vec3 v3_new_look_dir = {};
     vec4 v4_new_look_dir = {};
 
-    std::cout << "Yaw: " << camera_yaw << " Pitch: " << camera_pitch << std::endl;
-
     // Calculate camera's rotation matrix from pitch and yaw
     lac_get_yaw_mat4(&m_yaw, lac_deg_to_rad(camera_yaw));
     lac_get_pitch_mat4(&m_pitch, lac_deg_to_rad(camera_pitch));

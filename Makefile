@@ -16,7 +16,7 @@ OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 GUI_OBJS := $(patsubst $(GUI_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(GUI_SRCS))
 
 CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I$(GUI_DIR) -std=c++20 -Wall -Wextra -Wformat #-Werror
-LDFLAGS += -lX11 -lGL -lGLEW -llac
+LDFLAGS += -lX11 -lGL -lGLEW -llac -limc
 
 BIN := kingcraft
 

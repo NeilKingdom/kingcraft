@@ -44,11 +44,12 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(
 
 // Forward function declarations
 
+void checkCompileErrors(unsigned int shader, std::string type);
 void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono::steady_clock::time_point &since);
 bool            is_glx_extension_supported(const char *ext_list, const char *ext_name);
 unsigned        compile_shader(const unsigned type, const std::string source);
-unsigned        create_shader(const std::string vertex_shader, const std::string fragment_shader);
+unsigned        create_shader_prog(const std::string vertex_shader, const std::string fragment_shader);
 GLXFBConfig     create_window(XObjects &x_objs, const std::string win_name, const size_t win_width, const size_t win_height);
 void            create_opengl_context(XObjects &x_objs, const GLXFBConfig &best_fb_config);
 void            process_events(XObjects &x_objs, Camera &camera);
-void            render_frame(const GLObjects &gl_objs, const XObjects &x_objs, Camera &camera, Mvp &mvp, const size_t indices_size);
+void            render_frame(const GLObjects &gl_objs, const XObjects &x_objs, Camera &camera, Mvp &mvp, const size_t indices_size, const unsigned texture);

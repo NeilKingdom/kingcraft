@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cstring>
 #include <cstdint>
+#include <cstdint>
 #include <cstddef>
 
 // X11

@@ -62,6 +62,10 @@ int main()
 
     /*** Variable declarations ***/
 
+    Atlas atlas(16, 16, "/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png");
+    Texture texture = Texture(atlas, 1);
+    unsigned tex_id;
+
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
@@ -116,16 +120,16 @@ int main()
      *  (left) y---+
      */
     float vertices[] = {
-    //   Positions            Colors
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  // top left (front)
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  // top right (front)
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f,  1.0f,  // bottom left (front)
-         0.5f,  0.5f, -0.5f,  1.0f,  1.0f,  0.0f,  // bottom right (front)
+    //   Positions            Texture coords
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // top left (front)
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // top right (front)
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // bottom left (front)
+         0.5f,  0.5f, -0.5f,  1.0f,  1.0f, // bottom right (front)
 
-        -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  1.0f,  // top left (back)
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  1.0f,  // top right (back)
-        -0.5f, -0.5f, -0.5f,  1.0f,  1.0f,  1.0f,  // bottom left (back)
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  0.0f   // bottom right (back)
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // top left (back)
+        -0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // top right (back)
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // bottom left (back)
+        -0.5f,  0.5f, -0.5f,  1.0f,  1.0f  // bottom right (back)
     };
 
     /*
@@ -164,11 +168,11 @@ int main()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    // Texture attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     // Unbind array buffer + vertex array
@@ -177,6 +181,15 @@ int main()
 
     // Uncomment for wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    /*** Bind textures ***/
+
+    glGenTextures(1, &tex_id);
+    glBindTexture(GL_TEXTURE_2D, tex_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_UNSIGNED_BYTE, texture.m_pixmap.data());
 
     /*** Setup vertex/fragment shaders ***/
 
@@ -190,7 +203,7 @@ int main()
     const std::string fragment_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    gl_objs.shader = create_shader(vertex_shader, fragment_shader);
+    gl_objs.shader = create_shader_prog(vertex_shader, fragment_shader);
 
     /*** Game loop ***/
 
@@ -200,7 +213,7 @@ int main()
         GameState::player.speed = Player::PLAYER_BASE_SPEED * (frame_duration / (float)SEC_AS_NANO);
 
         process_events(x_objs, camera);
-        render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices));
+        render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices), tex_id);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

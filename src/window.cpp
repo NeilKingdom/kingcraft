@@ -81,7 +81,7 @@ unsigned compile_shader(const unsigned type, const std::string source)
  * @param[in] fragment_shader The fragment shader to be attached
  * @returns The id of the shader program
  */
-unsigned create_shader(const std::string vertex_shader, const std::string fragment_shader)
+unsigned create_shader_prog(const std::string vertex_shader, const std::string fragment_shader)
 {
     unsigned program = glCreateProgram();
     unsigned vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
@@ -90,12 +90,37 @@ unsigned create_shader(const std::string vertex_shader, const std::string fragme
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     glLinkProgram(program);
+    checkCompileErrors(program, "PROGRAM");
     glValidateProgram(program);
 
     glDeleteShader(vs);
     glDeleteShader(fs);
 
     return program;
+}
+
+void checkCompileErrors(unsigned int shader, std::string type)
+{
+    int success;
+    char infoLog[1024];
+    if (type != "PROGRAM")
+    {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
+    else
+    {
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        if (!success)
+        {
+            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
 }
 
 /**
@@ -518,12 +543,15 @@ void render_frame(
     const XObjects &x_objs,
     Camera &camera,
     Mvp &mvp,
-    const size_t indices_size
+    const size_t indices_size,
+    const unsigned texture
 )
 {
     // Set background color
     glClearColor(0.2f, 0.4f, 0.4f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     glUseProgram(gl_objs.shader);   // Bind shader program for draw call
     glBindVertexArray(gl_objs.vao); // Bind vertex array object

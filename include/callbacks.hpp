@@ -14,7 +14,7 @@ inline void GLAPIENTRY debug_callback(
 {
    std::cerr
        << "GL Callback: "
-       << "\ntype = " << (type == GL_DEBUG_TYPE_ERROR ? "GL ERROR" : "N/A")
+       << "\ntype = " << (type == GL_DEBUG_TYPE_ERROR ? "GL ERROR" : "GL INFO")
        << "\nseverity = " << severity
        << "\nmessage = " << msg
        << std::endl;
