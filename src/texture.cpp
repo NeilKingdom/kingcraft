@@ -27,24 +27,24 @@ void Atlas::load_atlas(const std::string path)
     m_pixmap = imc_png_parse(m_png_hndl);
 }
 
-std::vector<rgb8_t> Atlas::get_pixmap_at_id(const uint8_t id) const
+std::vector<Rgb_t> Atlas::get_pixmap_at_id(const uint8_t id) const
 {
     unsigned cols, x_offset, y_offset, stride;
-    auto pixmap = std::vector<rgb8_t>();
+    auto pixmap = std::vector<Rgb_t>();
+    Rgba_t rgba;
 
-    stride = m_stride * m_pixmap->n_channels;
-    pixmap.reserve(stride * m_pitch);
+    pixmap.reserve(m_stride * m_pitch);
 
     cols = m_pixmap->width / m_stride;
-
-    x_offset = (id % cols) * stride;
+    x_offset = (id % cols) * m_stride;
     y_offset = (id / cols) * m_pitch;
 
     for (unsigned y = y_offset; y < (y_offset + m_pitch); ++y)
     {
-        for (unsigned x = x_offset; x < (x_offset + stride); ++x)
+        for (unsigned x = x_offset; x < (x_offset + m_stride); ++x)
         {
-            pixmap.emplace_back(m_pixmap->data[(y * m_pixmap->width) + x]);
+            rgba = imc_pixmap_psample(m_pixmap, x, y);
+            pixmap.emplace_back(Rgb_t{ rgba.r, rgba.g, rgba.b });
         }
     }
 

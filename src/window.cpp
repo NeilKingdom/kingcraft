@@ -547,14 +547,14 @@ void render_frame(
     const unsigned texture
 )
 {
+    // Bind the shader program and any VAOs and textures
+    glUseProgram(gl_objs.shader);
+    glBindVertexArray(gl_objs.vao);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
     // Set background color
     glClearColor(0.2f, 0.4f, 0.4f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glUseProgram(gl_objs.shader);   // Bind shader program for draw call
-    glBindVertexArray(gl_objs.vao); // Bind vertex array object
 
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
@@ -574,4 +574,9 @@ void render_frame(
     // Issue draw call
     glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
     glXSwapBuffers(x_objs.dpy, x_objs.win);
+
+    // Unbind the shader program and any VAOs and textures
+    glUseProgram(0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -4,15 +4,13 @@
 
 #include "common.hpp"
 
-typedef uint8_t rgb8_t;
-
 class Atlas; // Forward declaration
 
 class Texture
 {
 public:
     // TODO: Make private?
-    std::vector<rgb8_t> m_pixmap;   // Pixmap data
+    std::vector<Rgb_t> m_pixmap;   // Pixmap data
 
     // Special member functions
     Texture() = delete;
@@ -20,7 +18,7 @@ public:
     ~Texture() = default;
 
     // General
-    rgb8_t sample_texture(unsigned x, unsigned y) const;
+    Rgb_t sample_texture(unsigned x, unsigned y) const;
 
 private:
     uint8_t m_id;                    // ID into texture atlas
@@ -41,7 +39,7 @@ public:
 
     // General
     void load_atlas(const std::string path);
-    std::vector<rgb8_t> get_pixmap_at_id(const uint8_t id) const;
+    std::vector<Rgb_t> get_pixmap_at_id(const uint8_t id) const;
 
 private:
     unsigned   m_stride;
