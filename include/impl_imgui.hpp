@@ -10,6 +10,6 @@
 
 // Forward function declarations
 
-void init_imgui(const XObjects &im_objs);
-void process_imgui_events(XObjects &im_objs);
-void render_imgui_frame(XObjects &im_objs, Camera &camera);
+void init_imgui(const KCWindow &win);
+void process_imgui_events(KCWindow &win);
+void render_imgui_frame(KCWindow &win, Camera &camera);

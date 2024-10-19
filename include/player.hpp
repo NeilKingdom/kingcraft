@@ -1,16 +1,14 @@
 #pragma once
 
 #include "common.hpp"
+#include "constants.hpp"
 
 class Player
 {
 public:
-    static constexpr float PLAYER_BASE_SPEED = 0.2f; // Normalized speed
+    float speed = KCConst::PLAYER_BASE_SPEED;
 
-    float speed;
-
-    Player();
+    // Special member functions
+    Player() = default;
     ~Player() = default;
-
-private:
 };

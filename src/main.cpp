@@ -17,43 +17,36 @@
  * @param[in] im_objs An optional instance of XObjects containing ImGui-related resources
  */
 static void cleanup(
-    GLObjects &gl_objs,
-    XObjects &x_objs,
-    const std::optional<XObjects> &im_objs
+    KCWindow &app_win,
+    const std::optional<KCWindow> &imgui_win
 )
 {
     // ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
 
-    if (im_objs != std::nullopt)
+    if (imgui_win != std::nullopt)
     {
         // OpenGL context
         ImGui::DestroyContext();
 
         // X11
-        XDestroyWindow(im_objs->dpy, im_objs->win);
-        XFreeColormap(im_objs->dpy, im_objs->cmap);
-        XCloseDisplay(im_objs->dpy);
+        XDestroyWindow(imgui_win->dpy, imgui_win->win);
+        XFreeColormap(imgui_win->dpy, imgui_win->cmap);
+        XCloseDisplay(imgui_win->dpy);
     }
 
-    // VAO, VBO, EBO
-    glDeleteVertexArrays(1, &gl_objs.vao);
-    glDeleteBuffers(1, &gl_objs.vbo);
-    glDeleteBuffers(1, &gl_objs.ebo);
-    glDeleteProgram(gl_objs.shader);
-
     // OpenGL context
-    glXMakeCurrent(x_objs.dpy, None, NULL);
-    glXDestroyContext(x_objs.dpy, x_objs.glx);
+    glXMakeCurrent(app_win.dpy, None, NULL);
+    glXDestroyContext(app_win.dpy, app_win.glx);
 
     // X11
-    XFreeCursor(x_objs.dpy, x_objs.cur.cursor);
-    XFreePixmap(x_objs.dpy, x_objs.cur.cpmap);
+    XFreeCursor(app_win.dpy, app_win.cur.cursor);
+    XFreePixmap(app_win.dpy, app_win.cur.cpmap);
 
-    XDestroyWindow(x_objs.dpy, x_objs.win);
-    XFreeColormap(x_objs.dpy, x_objs.cmap);
-    XCloseDisplay(x_objs.dpy);
+    XDestroyWindow(app_win.dpy, app_win.win);
+    XFreeColormap(app_win.dpy, app_win.cmap);
+    XCloseDisplay(app_win.dpy);
 }
 
 int main()
@@ -62,15 +55,11 @@ int main()
 
     /*** Variable declarations ***/
 
-    Atlas atlas(16, 16, "/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png");
-    Texture texture = Texture(atlas, 1);
+    KCWindow app_win;
+    KCWindow imgui_win;
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
-
-    XObjects x_objs;
-    XObjects im_objs;
-    GLObjects gl_objs;
 
     int frames_elapsed = 0;
     time_point<steady_clock> since = steady_clock::now();
@@ -78,13 +67,13 @@ int main()
 
     /*** Window and OpenGL context initialization ***/
 
-    GLXFBConfig best_fb_config = create_window(x_objs, "KingCraft", 1920, 1080);
-    create_opengl_context(x_objs, best_fb_config);
+    GLXFBConfig best_fb_config = create_window(app_win, "KingCraft", 1920, 1080);
+    create_opengl_context(app_win, best_fb_config);
 #ifdef DEBUG
-    (void)create_window(im_objs, "ImGui", 400, 400);
+    (void)create_window(imgui_win, "ImGui", 400, 400);
 #endif
 
-    init_imgui(im_objs);
+    init_imgui(imgui_win);
 
     // Bind graphics drivers to OpenGL API specification
     // NOTE: Must be placed after a valid OpenGL context has been made current
@@ -105,94 +94,72 @@ int main()
     }
 
     glEnable(GL_DEBUG_OUTPUT);      // Enable debug output
-    glEnable(GL_CULL_FACE);         // Enable culling
+    //glEnable(GL_CULL_FACE);         // Enable culling
     glEnable(GL_DEPTH_TEST);        // Enable z-ordering via depth buffer
 
-    glCullFace(GL_FRONT);           // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
-    glFrontFace(GL_CCW);            // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise)
-    glDepthFunc(GL_LESS);           // Depth algorithm (GL_LESS = lower zbuffer pixels are rendered on top)
-
-    /*** Setup VAO, VBO, and EBO ***/
-
-    /*
-     *             z (up)
-     * (forward) x |
-     *            \|
-     *  (left) y---+
-     */
-    float vertices[] = {
-    //   Positions            Texture coords
-    //   X      Y      Z      U      V
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // Top left (front)
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // Top right (front)
-         0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // Bottom left (front)
-         0.5f,  0.5f, -0.5f,  1.0f,  1.0f, // Bottom right (front)
-
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // Top left (back)
-        -0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // Top right (back)
-        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // Bottom left (back)
-        -0.5f,  0.5f, -0.5f,  1.0f,  1.0f  // Bottom right (back)
-    };
-
-    /*
-    *   4____5
-    *  /|   /|
-    * 0-+--1 |
-    * | 6__|_7
-    * |/   |/
-    * 2----3
-    *
-    * NOTE: Must maintain a clockwise rotation so normals are calulated properly
-    */
-    unsigned indices[] = {
-        0, 3, 2, 3, 0, 1, // Front face
-        4, 1, 0, 1, 4, 5, // Top face
-        5, 6, 7, 6, 5, 4, // Back face
-        7, 6, 3, 2, 3, 6, // Bottom face
-        1, 7, 3, 7, 1, 5, // Right face
-        4, 2, 6, 2, 4, 0  // Left face
-    };
-
-    glGenVertexArrays(1, &gl_objs.vao);
-    glGenBuffers(1, &gl_objs.vbo);
-    glGenBuffers(1, &gl_objs.ebo);
-
-    glBindVertexArray(gl_objs.vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, gl_objs.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_objs.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Texture attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Unbind everything
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    //glCullFace(GL_BACK);            // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
+    //glFrontFace(GL_CCW);            // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise)
+    //glDepthFunc(GL_LESS);           // Depth algorithm (GL_LESS = lower zbuffer pixels are rendered on top)
 
     // Uncomment for wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     /*** Generate textures ***/
 
-    unsigned textures;
-    glGenTextures(1, &textures);
-    glBindTexture(GL_TEXTURE_2D, textures);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#if 0
+    // Individual textures
+    TextureAtlas atlas(
+        KCConst::TEX_SIZE, KCConst::TEX_SIZE,
+        "/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png"
+    );
 
-    // Dirt block (side)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_UNSIGNED_BYTE, texture.m_pixmap.data());
+    // Dirt block
+    Pixmap_t dirt_block_front  = atlas.get_pixmap_at_id(1);
+    Pixmap_t dirt_block_back   = atlas.get_pixmap_at_id(1);
+    Pixmap_t dirt_block_right  = atlas.get_pixmap_at_id(1);
+    Pixmap_t dirt_block_left   = atlas.get_pixmap_at_id(1);
+    Pixmap_t dirt_block_top    = atlas.get_pixmap_at_id(0);
+    Pixmap_t dirt_block_bottom = atlas.get_pixmap_at_id(0);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    imc_pixmap_rotate_cw(&dirt_block_right);
+    imc_pixmap_rotate_cw(&dirt_block_right);
+    imc_pixmap_rotate_cw(&dirt_block_front);
+    imc_pixmap_rotate_ccw(&dirt_block_back);
+
+    Pixmap_t dirt_block[6] = {
+        dirt_block_back, dirt_block_front, dirt_block_right,
+        dirt_block_left, dirt_block_top, dirt_block_bottom
+    };
+
+    // Cube map texture
+    unsigned dirt_block_texid;
+    glGenTextures(1, &dirt_block_texid);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, dirt_block_texid);
+
+    // OpenGL   -> liblac
+    // (right)  -> (back)
+    // (left)   -> (front)
+    // (top)    -> (right)
+    // (bottom) -> (left)
+    // (front)  -> (top)
+    // (back)   -> (bottom)
+    for (int i = 0; i < KCConst::CUBE_FACES; ++i)
+    {
+        glTexImage2D(
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            0, GL_RGB,
+            dirt_block[i].pixmap.width,
+            dirt_block[i].pixmap.height,
+            0, GL_RGB, GL_UNSIGNED_BYTE,
+            dirt_block[i].data
+        );
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+#endif
 
     /*** Create shader program(s) ***/
 
@@ -206,35 +173,42 @@ int main()
     const std::string fragment_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    gl_objs.shader = create_shader_prog(vertex_shader, fragment_shader);
+    ShaderProgram shader = ShaderProgram(vertex_shader, fragment_shader);
+
+    //glUniform1i(glGetUniformLocation(gl_objs.shader, "cubeMap"), 0);
+
+    mat4 m_trns;
+    std::memcpy(m_trns, lac_ident_mat4, sizeof(m_trns));
+    Block block = BlockFactory::get_instance().make_block(BlockType::DIRT, m_trns, 0xFF);
 
     /*** Game loop ***/
 
-    while (GameState::is_running)
+    while (GameState::get_instance().is_running)
     {
         auto frame_start = steady_clock::now();
-        GameState::player.speed = Player::PLAYER_BASE_SPEED * (frame_duration / (float)SEC_AS_NANO);
+        GameState::get_instance().player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
-        process_events(x_objs, camera);
-        render_frame(gl_objs, x_objs, camera, mvp, sizeof(indices), textures);
+        process_events(app_win, camera);
+        render_frame(block, app_win, camera, mvp);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
         //calculate_frame_rate(fps, frames_elapsed, since);
 
 #ifdef DEBUG
+        // TODO: Try using imgui_win.glx as the OpenGL context
         // Switch OpenGL context to ImGui window
-        glXMakeCurrent(im_objs.dpy, im_objs.win, x_objs.glx);
-        process_imgui_events(im_objs);
-        render_imgui_frame(im_objs, camera);
-        glXMakeCurrent(x_objs.dpy, x_objs.win, x_objs.glx);
+        glXMakeCurrent(imgui_win.dpy, imgui_win.win, app_win.glx);
+        process_imgui_events(imgui_win);
+        render_imgui_frame(imgui_win, camera);
+        glXMakeCurrent(app_win.dpy, app_win.win, app_win.glx);
 #endif
     }
 
 #ifdef DEBUG
-    cleanup(gl_objs, x_objs, im_objs);
+    cleanup(app_win, imgui_win);
 #else
-    cleanup(gl_objs, x_objs, std::nullopt);
+    cleanup(app_win, std::nullopt);
 #endif
 
     return EXIT_SUCCESS;

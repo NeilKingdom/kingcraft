@@ -1,15 +1,30 @@
 #pragma once
 
-#include <atomic>
-
 #include "common.hpp"
 #include "player.hpp"
 
-namespace GameState
+class GameState
 {
-    static std::atomic<bool> is_running = true;
-    static std::atomic<float> fov = 90.0f;
-    static std::atomic<float> aspect = 9.0f / 16.0f;
+public:
+    float fov = 90.0f;
+    float aspect = 9.0f / 16.0f;
+    float znear = 1.0f;
+    float zfar = 1000.0f;
 
-    static Player player = Player();
+    bool is_running = true;
+
+    Player player = Player();
+
+    // Special member functions
+    GameState(const GameState&) = delete;
+    GameState &operator=(const GameState&) = delete;
+    ~GameState() = default;
+
+    // General
+    static GameState &get_instance();
+    //void start() const;
+
+private:
+    // Special member functions
+    GameState();
 };

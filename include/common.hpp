@@ -41,8 +41,8 @@ struct XCursor
     Pixmap cpmap;
 };
 
-// X11 data
-struct XObjects
+// Window data (right now only X11 is supported)
+struct KCWindow
 {
     Display                *dpy;    // The target monitor/display (assuming we might have multiple displays)
     Window                  win;    // The application's parent window
@@ -51,14 +51,5 @@ struct XObjects
     XEvent                  xev;    // Stores the event type of the most recently received event
     Colormap               cmap;    // Colormap for the X window
     GLXContext              glx;    // The OpenGL context for X11
-    XCursor                 cur;    // Custom cursor to hide the default one
-};
-
-// OpenGL data
-struct GLObjects
-{
-    unsigned vao;
-    unsigned vbo;
-    unsigned ebo;
-    unsigned shader;
+    XCursor                 cur;    // Custom cursor to replace the default one
 };

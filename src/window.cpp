@@ -28,7 +28,7 @@ void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_poin
     auto time_elapsed = duration_cast<nanoseconds>(curr_time - since).count();
     ++frames_elapsed;
 
-    if (time_elapsed > SEC_AS_NANO)
+    if (time_elapsed > KCConst::SEC_AS_NANO)
     {
         since = curr_time;
         fps = frames_elapsed;
@@ -39,98 +39,13 @@ void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_poin
 }
 
 /**
- * @brief Compiles a GLSL shader and returns its id.
- * @since 02-03-2024
- * @param[in] type The type of shader being compiled (GL_VERTEX_SHADER or GL_FRAGMENT_SHADER)
- * @param[in] source The GLSL source code for the shader
- * @returns The id of the compiled GLSL shader or 0 on failure
- */
-unsigned compile_shader(const unsigned type, const std::string source)
-{
-    assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
-
-    int res;
-    unsigned id = glCreateShader(type);
-    const char *src = source.c_str();
-    glShaderSource(id, 1, &src, NULL);
-    glCompileShader(id);
-
-    glGetShaderiv(id, GL_COMPILE_STATUS, &res);
-    if (res == GL_FALSE)
-    {
-        int length;
-        char *message = nullptr;
-
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-        glGetShaderInfoLog(id, length, &length, message);
-        std::cerr << "Failed to compile "
-            << ((type == GL_VERTEX_SHADER) ? "vertex" : "fragment")
-            << " shader: " << std::string(message)
-            << std::endl;
-        glDeleteShader(id);
-        return 0;
-    }
-
-    return id;
-}
-
-/**
- * @brief Attaches and links the vertex and fragment shaders to a shader program.
- * @since 02-03-2024
- * @param[in] vertex_shader The vertex shader to be attached
- * @param[in] fragment_shader The fragment shader to be attached
- * @returns The id of the shader program
- */
-unsigned create_shader_prog(const std::string vertex_shader, const std::string fragment_shader)
-{
-    unsigned program = glCreateProgram();
-    unsigned vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
-    unsigned fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
-
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    checkCompileErrors(program, "PROGRAM");
-    glValidateProgram(program);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    return program;
-}
-
-void checkCompileErrors(unsigned int shader, std::string type)
-{
-    int success;
-    char infoLog[1024];
-    if (type != "PROGRAM")
-    {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
-        }
-    }
-    else
-    {
-        glGetProgramiv(shader, GL_LINK_STATUS, &success);
-        if (!success)
-        {
-            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
-        }
-    }
-}
-
-/**
  * @brief Checks to see if the X11 extension function is supported by OpenGL.
  * @since 02-03-2024
  * @param ext_list The list of supported extensions to be checked
  * @param ext_name The name of the extension being searched for in __ext_list__
  * @returns True if the extension is supported or false otherwise
  */
-bool is_glx_extension_supported(const char *ext_list, const char *ext_name)
+static bool _is_glx_extension_supported(const char *ext_list, const char *ext_name)
 {
     const char *start, *where, *terminator;
     where = strchr(ext_name, ' ');
@@ -171,15 +86,15 @@ bool is_glx_extension_supported(const char *ext_list, const char *ext_name)
  * @returns The best available frame buffer configuration for the new window
  */
 GLXFBConfig create_window(
-    XObjects &x_objs,
+    KCWindow &win,
     const std::string win_name,
     const size_t win_width,
     const size_t win_height
 )
 {
     // Open the X11 display
-    x_objs.dpy = XOpenDisplay(NULL);
-    if (x_objs.dpy == NULL)
+    win.dpy = XOpenDisplay(NULL);
+    if (win.dpy == NULL)
     {
         std::cerr << "Cannot connect to X server" << std::endl;
         exit(EXIT_FAILURE);
@@ -187,7 +102,7 @@ GLXFBConfig create_window(
 
     // Get OpenGL version
     int v_major, v_minor;
-    glXQueryVersion(x_objs.dpy, &v_major, &v_minor);
+    glXQueryVersion(win.dpy, &v_major, &v_minor);
 
     // Specify the visual attributes for the frame buffer configuration
     int vi_attribs[] = {
@@ -213,11 +128,11 @@ GLXFBConfig create_window(
     /*** Takes in our attributes and returns a list of frame buffers loosely matching the criteria ***/
 
     int fb_count;
-    GLXFBConfig *fb_config = glXChooseFBConfig(x_objs.dpy, DefaultScreen(x_objs.dpy), vi_attribs, &fb_count);
+    GLXFBConfig *fb_config = glXChooseFBConfig(win.dpy, DefaultScreen(win.dpy), vi_attribs, &fb_count);
     if (fb_config == NULL)
     {
         std::cerr << "Failed to retrieve framebuffer configuration" << std::endl;
-        XCloseDisplay(x_objs.dpy);
+        XCloseDisplay(win.dpy);
         exit(EXIT_FAILURE);
     }
 
@@ -232,12 +147,12 @@ GLXFBConfig create_window(
 
     for (int i = 0; i < fb_count; ++i)
     {
-        x_objs.xvi = glXGetVisualFromFBConfig(x_objs.dpy, fb_config[i]);
-        if (x_objs.xvi != NULL)
+        win.xvi = glXGetVisualFromFBConfig(win.dpy, fb_config[i]);
+        if (win.xvi != NULL)
         {
             int samp_buf, samples;
-            glXGetFBConfigAttrib(x_objs.dpy, fb_config[i], GLX_SAMPLE_BUFFERS, &samp_buf);
-            glXGetFBConfigAttrib(x_objs.dpy, fb_config[i], GLX_SAMPLES, &samples);
+            glXGetFBConfigAttrib(win.dpy, fb_config[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+            glXGetFBConfigAttrib(win.dpy, fb_config[i], GLX_SAMPLES, &samples);
 
             if ((best_fb_idx < 0) || (samp_buf && (samples > best_spp)))
             {
@@ -245,44 +160,44 @@ GLXFBConfig create_window(
                 best_spp = samples;
             }
 
-            XFree(x_objs.xvi);
+            XFree(win.xvi);
         }
     }
     GLXFBConfig best_fb_config = fb_config[best_fb_idx];
     XFree(fb_config);
 
-    x_objs.xvi = glXGetVisualFromFBConfig(x_objs.dpy, best_fb_config);
-    if (x_objs.xvi == NULL)
+    win.xvi = glXGetVisualFromFBConfig(win.dpy, best_fb_config);
+    if (win.xvi == NULL)
     {
         std::cerr << "No appropriate visual found" << std::endl;
-        XCloseDisplay(x_objs.dpy);
+        XCloseDisplay(win.dpy);
         exit(EXIT_FAILURE);
     }
 
 #ifdef DEBUG
-    std::cout << "Visual ID with greatest samples per-pixel: " << x_objs.xvi->visualid << std::endl;
+    std::cout << "Visual ID with greatest samples per-pixel: " << win.xvi->visualid << std::endl;
 #endif
 
     /*** Create custom invisible cursor ***/
 
     XColor color = {};
-    x_objs.cur.cpmap  = XCreateBitmapFromData(x_objs.dpy, XDefaultRootWindow(x_objs.dpy), "\0", 1, 1);
-    x_objs.cur.cursor = XCreatePixmapCursor(
-        x_objs.dpy,
-        x_objs.cur.cpmap, x_objs.cur.cpmap,
+    win.cur.cpmap  = XCreateBitmapFromData(win.dpy, XDefaultRootWindow(win.dpy), "\0", 1, 1);
+    win.cur.cursor = XCreatePixmapCursor(
+        win.dpy,
+        win.cur.cpmap, win.cur.cpmap,
         &color, &color, 0, 0
     );
-    XDefineCursor(x_objs.dpy, XDefaultRootWindow(x_objs.dpy), x_objs.cur.cursor);
+    XDefineCursor(win.dpy, XDefaultRootWindow(win.dpy), win.cur.cursor);
 
     /*** Set the XWindow attributes i.e. colormap and event mask ***/
 
     XSetWindowAttributes xswa;
     xswa.border_pixel = 0;
     xswa.background_pixmap = None;
-    xswa.colormap = x_objs.cmap = XCreateColormap(
-        x_objs.dpy,
-        RootWindow(x_objs.dpy, x_objs.xvi->screen),
-        x_objs.xvi->visual,
+    xswa.colormap = win.cmap = XCreateColormap(
+        win.dpy,
+        RootWindow(win.dpy, win.xvi->screen),
+        win.xvi->visual,
         AllocNone
     );
     xswa.event_mask = (
@@ -290,24 +205,24 @@ GLXFBConfig create_window(
         KeyReleaseMask | ButtonPressMask   | ButtonReleaseMask
     );
 
-    x_objs.win = XCreateWindow(
-        x_objs.dpy, RootWindow(x_objs.dpy, x_objs.xvi->screen),
+    win.win = XCreateWindow(
+        win.dpy, RootWindow(win.dpy, win.xvi->screen),
         0, 0, win_width, win_height, 0,
-        x_objs.xvi->depth,
+        win.xvi->depth,
         InputOutput,
-        x_objs.xvi->visual,
+        win.xvi->visual,
         (CWColormap | CWBorderPixel | CWEventMask),
         &xswa
     );
-    if (!x_objs.win)
+    if (!win.win)
     {
         std::cerr << "Failed to create a window" << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    XFree(x_objs.xvi);
-    XStoreName(x_objs.dpy, x_objs.win, win_name.c_str());
-    XMapWindow(x_objs.dpy, x_objs.win);
+    XFree(win.xvi);
+    XStoreName(win.dpy, win.win, win_name.c_str());
+    XMapWindow(win.dpy, win.win);
 
     return best_fb_config;
 }
@@ -318,7 +233,7 @@ GLXFBConfig create_window(
  * @param[in,out] x_objs An instance of XObjects containing X-related data
  * @param[in] fb_config The frame buffer configuration that shall be bound to the OpenGL context
  */
-void create_opengl_context(XObjects &x_objs, const GLXFBConfig &fb_config)
+void create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
 {
     /*
         The OpenGL Architecture Review Board (ARB) has developed certain extension functions (usually
@@ -330,16 +245,16 @@ void create_opengl_context(XObjects &x_objs, const GLXFBConfig &fb_config)
     glXCreateContextAttribsARBProc glx_create_context_attribs_arb =
         (glXCreateContextAttribsARBProc)glXGetProcAddressARB(proc_name);
 
-    const char *glx_exts = glXQueryExtensionsString(x_objs.dpy, DefaultScreen(x_objs.dpy));
+    const char *glx_exts = glXQueryExtensionsString(win.dpy, DefaultScreen(win.dpy));
 
 #ifdef DEBUG
     std::cout << "Late extensions: " << glx_exts << std::endl;
 #endif
 
-    if (!is_glx_extension_supported(glx_exts, "GLX_ARB_create_context") || !glx_create_context_attribs_arb)
+    if (!_is_glx_extension_supported(glx_exts, "GLX_ARB_create_context") || !glx_create_context_attribs_arb)
     {
         std::cerr << "glXCreateContextAttribsARB() not found. Using old GLX context" << std::endl;
-        x_objs.glx = glXCreateNewContext(x_objs.dpy, fb_config, GLX_RGBA_TYPE, 0, true);
+        win.glx = glXCreateNewContext(win.dpy, fb_config, GLX_RGBA_TYPE, 0, true);
     }
     else
     {
@@ -349,11 +264,11 @@ void create_opengl_context(XObjects &x_objs, const GLXFBConfig &fb_config)
             GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
             None
         };
-        x_objs.glx = glx_create_context_attribs_arb(x_objs.dpy, fb_config, 0, true, glx_attribs);
+        win.glx = glx_create_context_attribs_arb(win.dpy, fb_config, 0, true, glx_attribs);
     }
 
-    XSync(x_objs.dpy, false);
-    glXMakeCurrent(x_objs.dpy, x_objs.win, x_objs.glx);
+    XSync(win.dpy, false);
+    glXMakeCurrent(win.dpy, win.win, win.glx);
 }
 
 /**
@@ -362,29 +277,29 @@ void create_opengl_context(XObjects &x_objs, const GLXFBConfig &fb_config)
  * @param[in,out] x_objs An instance of XObjects containing X-related data
  * @param[in,out] camera The active camera which will be updated on MotionNotify events
  */
-void process_events(XObjects &x_objs, Camera &camera)
+void process_events(KCWindow &win, Camera &camera)
 {
-    while (XPending(x_objs.dpy) > 0)
+    while (XPending(win.dpy) > 0)
     {
-        XNextEvent(x_objs.dpy, &x_objs.xev); // Blocks until event is received
+        XNextEvent(win.dpy, &win.xev); // Blocks until event is received
 
-        switch (x_objs.xev.type)
+        switch (win.xev.type)
         {
             case ConfigureNotify:
             {
-                if (x_objs.xev.xconfigure.window == x_objs.win)
+                if (win.xev.xconfigure.window == win.win)
                 {
-                    x_objs.xwa.width = x_objs.xev.xconfigure.width;
-                    x_objs.xwa.height = x_objs.xev.xconfigure.height;
-                    GameState::aspect = (float)x_objs.xwa.height / (float)x_objs.xwa.width;
+                    win.xwa.width = win.xev.xconfigure.width;
+                    win.xwa.height = win.xev.xconfigure.height;
+                    GameState::get_instance().aspect = (float)win.xwa.height / (float)win.xwa.width;
                 }
                 break;
             }
             case Expose: // Window was being overlapped by another window, but is now exposed
             {
                 // Set affine transform for viewport based on window width/height
-                XGetWindowAttributes(x_objs.dpy, x_objs.win, &x_objs.xwa);
-                glViewport(0, 0, x_objs.xwa.width, x_objs.xwa.height);
+                XGetWindowAttributes(win.dpy, win.win, &win.xwa);
+                glViewport(0, 0, win.xwa.width, win.xwa.height);
                 break;
             }
             case MotionNotify: // Mouse was moved
@@ -393,13 +308,13 @@ void process_events(XObjects &x_objs, Camera &camera)
                 query_pointer_location = !query_pointer_location;
                 if (query_pointer_location)
                 {
-                    camera.update_rotation_from_pointer(x_objs);
+                    camera.update_rotation_from_pointer(win);
                 }
                 break;
             }
             case KeyPress:
             {
-                KeySym sym = XLookupKeysym(&x_objs.xev.xkey, 0);
+                KeySym sym = XLookupKeysym(&win.xev.xkey, 0);
                 switch (sym)
                 {
                     case XK_w:
@@ -437,7 +352,7 @@ void process_events(XObjects &x_objs, Camera &camera)
             }
             case KeyRelease:
             {
-                KeySym sym = XLookupKeysym(&x_objs.xev.xkey, 0);
+                KeySym sym = XLookupKeysym(&win.xev.xkey, 0);
                 switch (sym)
                 {
                     case XK_w:
@@ -525,58 +440,58 @@ void process_events(XObjects &x_objs, Camera &camera)
     if (magnitude > 0.0f)
     {
         lac_normalize_vec3(&v_velocity, v_velocity);
-        lac_multiply_vec3(&v_velocity, v_velocity, GameState::player.speed);
+        lac_multiply_vec3(&v_velocity, v_velocity, KCConst::PLAYER_BASE_SPEED);
         lac_add_vec3(&camera.v_eye, camera.v_eye, v_velocity);
     }
 }
 
 /**
  * @brief Renders the current frame for both OpenGL and optionally ImGui
- * @param[in,out] gl_objs An instance of GLObjects containing OpenGL-related data
- * @param[in,out] x_objs An instance of XObjects containing X-related data
+ * @param[in,out] win An instance of XObjects containing X-related data
  * @param[in,out] camera The currently active camera used for calculating perspective
  * @param[in,out] mvp The model-view-projection matrix
- * @param[in] indices_size The number of elements within the Element Array Object (EAO)
  */
 void render_frame(
-    const GLObjects &gl_objs,
-    const XObjects &x_objs,
+    const Block block,
+    const KCWindow &win,
     Camera &camera,
-    Mvp &mvp,
-    const size_t indices_size,
-    const unsigned texture
+    Mvp &mvp
 )
 {
-    // Bind the shader program and any VAOs and textures
-    glUseProgram(gl_objs.shader);
-    glBindVertexArray(gl_objs.vao);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
     // Set background color
     glClearColor(0.2f, 0.4f, 0.4f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Bind the shader program and any VAOs and textures
+    glUseProgram(block.mesh.shader);
+    glBindVertexArray(block.mesh.vao);
+
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
-    int model_uniform = glGetUniformLocation(gl_objs.shader, "model");
+    int model_uniform = glGetUniformLocation(block.mesh.shader, "model");
     glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
     camera.calculate_view_matrix();
-    int view_uniform = glGetUniformLocation(gl_objs.shader, "view");
+    int view_uniform = glGetUniformLocation(block.mesh.shader, "view");
     glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
-    lac_get_projection_mat4(&mvp.m_proj, GameState::aspect, GameState::fov, znear, zfar);
-    int proj_uniform = glGetUniformLocation(gl_objs.shader, "proj");
+    lac_get_projection_mat4(
+        &mvp.m_proj,
+        GameState::get_instance().aspect,
+        GameState::get_instance().fov,
+        GameState::get_instance().znear,
+        GameState::get_instance().zfar
+    );
+    int proj_uniform = glGetUniformLocation(block.mesh.shader, "proj");
     glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
 
     // Issue draw call
-    glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
-    glXSwapBuffers(x_objs.dpy, x_objs.win);
+    glDrawArrays(GL_TRIANGLES, 0, block.mesh.vertices);
+    glXSwapBuffers(win.dpy, win.win);
 
     // Unbind the shader program and any VAOs and textures
     glUseProgram(0);
     glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 }

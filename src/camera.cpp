@@ -28,9 +28,9 @@ Camera::Camera() :
 /**
  * @brief Update the Camera's rotation matrix given the position of the mouse/pointer on screen.
  * @since 02-03-2024
- * @param[in] x_objs A structure containing the state of X11 objects
+ * @param[in] win A reference to the application's window
  */
-void Camera::update_rotation_from_pointer(const XObjects &x_objs)
+void Camera::update_rotation_from_pointer(const KCWindow &win)
 {
     int win_loc_x, win_loc_y, win_edge_x, win_edge_y;
     int win_off_x, win_off_y, root_off_x, root_off_y;
@@ -39,15 +39,15 @@ void Camera::update_rotation_from_pointer(const XObjects &x_objs)
     Window wnop;
 
     XQueryPointer(
-        x_objs.dpy, x_objs.win, &wnop, &wnop,
+        win.dpy, win.win, &wnop, &wnop,
         &root_off_x, &root_off_y, &win_off_x, &win_off_y,
         &inop
     );
 
-    win_loc_x  = x_objs.xwa.x;
-    win_loc_y  = x_objs.xwa.y;
-    win_edge_x = x_objs.xwa.x + x_objs.xwa.width;
-    win_edge_y = x_objs.xwa.y + x_objs.xwa.height;
+    win_loc_x  = win.xwa.x;
+    win_loc_y  = win.xwa.y;
+    win_edge_x = win.xwa.x + win.xwa.width;
+    win_edge_y = win.xwa.y + win.xwa.height;
 
     // Cursor is outside window. Warp to nearest edge.
     if (root_off_x < win_loc_x || root_off_x > win_edge_x
@@ -55,24 +55,24 @@ void Camera::update_rotation_from_pointer(const XObjects &x_objs)
     {
         dist_x = std::min(std::abs(root_off_x - win_loc_x), std::abs(root_off_x - win_edge_x));
         dist_y = std::min(std::abs(root_off_y - win_loc_y), std::abs(root_off_y - win_edge_y));
-        win_off_x = (dist_x == std::abs(root_off_x - win_loc_y)) ? 0 : x_objs.xwa.width - 1;
-        win_off_y = (dist_y == std::abs(root_off_y - win_loc_x)) ? 0 : x_objs.xwa.height - 1;
-        XWarpPointer(x_objs.dpy, None, x_objs.win, 0, 0, 0, 0, win_off_x, win_off_y);
+        win_off_x = (dist_x == std::abs(root_off_x - win_loc_y)) ? 0 : win.xwa.width - 1;
+        win_off_y = (dist_y == std::abs(root_off_y - win_loc_x)) ? 0 : win.xwa.height - 1;
+        XWarpPointer(win.dpy, None, win.win, 0, 0, 0, 0, win_off_x, win_off_y);
     }
 
-    center_x = (float)x_objs.xwa.width / 2.0f;
-    center_y = (float)x_objs.xwa.height / 2.0f;
-    norm_dx  = (center_x - (float)win_off_x) / (float)x_objs.xwa.width;
-    norm_dy  = (center_y - (float)win_off_y) / (float)x_objs.xwa.height;
+    center_x = (float)win.xwa.width / 2.0f;
+    center_y = (float)win.xwa.height / 2.0f;
+    norm_dx  = (center_x - (float)win_off_x) / (float)win.xwa.width;
+    norm_dy  = (center_y - (float)win_off_y) / (float)win.xwa.height;
 
     // Convert pixel space to degrees
-    camera_yaw += norm_dx * 180.0f * Camera::CAMERA_ROTATION_SPEED;
-    camera_pitch += norm_dy * 180.0f * Camera::CAMERA_ROTATION_SPEED;
+    camera_yaw += norm_dx * 180.0f * KCConst::CAMERA_ROTATION_SPEED;
+    camera_pitch += norm_dy * 180.0f * KCConst::CAMERA_ROTATION_SPEED;
     camera_pitch = std::clamp(camera_pitch, -89.0f, 89.0f);
 
     XWarpPointer(
-        x_objs.dpy, x_objs.win, x_objs.win, 0, 0,
-        x_objs.xwa.width, x_objs.xwa.height, center_x, center_y
+        win.dpy, win.win, win.win, 0, 0,
+        win.xwa.width, win.xwa.height, center_x, center_y
     );
 }
 

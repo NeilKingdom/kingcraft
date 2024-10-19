@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 
-inline void GLAPIENTRY debug_callback(
+static inline void GLAPIENTRY debug_callback(
    GLenum source,
    GLenum type,
    GLuint id,
