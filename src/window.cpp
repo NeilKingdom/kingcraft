@@ -230,11 +230,14 @@ GLXFBConfig create_window(
 /**
  * @brief Create an OpenGL context for the given X11 window.
  * @since 02-03-2024
- * @param[in,out] x_objs An instance of XObjects containing X-related data
+ * @param[in,out] win An instance of XObjects containing X-related data
  * @param[in] fb_config The frame buffer configuration that shall be bound to the OpenGL context
+ * @returns An OpenGL context for __win__
  */
-void create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
+GLXContext create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
 {
+    GLXContext glx;
+
     /*
         The OpenGL Architecture Review Board (ARB) has developed certain extension functions (usually
         platform-specific) which must be retrieved via glXGetProcAddressARB(). Assuming that the argument
@@ -254,7 +257,7 @@ void create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
     if (!_is_glx_extension_supported(glx_exts, "GLX_ARB_create_context") || !glx_create_context_attribs_arb)
     {
         std::cerr << "glXCreateContextAttribsARB() not found. Using old GLX context" << std::endl;
-        win.glx = glXCreateNewContext(win.dpy, fb_config, GLX_RGBA_TYPE, 0, true);
+        glx = glXCreateNewContext(win.dpy, fb_config, GLX_RGBA_TYPE, 0, true);
     }
     else
     {
@@ -264,11 +267,11 @@ void create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
             GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
             None
         };
-        win.glx = glx_create_context_attribs_arb(win.dpy, fb_config, 0, true, glx_attribs);
+        glx = glx_create_context_attribs_arb(win.dpy, fb_config, 0, true, glx_attribs);
     }
 
     XSync(win.dpy, false);
-    glXMakeCurrent(win.dpy, win.win, win.glx);
+    return glx;
 }
 
 /**
@@ -452,7 +455,7 @@ void process_events(KCWindow &win, Camera &camera)
  * @param[in,out] mvp The model-view-projection matrix
  */
 void render_frame(
-    const Block block,
+    const Block &block,
     const KCWindow &win,
     Camera &camera,
     Mvp &mvp
@@ -463,17 +466,18 @@ void render_frame(
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Bind the shader program and any VAOs and textures
-    glUseProgram(block.mesh.shader);
+    block.mesh.shader.bind();
+    block.mesh.texture.bind();
     glBindVertexArray(block.mesh.vao);
 
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
-    int model_uniform = glGetUniformLocation(block.mesh.shader, "model");
+    int model_uniform = glGetUniformLocation(block.mesh.shader.id, "model");
     glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
     camera.calculate_view_matrix();
-    int view_uniform = glGetUniformLocation(block.mesh.shader, "view");
+    int view_uniform = glGetUniformLocation(block.mesh.shader.id, "view");
     glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
@@ -484,7 +488,7 @@ void render_frame(
         GameState::get_instance().znear,
         GameState::get_instance().zfar
     );
-    int proj_uniform = glGetUniformLocation(block.mesh.shader, "proj");
+    int proj_uniform = glGetUniformLocation(block.mesh.shader.id, "proj");
     glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
 
     // Issue draw call
@@ -492,6 +496,7 @@ void render_frame(
     glXSwapBuffers(win.dpy, win.win);
 
     // Unbind the shader program and any VAOs and textures
-    glUseProgram(0);
+    block.mesh.shader.unbind();
+    block.mesh.texture.unbind();
     glBindVertexArray(0);
 }

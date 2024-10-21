@@ -5,8 +5,10 @@
 class ShaderProgram
 {
 public:
+    unsigned id;
+
     // Special member functions
-    ShaderProgram() = delete;
+    ShaderProgram();
     ShaderProgram(const std::string vertex_src, const std::string fragment_src);
     ~ShaderProgram();
 
@@ -15,7 +17,5 @@ public:
     void unbind() const;
 
 private:
-    unsigned m_id;
-
     unsigned compile(const unsigned type, const std::string source);
 };

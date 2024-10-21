@@ -47,6 +47,6 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(
 
 void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono::steady_clock::time_point &since);
 GLXFBConfig     create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
-void            create_opengl_context(KCWindow &win, const GLXFBConfig &best_fb_config);
+GLXContext      create_opengl_context(KCWindow &win, const GLXFBConfig &best_fb_config);
 void            process_events(KCWindow &win, Camera &camera);
-void            render_frame(const Block block, const KCWindow &win, Camera &camera, Mvp &mvp);
+void            render_frame(const Block &block, const KCWindow &win, Camera &camera, Mvp &mvp);

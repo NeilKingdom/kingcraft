@@ -11,6 +11,7 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include <tuple>
 
 // C APIs
 #include <cstdlib>
@@ -49,7 +50,7 @@ struct KCWindow
     XVisualInfo            *xvi;    // Struct containing additional info about the window
     XWindowAttributes       xwa;    // Struct containing the window's attributes
     XEvent                  xev;    // Stores the event type of the most recently received event
+    GLXContext              glx;
     Colormap               cmap;    // Colormap for the X window
-    GLXContext              glx;    // The OpenGL context for X11
     XCursor                 cur;    // Custom cursor to replace the default one
 };

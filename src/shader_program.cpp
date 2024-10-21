@@ -1,5 +1,9 @@
 #include "shader_program.hpp"
 
+ShaderProgram::ShaderProgram() :
+    id(0)
+{}
+
 ShaderProgram::ShaderProgram(const std::string vertex_src, const std::string fragment_src)
 {
     unsigned program = glCreateProgram();
@@ -14,7 +18,7 @@ ShaderProgram::ShaderProgram(const std::string vertex_src, const std::string fra
     glDeleteShader(vs);
     glDeleteShader(fs);
 
-    m_id = program;
+    id = program;
 }
 
 ShaderProgram::~ShaderProgram()
@@ -25,7 +29,7 @@ ShaderProgram::~ShaderProgram()
 // General
 void ShaderProgram::bind() const
 {
-    glUseProgram(m_id);
+    glUseProgram(id);
 }
 
 void ShaderProgram::unbind() const

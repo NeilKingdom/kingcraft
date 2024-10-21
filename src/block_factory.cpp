@@ -34,57 +34,56 @@ Block BlockFactory::make_block(const BlockType type, const mat4 m_trns, const ui
     float vertices[] = {
     //   Positions            Texture coords
     //   X      Y      Z      U      V
-
-    // Right
-        -0.5f,  0.5f,  0.5f, // 1
-         0.5f,  0.5f, -0.5f, // 7
-        -0.5f,  0.5f, -0.5f, // 3
-         0.5f,  0.5f, -0.5f, // 7
-        -0.5f,  0.5f,  0.5f, // 1
-         0.5f,  0.5f,  0.5f, // 5
-
-    // Left
-         0.5f, -0.5f,  0.5f, // 4
-        -0.5f, -0.5f, -0.5f, // 2
-        -0.5f, -0.5f,  0.5f, // 0
-        -0.5f, -0.5f, -0.5f, // 2
-         0.5f, -0.5f,  0.5f, // 4
-         0.5f, -0.5f, -0.5f, // 6
-
-    // Top
-        -0.5f, -0.5f,  0.5f, // 0
-         0.5f,  0.5f,  0.5f, // 5
-         0.5f, -0.5f,  0.5f, // 4
-         0.5f,  0.5f,  0.5f, // 5
-        -0.5f, -0.5f,  0.5f, // 0
-        -0.5f,  0.5f,  0.5f, // 1
-
-    // Bottom
-         0.5f, -0.5f, -0.5f, // 6
-        -0.5f,  0.5f, -0.5f, // 3
-        -0.5f, -0.5f, -0.5f, // 2
-        -0.5f,  0.5f, -0.5f, // 3
-         0.5f, -0.5f, -0.5f, // 6
-         0.5f,  0.5f, -0.5f, // 7
-
     // Front
-        -0.5f, -0.5f, -0.5f, // 2
-        -0.5f,  0.5f,  0.5f, // 1
-        -0.5f, -0.5f,  0.5f, // 0
-        -0.5f,  0.5f,  0.5f, // 1
-        -0.5f, -0.5f, -0.5f, // 2
-        -0.5f,  0.5f, -0.5f, // 3
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // 0
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 2
+        -0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 1
+        -0.5f,  0.5f, -0.5f,  1.0f,  1.0f, // 3
+        -0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 1
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 2
 
     // Back
-         0.5f, -0.5f,  0.5f, // 4
-         0.5f,  0.5f, -0.5f, // 7
-         0.5f, -0.5f, -0.5f, // 6
-         0.5f,  0.5f, -0.5f, // 7
-         0.5f, -0.5f,  0.5f, // 4
-         0.5f,  0.5f,  0.5f, // 5
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // 4
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 6
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 5
+         0.5f,  0.5f, -0.5f,  1.0f,  1.0f, // 7
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 5
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 6
+
+    // Right
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, // 1
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f, // 3
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 5
+         0.5f,  0.5f, -0.5f,  1.0f,  1.0f, // 7
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 5
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f, // 3
+
+    // Left
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // 4
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 6
+        -0.5f, -0.5f,  0.5f,  1.0f,  0.0f, // 0
+        -0.5f, -0.5f, -0.5f,  1.0f,  1.0f, // 2
+        -0.5f, -0.5f,  0.5f,  1.0f,  0.0f, // 0
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 6
+
+    // Top
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, // 4
+        -0.5f, -0.5f,  0.5f,  0.0f,  1.0f, // 0
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 5
+        -0.5f,  0.5f,  0.5f,  1.0f,  1.0f, // 1
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f, // 5
+        -0.5f, -0.5f,  0.5f,  0.0f,  1.0f, // 0
+
+    // Bottom
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, // 6
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 2
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f, // 7
+        -0.5f,  0.5f, -0.5f,  1.0f,  1.0f, // 3
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f, // 7
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f, // 2
     };
 
-    block.mesh.vertices = sizeof(vertices) / sizeof(vertices[0]) / 3;
+    block.mesh.vertices = 36;
 
     // Create vertex attribute array and vertex buffer object
     glGenVertexArrays(1, &block.mesh.vao);
@@ -95,16 +94,15 @@ Block BlockFactory::make_block(const BlockType type, const mat4 m_trns, const ui
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Texture attribute
-    //glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(3 * sizeof(float)));
-    //glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-    // Unbind everything
+    // Unbind VAO
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     return block;
 }
