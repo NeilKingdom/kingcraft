@@ -102,8 +102,6 @@ int main()
     glEnable(GL_DEBUG_OUTPUT);     // Enable debug output
     glEnable(GL_DEPTH_TEST);       // Enable z-ordering via depth buffer
     glEnable(GL_CULL_FACE);        // Enable culling
-    glCullFace(GL_FRONT);           // Culling algorithm (GL_FRONT = front faces, GL_BACK = back faces)
-    glFrontFace(GL_CCW);           // Front faces (GL_CW = clockwise, GL_CCW = counter clockwise)
 
     // Uncomment for wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
