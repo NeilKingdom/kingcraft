@@ -118,15 +118,22 @@ int main()
     const std::string fragment_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    init_textures();
+    ShaderProgram program = ShaderProgram(vertex_shader, fragment_shader);
+    program.bind();
 
-    Block block = block_factory.make_block(BlockType::DIRT, lac_ident_mat4, 0xFF);
-    auto texture = get_tex_by_block_type(block.type);
-    if (texture != std::nullopt)
-    {
-        block.mesh.texture = std::get<0>(texture.value());
-    }
-    block.mesh.shader = ShaderProgram(vertex_shader, fragment_shader);
+    PngHndl_t *hndl = nullptr;
+    Pixmap_t *pixmap = nullptr;
+    std::string file = "/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png";
+
+    hndl = imc_png_open(file.c_str());
+    pixmap = imc_png_parse(hndl);
+
+    imc_pixmap_to_ppm(pixmap, "raster.ppm", Rgb_t{ 255, 255, 255 });
+    Texture main_texture = Texture(*pixmap, GL_NEAREST, GL_NEAREST);
+
+    Block block = block_factory.make_block(BlockType::DIRT, lac_ident_mat4, ALL);
+    block.mesh.texture = main_texture;
+    block.mesh.shader = program;
 
     /*** Game loop ***/
 

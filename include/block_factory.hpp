@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "texture_atlas.hpp"
+#include "texture_mappings.hpp"
 #include "block.hpp"
 
 class BlockFactory
@@ -14,7 +15,7 @@ public:
 
     // General
     static BlockFactory &get_instance();
-    Block make_block(const BlockType type, const mat4 m_trns, const uint8_t sides) const;
+    Block make_block(const BlockType type, const mat4 m_trns, const Face sides) const;
 
 private:
     // Special member functions

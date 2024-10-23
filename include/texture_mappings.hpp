@@ -5,27 +5,14 @@
 #include "constants.hpp"
 #include "block.hpp"
 
-static TextureAtlas atlas = TextureAtlas(
-    KCConst::TEX_SIZE, KCConst::TEX_SIZE,
-    "/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png"
-);
+typedef std::array<float, 2> UvCoords;
 
-// Dirt block
-static Texture tex_dirt_top;
-static Texture tex_dirt_sides;
-static Texture tex_dirt_bottom;
-
-// NOTE: Must be called after OpenGL context is created
-static void init_textures()
+static std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_tex_by_block_type(const BlockType type)
 {
-    tex_dirt_top    = Texture(atlas.get_pixmap_at_id(0), GL_NEAREST, GL_NEAREST);
-    tex_dirt_sides  = Texture(atlas.get_pixmap_at_id(1), GL_NEAREST, GL_NEAREST);
-    tex_dirt_bottom = Texture(atlas.get_pixmap_at_id(2), GL_NEAREST, GL_NEAREST);
-}
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> textures;
 
-static std::optional<std::tuple<Texture, Texture, Texture>> get_tex_by_block_type(const BlockType type)
-{
-    std::optional<std::tuple<Texture, Texture, Texture>> textures;
+    unsigned row, col;
+    UvCoords uv_top, uv_sides, uv_bottom;
 
     switch (type)
     {
@@ -33,7 +20,19 @@ static std::optional<std::tuple<Texture, Texture, Texture>> get_tex_by_block_typ
             textures = std::nullopt;
             break;
         case BlockType::DIRT:
-            textures = std::make_tuple(tex_dirt_top, tex_dirt_sides, tex_dirt_bottom);
+            // Top
+            uv_top[0] = 0.0f / 16.0f;
+            uv_top[1] = 0.0f;
+
+            // Sides
+            uv_sides[0] = 1.0f / 16.0f;
+            uv_sides[1] = 0.0f;
+
+            // Bottom
+            uv_bottom[0] = 2.0f / 16.0f;
+            uv_bottom[1] = 0.0f;
+
+            textures = std::make_tuple(uv_top, uv_sides, uv_bottom);
             break;
         default:
             textures = std::nullopt;

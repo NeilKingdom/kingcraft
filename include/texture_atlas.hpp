@@ -7,6 +7,8 @@
 class TextureAtlas
 {
 public:
+    Pixmap_t  *m_pixmap;
+
     // Special member functions
     TextureAtlas() = delete;
     TextureAtlas(const unsigned stride, const unsigned pitch);
@@ -20,6 +22,5 @@ public:
 private:
     unsigned   m_stride;
     unsigned   m_pitch;
-    Pixmap_t  *m_pixmap;
     PngHndl_t *m_png_hndl;
 };
