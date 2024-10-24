@@ -455,29 +455,27 @@ void process_events(KCWindow &win, Camera &camera)
  * @param[in,out] mvp The model-view-projection matrix
  */
 void render_frame(
-    const Block &block,
+    const std::array<Block, 2> blocks,
     const KCWindow &win,
     Camera &camera,
-    Mvp &mvp
+    Mvp &mvp,
+    const ShaderProgram shader
 )
 {
     // Set background color
-    glClearColor(0.2f, 0.4f, 0.4f, 1.0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Bind the shader program and any VAOs and textures
-    block.mesh.shader.bind();
-    block.mesh.texture.bind();
-    glBindVertexArray(block.mesh.vao);
+    shader.bind();
 
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
-    int model_uniform = glGetUniformLocation(block.mesh.shader.id, "model");
+    int model_uniform = glGetUniformLocation(shader.id, "model");
     glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
     camera.calculate_view_matrix();
-    int view_uniform = glGetUniformLocation(block.mesh.shader.id, "view");
+    int view_uniform = glGetUniformLocation(shader.id, "view");
     glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
@@ -488,15 +486,22 @@ void render_frame(
         GameState::get_instance().znear,
         GameState::get_instance().zfar
     );
-    int proj_uniform = glGetUniformLocation(block.mesh.shader.id, "proj");
+    int proj_uniform = glGetUniformLocation(shader.id, "proj");
     glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
 
-    // Issue draw call
-    glDrawArrays(GL_TRIANGLES, 0, block.mesh.vertices);
-    glXSwapBuffers(win.dpy, win.win);
+    for (int i = 0; i < 2; ++i)
+    {
+        blocks[i].mesh.texture.bind();
+        glBindVertexArray(blocks[i].mesh.vao);
 
-    // Unbind the shader program and any VAOs and textures
-    block.mesh.shader.unbind();
-    block.mesh.texture.unbind();
-    glBindVertexArray(0);
+        // Issue draw call
+        glDrawArrays(GL_TRIANGLES, 0, blocks[i].mesh.vertices);
+
+        // Unbind the shader program and any VAOs and textures
+        blocks[i].mesh.texture.unbind();
+        glBindVertexArray(0);
+    }
+
+    glXSwapBuffers(win.dpy, win.win);
+    shader.unbind();
 }

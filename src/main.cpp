@@ -89,7 +89,9 @@ int main()
     }
     std::cout << glGetString(GL_VERSION) << std::endl;
 
-    // Setup callback function for when a OpenGL debug message is received
+    // Enable debug logging
+    glEnable(GL_DEBUG_OUTPUT);
+    // Set debug logging callback
     if (glDebugMessageCallback)
     {
         glDebugMessageCallback(debug_callback, nullptr);
@@ -99,11 +101,16 @@ int main()
         std::cerr << "WARNING: glDebugMessageCallback() is unavailable!" << std::endl;
     }
 
-    glEnable(GL_DEBUG_OUTPUT);     // Enable debug output
-    glEnable(GL_DEPTH_TEST);       // Enable z-ordering via depth buffer
-    glEnable(GL_CULL_FACE);        // Enable culling
+    // Enable depth buffering
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
-    // Uncomment for wireframe
+    // Enable culling
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
+
+    // Enable wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     /*** Create shader program(s) ***/
@@ -118,8 +125,7 @@ int main()
     const std::string fragment_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    ShaderProgram program = ShaderProgram(vertex_shader, fragment_shader);
-    program.bind();
+    ShaderProgram shader = ShaderProgram(vertex_shader, fragment_shader);
 
     PngHndl_t *hndl = nullptr;
     Pixmap_t *pixmap = nullptr;
@@ -131,9 +137,17 @@ int main()
     imc_pixmap_to_ppm(pixmap, "raster.ppm", Rgb_t{ 255, 255, 255 });
     Texture main_texture = Texture(*pixmap, GL_NEAREST, GL_NEAREST);
 
-    Block block = block_factory.make_block(BlockType::DIRT, lac_ident_mat4, ALL);
-    block.mesh.texture = main_texture;
-    block.mesh.shader = program;
+    mat4 m_trns = {};
+    lac_get_translation_mat4(&m_trns, 0.0f, 0.0f, 0.0f);
+
+    Block block1 = block_factory.make_block(BlockType::DIRT, m_trns, (Face)(FRONT | BACK | LEFT | TOP | BOTTOM));
+    block1.mesh.texture = main_texture;
+
+    lac_get_translation_mat4(&m_trns, 0.0f, 1.0f, 0.0f);
+    Block block2 = block_factory.make_block(BlockType::DIRT, m_trns, (Face)(FRONT | BACK | RIGHT | TOP | BOTTOM));
+    block2.mesh.texture = main_texture;
+
+    std::array<Block, 2> blocks = { block1, block2 };
 
     /*** Game loop ***/
 
@@ -143,7 +157,7 @@ int main()
         game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
         process_events(app_win, camera);
-        render_frame(block, app_win, camera, mvp);
+        render_frame(blocks, app_win, camera, mvp, shader);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

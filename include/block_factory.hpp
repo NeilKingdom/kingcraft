@@ -5,6 +5,8 @@
 #include "texture_mappings.hpp"
 #include "block.hpp"
 
+typedef std::array<float, 2> UvCoords;
+
 class BlockFactory
 {
 public:
