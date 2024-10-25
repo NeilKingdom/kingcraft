@@ -17,7 +17,6 @@ class Block
 public:
     BlockType   type;   // Block type
     Mesh        mesh;   // Contains the vertex attribute object of the block mesh
-    vec3        pos;    // Block position in world space
 
     // Special member functions
     Block() = delete;
@@ -26,7 +25,4 @@ public:
         this->type = type;
     }
     ~Block() = default;
-
-    // General
-    void render() const;
 };

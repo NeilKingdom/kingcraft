@@ -5,7 +5,7 @@
 class ShaderProgram
 {
 public:
-    unsigned id;
+    ID id;
 
     // Special member functions
     ShaderProgram();
@@ -17,5 +17,6 @@ public:
     void unbind() const;
 
 private:
-    unsigned compile(const unsigned type, const std::string source);
+    // General
+    unsigned compile(const unsigned type, const std::string src) const;
 };

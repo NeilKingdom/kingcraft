@@ -27,6 +27,6 @@ private:
     float camera_yaw;       // Rotation about the z axis
     float camera_pitch;     // Rotation about the y axis
 
-    mat4  m_point_at;       // The point-at matrix which becomes the view matrix after inversion
-    mat4  m_cam_rot;        // Rotation matrix used for transforming v_look_dir
+    mat4 m_point_at;        // The point-at matrix which becomes the view matrix after inversion
+    mat4 m_cam_rot;         // Rotation matrix used for transforming v_look_dir
 };

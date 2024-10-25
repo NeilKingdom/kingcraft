@@ -6,9 +6,9 @@ ShaderProgram::ShaderProgram() :
 
 ShaderProgram::ShaderProgram(const std::string vertex_src, const std::string fragment_src)
 {
-    unsigned program = glCreateProgram();
-    unsigned vs = compile(GL_VERTEX_SHADER, vertex_src);
-    unsigned fs = compile(GL_FRAGMENT_SHADER, fragment_src);
+    ID program = glCreateProgram();
+    ID vs = compile(GL_VERTEX_SHADER, vertex_src);
+    ID fs = compile(GL_FRAGMENT_SHADER, fragment_src);
 
     glAttachShader(program, vs);
     glAttachShader(program, fs);
@@ -26,7 +26,6 @@ ShaderProgram::~ShaderProgram()
     glUseProgram(0);
 }
 
-// General
 void ShaderProgram::bind() const
 {
     glUseProgram(id);
@@ -44,14 +43,14 @@ void ShaderProgram::unbind() const
  * @param[in] source The GLSL source code for the shader
  * @returns The id of the compiled GLSL shader or 0 on failure
  */
-unsigned ShaderProgram::compile(const unsigned type, const std::string source)
+unsigned ShaderProgram::compile(const unsigned type, const std::string src) const
 {
     assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 
     int res;
-    unsigned id = glCreateShader(type);
-    const char *src = source.c_str();
-    glShaderSource(id, 1, &src, NULL);
+    ID id = glCreateShader(type);
+    const char *tmp_src = src.c_str();
+    glShaderSource(id, 1, &tmp_src, NULL);
     glCompileShader(id);
 
     glGetShaderiv(id, GL_COMPILE_STATUS, &res);

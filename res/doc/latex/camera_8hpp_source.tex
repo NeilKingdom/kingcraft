@@ -1,0 +1,39 @@
+\doxysection{camera.\+hpp}
+\hypertarget{camera_8hpp_source}{}\label{camera_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/camera.hpp@{/home/neil/devel/projects/kingcraft/include/camera.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}game\_state.hpp"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classCamera}{Camera}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ CAMERA\_ROTATION\_SPEED\ =\ 0.5f;\ \textcolor{comment}{//\ Normalized\ rotation\ speed}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{const}\ vec3\ v\_fwd\ \ \ =\ \{\ 1.0f,\ 0.0f,\ 0.0f\ \};}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keyword}{const}\ vec3\ v\_right\ =\ \{\ 0.0f,\ 1.0f,\ 0.0f\ \};}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{const}\ vec3\ v\_up\ \ \ \ =\ \{\ 0.0f,\ 0.0f,\ 1.0f\ \};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ vec3\ v\_eye;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Camera's\ origin\ point}}
+\DoxyCodeLine{00016\ \ \ \ \ vec3\ v\_look\_dir;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ direction\ that\ the\ camera\ is\ facing\ on\ the\ current\ frame}}
+\DoxyCodeLine{00017\ \ \ \ \ std::shared\_ptr<std::array<float,\ 16>>\ m\_view;\ \ \textcolor{comment}{//\ View\ matrix}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00020\ \ \ \ \ \mbox{\hyperlink{classCamera_a01f94c3543f56ede7af49dc778f19331}{Camera}}();}
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{classCamera}{\string~Camera}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classCamera_a42d3932fba2f04e2647ca477873754bc}{update\_rotation\_from\_pointer}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structXObjects}{XObjects}}\ \&x\_objs);}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classCamera_aacf6d242bd9fcf1bc7518f86f422c4b3}{calculate\_view\_matrix}}();}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{float}\ camera\_yaw;\ \ \ \ \ \ \ \textcolor{comment}{//\ Rotation\ about\ the\ z\ axis}}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{float}\ camera\_pitch;\ \ \ \ \ \textcolor{comment}{//\ Rotation\ about\ the\ y\ axis}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ mat4\ m\_point\_at;\ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ point-\/at\ matrix\ which\ becomes\ the\ view\ matrix\ after\ inversion}}
+\DoxyCodeLine{00032\ \ \ \ \ mat4\ m\_cam\_rot;\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Rotation\ matrix\ used\ for\ transforming\ v\_look\_dir}}
+\DoxyCodeLine{00033\ \};}
+
+\end{DoxyCode}

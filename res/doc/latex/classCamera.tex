@@ -1,0 +1,94 @@
+\doxysection{Camera Class Reference}
+\hypertarget{classCamera}{}\label{classCamera}\index{Camera@{Camera}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classCamera_a01f94c3543f56ede7af49dc778f19331}{Camera}} ()
+\begin{DoxyCompactList}\small\item\em Default constructor for the \doxylink{classCamera}{Camera} class. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classCamera_a42d3932fba2f04e2647ca477873754bc}{update\+\_\+rotation\+\_\+from\+\_\+pointer}} (const \mbox{\hyperlink{structXObjects}{XObjects}} \&x\+\_\+objs)
+\begin{DoxyCompactList}\small\item\em Update the \doxylink{classCamera}{Camera}\textquotesingle{}s rotation matrix given the position of the mouse/pointer on screen. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classCamera_aacf6d242bd9fcf1bc7518f86f422c4b3}{calculate\+\_\+view\+\_\+matrix}} ()
+\begin{DoxyCompactList}\small\item\em Calculates the view matrix based on the look direction of the camera. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classCamera_af1f5f5552498d47f54af2839f482d0fb}\label{classCamera_af1f5f5552498d47f54af2839f482d0fb} 
+const vec3 {\bfseries v\+\_\+fwd} = \{ 1.\+0f, 0.\+0f, 0.\+0f \}
+\item 
+\Hypertarget{classCamera_a544948403b6ccf82805a5108c3688b84}\label{classCamera_a544948403b6ccf82805a5108c3688b84} 
+const vec3 {\bfseries v\+\_\+right} = \{ 0.\+0f, 1.\+0f, 0.\+0f \}
+\item 
+\Hypertarget{classCamera_a02ccf9d219c930fb29d4c510d40cdef5}\label{classCamera_a02ccf9d219c930fb29d4c510d40cdef5} 
+const vec3 {\bfseries v\+\_\+up} = \{ 0.\+0f, 0.\+0f, 1.\+0f \}
+\item 
+\Hypertarget{classCamera_a8188f374a18c63a2134ed38cec2d147a}\label{classCamera_a8188f374a18c63a2134ed38cec2d147a} 
+vec3 {\bfseries v\+\_\+eye}
+\item 
+\Hypertarget{classCamera_aac2bb35d2de12dd520de56a344f73370}\label{classCamera_aac2bb35d2de12dd520de56a344f73370} 
+vec3 {\bfseries v\+\_\+look\+\_\+dir}
+\item 
+\Hypertarget{classCamera_aa020ce4d8ef78b601cb34452ef294f4c}\label{classCamera_aa020ce4d8ef78b601cb34452ef294f4c} 
+std\+::shared\+\_\+ptr$<$ std\+::array$<$ float, 16 $>$ $>$ {\bfseries m\+\_\+view}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classCamera_aeceea7775687dac0124f79ba3d4f06e2}\label{classCamera_aeceea7775687dac0124f79ba3d4f06e2} 
+static constexpr float {\bfseries CAMERA\+\_\+\+ROTATION\+\_\+\+SPEED} = 0.\+5f
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{classCamera_a01f94c3543f56ede7af49dc778f19331}\index{Camera@{Camera}!Camera@{Camera}}
+\index{Camera@{Camera}!Camera@{Camera}}
+\doxysubsubsection{\texorpdfstring{Camera()}{Camera()}}
+{\footnotesize\ttfamily \label{classCamera_a01f94c3543f56ede7af49dc778f19331} 
+Camera\+::\+Camera (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Default constructor for the \doxylink{classCamera}{Camera} class. 
+
+\begin{DoxySince}{Since}
+02-\/03-\/2024 
+\end{DoxySince}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classCamera_aacf6d242bd9fcf1bc7518f86f422c4b3}\index{Camera@{Camera}!calculate\_view\_matrix@{calculate\_view\_matrix}}
+\index{calculate\_view\_matrix@{calculate\_view\_matrix}!Camera@{Camera}}
+\doxysubsubsection{\texorpdfstring{calculate\_view\_matrix()}{calculate\_view\_matrix()}}
+{\footnotesize\ttfamily \label{classCamera_aacf6d242bd9fcf1bc7518f86f422c4b3} 
+void Camera\+::calculate\+\_\+view\+\_\+matrix (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Calculates the view matrix based on the look direction of the camera. 
+
+\begin{DoxySince}{Since}
+02-\/03-\/2024 
+\end{DoxySince}
+\Hypertarget{classCamera_a42d3932fba2f04e2647ca477873754bc}\index{Camera@{Camera}!update\_rotation\_from\_pointer@{update\_rotation\_from\_pointer}}
+\index{update\_rotation\_from\_pointer@{update\_rotation\_from\_pointer}!Camera@{Camera}}
+\doxysubsubsection{\texorpdfstring{update\_rotation\_from\_pointer()}{update\_rotation\_from\_pointer()}}
+{\footnotesize\ttfamily \label{classCamera_a42d3932fba2f04e2647ca477873754bc} 
+void Camera\+::update\+\_\+rotation\+\_\+from\+\_\+pointer (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structXObjects}{XObjects}} \&}]{x\+\_\+objs}{}\end{DoxyParamCaption})}
+
+
+
+Update the \doxylink{classCamera}{Camera}\textquotesingle{}s rotation matrix given the position of the mouse/pointer on screen. 
+
+\begin{DoxySince}{Since}
+02-\/03-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em x\+\_\+objs} & A structure containing the state of X11 objects \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/neil/devel/projects/kingcraft/include/camera.\+hpp\item 
+/home/neil/devel/projects/kingcraft/src/\mbox{\hyperlink{camera_8cpp}{camera.\+cpp}}\end{DoxyCompactItemize}

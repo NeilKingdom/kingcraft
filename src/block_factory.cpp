@@ -9,12 +9,14 @@ BlockFactory &BlockFactory::get_instance()
     return instance;
 }
 
-static std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_tex_by_block_type(const BlockType type)
+std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> BlockFactory::get_tex_by_block_type(
+    const BlockType type
+) const
 {
-    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> textures;
-
     unsigned row, col;
+    float tx_offset, ty_offset;
     UvCoords uv_top, uv_sides, uv_bottom;
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> textures;
 
     switch (type)
     {
@@ -22,17 +24,22 @@ static std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_tex_by_block_
             textures = std::nullopt;
             break;
         case BlockType::DIRT:
+            ty_offset = 0.0f;
+
             // Top
-            uv_top[0] = 0.0f / 16.0f;
-            uv_top[1] = 0.0f;
+            tx_offset = 0.0f;
+            uv_top[0] = tx_offset / (float)KCConst::ATLAS_TEX_SIZE;
+            uv_top[1] = ty_offset;
 
             // Sides
-            uv_sides[0] = 1.0f / 16.0f;
-            uv_sides[1] = 0.0f;
+            tx_offset = 1.0f;
+            uv_sides[0] = tx_offset / (float)KCConst::ATLAS_TEX_SIZE;
+            uv_sides[1] = ty_offset;
 
             // Bottom
-            uv_bottom[0] = 2.0f / 16.0f;
-            uv_bottom[1] = 0.0f;
+            tx_offset = 2.0f;
+            uv_bottom[0] = tx_offset / (float)KCConst::ATLAS_TEX_SIZE;
+            uv_bottom[1] = ty_offset;
 
             textures = std::make_tuple(uv_top, uv_sides, uv_bottom);
             break;
@@ -50,7 +57,11 @@ static std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_tex_by_block_
  *             \|
  *              +---y (+right)
  */
-Block BlockFactory::make_block(const BlockType type, const mat4 m_trns, const Face sides) const
+Block BlockFactory::make_block(
+    const BlockType type,
+    const mat4 m_trns,
+    const Face sides
+) const
 {
     typedef const std::array<float, 30> face_t;
 
@@ -66,11 +77,15 @@ Block BlockFactory::make_block(const BlockType type, const mat4 m_trns, const Fa
     };
 
     // UV coordinates
-    float u_off = 1.0f / KCConst::TEX_SIZE;
-    float v_off = 1.0f / KCConst::TEX_SIZE;
+    float u_off = 1.0f / KCConst::ATLAS_TEX_SIZE;
+    float v_off = 1.0f / KCConst::ATLAS_TEX_SIZE;
 
     auto uv = get_tex_by_block_type(type).value_or(
-        std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
+        std::make_tuple(
+            UvCoords{ 0.0f, 0.0f },
+            UvCoords{ 0.0f, 0.0f },
+            UvCoords{ 0.0f, 0.0f }
+        )
     );
 
     UvCoords uv_top    = std::get<0>(uv);
@@ -99,6 +114,7 @@ Block BlockFactory::make_block(const BlockType type, const mat4 m_trns, const Fa
     // Translate cube
     vec4 copy = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+    // TODO: Remove memcpys once liblac is fixed
     lac_multiply_vec4_mat4(&copy, v0, m_trns);
     std::memcpy(v0, copy, sizeof(v0));
     lac_multiply_vec4_mat4(&copy, v1, m_trns);

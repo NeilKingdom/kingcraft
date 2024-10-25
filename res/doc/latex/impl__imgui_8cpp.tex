@@ -1,0 +1,93 @@
+\doxysection{/home/neil/devel/projects/kingcraft/src/impl\+\_\+imgui.cpp File Reference}
+\hypertarget{impl__imgui_8cpp}{}\label{impl__imgui_8cpp}\index{/home/neil/devel/projects/kingcraft/src/impl\_imgui.cpp@{/home/neil/devel/projects/kingcraft/src/impl\_imgui.cpp}}
+
+
+Provides functions for interacting with an Im\+Gui debug window.  
+
+
+{\ttfamily \#include "{}impl\+\_\+imgui.\+hpp"{}}\newline
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{impl__imgui_8cpp_a83af7c48e03331b5c12097ae005e9d97}\label{impl__imgui_8cpp_a83af7c48e03331b5c12097ae005e9d97} 
+IMGUI\+\_\+\+IMPL\+\_\+\+API int {\bfseries Im\+Gui\+\_\+\+Impl\+X11\+\_\+\+Event\+Handler} (XEvent \&event, XEvent \texorpdfstring{$\ast$}{*}next\+\_\+event)
+\item 
+void \mbox{\hyperlink{impl__imgui_8cpp_a4bc8866821df65ee188e4c77340765b1}{init\+\_\+imgui}} (const \mbox{\hyperlink{structXObjects}{XObjects}} \&im\+\_\+objs)
+\begin{DoxyCompactList}\small\item\em Initializes the Im\+Gui window with an X11 backend. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{impl__imgui_8cpp_aeb51260f986d0807ebcf592539bfe918}{process\+\_\+imgui\+\_\+events}} (\mbox{\hyperlink{structXObjects}{XObjects}} \&im\+\_\+objs)
+\begin{DoxyCompactList}\small\item\em Processes any pending X11 events for the Im\+Gui window. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{impl__imgui_8cpp_af4d77f5be6aa7406e48453ff2a98cc45}{render\+\_\+imgui\+\_\+frame}} (\mbox{\hyperlink{structXObjects}{XObjects}} \&im\+\_\+objs, \mbox{\hyperlink{classCamera}{Camera}} \&camera)
+\begin{DoxyCompactList}\small\item\em Renders the Im\+Gui window to the screen. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Provides functions for interacting with an Im\+Gui debug window. 
+
+\begin{DoxyAuthor}{Author}
+Neil Kingdom 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+07-\/05-\/2024 
+\end{DoxySince}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{impl__imgui_8cpp_a4bc8866821df65ee188e4c77340765b1}\index{impl\_imgui.cpp@{impl\_imgui.cpp}!init\_imgui@{init\_imgui}}
+\index{init\_imgui@{init\_imgui}!impl\_imgui.cpp@{impl\_imgui.cpp}}
+\doxysubsubsection{\texorpdfstring{init\_imgui()}{init\_imgui()}}
+{\footnotesize\ttfamily \label{impl__imgui_8cpp_a4bc8866821df65ee188e4c77340765b1} 
+void init\+\_\+imgui (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structXObjects}{XObjects}} \&}]{im\+\_\+objs}{}\end{DoxyParamCaption})}
+
+
+
+Initializes the Im\+Gui window with an X11 backend. 
+
+\begin{DoxySince}{Since}
+07-\/05-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em im\+\_\+objs} & Reference to and \doxylink{structXObjects}{XObjects} instance containing Im\+Gui-\/related data \\
+\hline
+\end{DoxyParams}
+\Hypertarget{impl__imgui_8cpp_aeb51260f986d0807ebcf592539bfe918}\index{impl\_imgui.cpp@{impl\_imgui.cpp}!process\_imgui\_events@{process\_imgui\_events}}
+\index{process\_imgui\_events@{process\_imgui\_events}!impl\_imgui.cpp@{impl\_imgui.cpp}}
+\doxysubsubsection{\texorpdfstring{process\_imgui\_events()}{process\_imgui\_events()}}
+{\footnotesize\ttfamily \label{impl__imgui_8cpp_aeb51260f986d0807ebcf592539bfe918} 
+void process\+\_\+imgui\+\_\+events (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structXObjects}{XObjects}} \&}]{im\+\_\+objs}{}\end{DoxyParamCaption})}
+
+
+
+Processes any pending X11 events for the Im\+Gui window. 
+
+\begin{DoxySince}{Since}
+07-\/05-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em im\+\_\+objs} & Reference to and \doxylink{structXObjects}{XObjects} instance containing Im\+Gui-\/related data \\
+\hline
+\end{DoxyParams}
+\Hypertarget{impl__imgui_8cpp_af4d77f5be6aa7406e48453ff2a98cc45}\index{impl\_imgui.cpp@{impl\_imgui.cpp}!render\_imgui\_frame@{render\_imgui\_frame}}
+\index{render\_imgui\_frame@{render\_imgui\_frame}!impl\_imgui.cpp@{impl\_imgui.cpp}}
+\doxysubsubsection{\texorpdfstring{render\_imgui\_frame()}{render\_imgui\_frame()}}
+{\footnotesize\ttfamily \label{impl__imgui_8cpp_af4d77f5be6aa7406e48453ff2a98cc45} 
+void render\+\_\+imgui\+\_\+frame (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structXObjects}{XObjects}} \&}]{im\+\_\+objs}{, }\item[{\mbox{\hyperlink{classCamera}{Camera}} \&}]{camera}{}\end{DoxyParamCaption})}
+
+
+
+Renders the Im\+Gui window to the screen. 
+
+\begin{DoxySince}{Since}
+07-\/05-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em im\+\_\+objs} & Reference to and \doxylink{structXObjects}{XObjects} instance containing Im\+Gui-\/related data \\
+\hline
+\mbox{\texttt{ in}}  & {\em camera} & A reference to a \doxylink{classCamera}{Camera} object that manages the camera\textquotesingle{}s state \\
+\hline
+\end{DoxyParams}

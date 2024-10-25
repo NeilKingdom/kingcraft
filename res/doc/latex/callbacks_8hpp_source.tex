@@ -1,0 +1,27 @@
+\doxysection{callbacks.\+hpp}
+\hypertarget{callbacks_8hpp_source}{}\label{callbacks_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/callbacks.hpp@{/home/neil/devel/projects/kingcraft/include/callbacks.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ GLAPIENTRY\ debug\_callback(}
+\DoxyCodeLine{00006\ \ \ \ GLenum\ source,}
+\DoxyCodeLine{00007\ \ \ \ GLenum\ type,}
+\DoxyCodeLine{00008\ \ \ \ GLuint\ \textcolor{keywordtype}{id},}
+\DoxyCodeLine{00009\ \ \ \ GLenum\ severity,}
+\DoxyCodeLine{00010\ \ \ \ GLsizei\ length,}
+\DoxyCodeLine{00011\ \ \ \ \textcolor{keyword}{const}\ GLchar\ *msg,}
+\DoxyCodeLine{00012\ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}\ *args}
+\DoxyCodeLine{00013\ )}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ std::cerr}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ <<\ \textcolor{stringliteral}{"{}GL\ Callback:\ "{}}}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ <<\ \textcolor{stringliteral}{"{}\(\backslash\)ntype\ =\ "{}}\ <<\ (type\ ==\ GL\_DEBUG\_TYPE\_ERROR\ ?\ \textcolor{stringliteral}{"{}GL\ ERROR"{}}\ :\ \textcolor{stringliteral}{"{}N/A"{}})}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ <<\ \textcolor{stringliteral}{"{}\(\backslash\)nseverity\ =\ "{}}\ <<\ severity}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ <<\ \textcolor{stringliteral}{"{}\(\backslash\)nmessage\ =\ "{}}\ <<\ msg}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ <<\ std::endl;}
+\DoxyCodeLine{00021\ \}}
+
+\end{DoxyCode}

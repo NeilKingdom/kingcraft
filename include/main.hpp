@@ -9,4 +9,4 @@
 #include "game_state.hpp"
 #include "shader_program.hpp"
 #include "block_factory.hpp"
-#include "texture_mappings.hpp"
+#include "chunk_factory.hpp"

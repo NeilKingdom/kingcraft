@@ -32,6 +32,8 @@ static void cleanup(
         ImGui::DestroyContext();
 
         // X11
+
+        // TODO: Put cursor back to default
         XDestroyWindow(imgui_win.value().dpy, imgui_win.value().win);
         XFreeColormap(imgui_win.value().dpy, imgui_win.value().cmap);
         XCloseDisplay(imgui_win.value().dpy);
@@ -56,9 +58,6 @@ int main()
 
     /*** Variable declarations ***/
 
-    KCWindow app_win;
-    KCWindow imgui_win;
-
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
@@ -70,6 +69,9 @@ int main()
     nanoseconds::rep frame_duration = 0L;
 
     /*** Window and OpenGL context initialization ***/
+
+    KCWindow app_win;
+    KCWindow imgui_win;
 
     GLXFBConfig fb_config = create_window(app_win, "KingCraft", 1920, 1080);
     GLXContext glx = create_opengl_context(app_win, fb_config);
@@ -127,19 +129,14 @@ int main()
 
     ShaderProgram shader = ShaderProgram(vertex_shader, fragment_shader);
 
-    PngHndl_t *hndl = nullptr;
-    Pixmap_t *pixmap = nullptr;
-    std::string file = "/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png";
+    std::filesystem::path tex_atlas("/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png");
+    Texture main_texture = Texture(tex_atlas, GL_NEAREST, GL_NEAREST);
 
-    hndl = imc_png_open(file.c_str());
-    pixmap = imc_png_parse(hndl);
-
-    imc_pixmap_to_ppm(pixmap, "raster.ppm", Rgb_t{ 255, 255, 255 });
-    Texture main_texture = Texture(*pixmap, GL_NEAREST, GL_NEAREST);
+    /*** Load assets e.g. textures ***/
 
     mat4 m_trns = {};
-    lac_get_translation_mat4(&m_trns, 0.0f, 0.0f, 0.0f);
 
+    std::memcpy(m_trns, lac_ident_mat4, sizeof(m_trns));
     Block block1 = block_factory.make_block(BlockType::DIRT, m_trns, (Face)(FRONT | BACK | LEFT | TOP | BOTTOM));
     block1.mesh.texture = main_texture;
 
@@ -147,7 +144,9 @@ int main()
     Block block2 = block_factory.make_block(BlockType::DIRT, m_trns, (Face)(FRONT | BACK | RIGHT | TOP | BOTTOM));
     block2.mesh.texture = main_texture;
 
-    std::array<Block, 2> blocks = { block1, block2 };
+    auto blocks = std::vector<Block>();
+    blocks.push_back(block1);
+    blocks.push_back(block2);
 
     /*** Game loop ***/
 
@@ -157,7 +156,7 @@ int main()
         game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
         process_events(app_win, camera);
-        render_frame(blocks, app_win, camera, mvp, shader);
+        render_frame(app_win, camera, mvp, shader, blocks);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

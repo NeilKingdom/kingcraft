@@ -1,0 +1,21 @@
+\doxysection{game\+\_\+state.\+hpp}
+\hypertarget{game__state_8hpp_source}{}\label{game__state_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/game\_state.hpp@{/home/neil/devel/projects/kingcraft/include/game\_state.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <atomic>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}player.hpp"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{namespace\ }GameState}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keyword}{static}\ std::atomic<bool>\ is\_running\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{static}\ std::atomic<float>\ fov\ =\ 90.0f;}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keyword}{static}\ std::atomic<float>\ aspect\ =\ 9.0f\ /\ 16.0f;}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{classPlayer}{Player}}\ player\ =\ \mbox{\hyperlink{classPlayer}{Player}}();}
+\DoxyCodeLine{00015\ \};}
+
+\end{DoxyCode}

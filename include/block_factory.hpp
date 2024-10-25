@@ -1,8 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "texture_atlas.hpp"
-#include "texture_mappings.hpp"
+#include "constants.hpp"
 #include "block.hpp"
 
 typedef std::array<float, 2> UvCoords;
@@ -22,4 +21,7 @@ public:
 private:
     // Special member functions
     BlockFactory();
+
+    // General
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_tex_by_block_type(const BlockType type) const;
 };

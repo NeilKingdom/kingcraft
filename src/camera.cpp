@@ -65,11 +65,12 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     norm_dx  = (center_x - (float)win_off_x) / (float)win.xwa.width;
     norm_dy  = (center_y - (float)win_off_y) / (float)win.xwa.height;
 
-    // Convert pixel space to degrees
+    // Convert from pixel space to degrees
     camera_yaw += norm_dx * 180.0f * KCConst::CAMERA_ROTATION_SPEED;
     camera_pitch += norm_dy * 180.0f * KCConst::CAMERA_ROTATION_SPEED;
     camera_pitch = std::clamp(camera_pitch, -89.0f, 89.0f);
 
+    // Warp back to center of screen
     XWarpPointer(
         win.dpy, win.win, win.win, 0, 0,
         win.xwa.width, win.xwa.height, center_x, center_y

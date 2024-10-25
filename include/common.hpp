@@ -12,6 +12,7 @@
 #include <array>
 #include <optional>
 #include <tuple>
+#include <filesystem>
 
 // C APIs
 #include <cstdlib>
@@ -65,3 +66,5 @@ enum Face : uint8_t
     TOP    = 1 << 5,
     ALL    = 0xFF
 };
+
+typedef unsigned ID;

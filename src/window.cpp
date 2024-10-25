@@ -399,10 +399,10 @@ void process_events(KCWindow &win, Camera &camera)
         }
     }
 
-    vec3 v_fwd      = { 0 };
-    vec3 v_right    = { 0 };
-    vec3 v_up       = { 0 };
-    vec3 v_velocity = { 0 };
+    vec3 v_fwd      = {};
+    vec3 v_right    = {};
+    vec3 v_up       = {};
+    vec3 v_velocity = {};
     float magnitude = 0.0f;
 
     std::memcpy(v_fwd, camera.v_look_dir, sizeof(v_fwd));
@@ -455,11 +455,11 @@ void process_events(KCWindow &win, Camera &camera)
  * @param[in,out] mvp The model-view-projection matrix
  */
 void render_frame(
-    const std::array<Block, 2> blocks,
     const KCWindow &win,
     Camera &camera,
     Mvp &mvp,
-    const ShaderProgram shader
+    const ShaderProgram &shader,
+    const std::vector<Block> &blocks
 )
 {
     // Set background color
@@ -489,19 +489,21 @@ void render_frame(
     int proj_uniform = glGetUniformLocation(shader.id, "proj");
     glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
 
-    for (int i = 0; i < 2; ++i)
+    for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
-        blocks[i].mesh.texture.bind();
-        glBindVertexArray(blocks[i].mesh.vao);
+        // Bind
+        block->mesh.texture.bind();
+        glBindVertexArray(block->mesh.vao);
 
         // Issue draw call
-        glDrawArrays(GL_TRIANGLES, 0, blocks[i].mesh.vertices);
+        glDrawArrays(GL_TRIANGLES, 0, block->mesh.vertices);
 
-        // Unbind the shader program and any VAOs and textures
-        blocks[i].mesh.texture.unbind();
+        // Unbind
+        block->mesh.texture.unbind();
         glBindVertexArray(0);
     }
 
+    // Blit
     glXSwapBuffers(win.dpy, win.win);
     shader.unbind();
 }
