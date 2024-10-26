@@ -5,18 +5,16 @@
 \DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
 \DoxyCodeLine{00002\ }
 \DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
-\DoxyCodeLine{00004\ }
-\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classPlayer}{Player}}}
-\DoxyCodeLine{00006\ \{}
-\DoxyCodeLine{00007\ \textcolor{keyword}{public}:}
-\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ PLAYER\_BASE\_SPEED\ =\ 0.2f;\ \textcolor{comment}{//\ Normalized\ speed}}
-\DoxyCodeLine{00009\ }
-\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keywordtype}{float}\ speed;}
-\DoxyCodeLine{00011\ }
-\DoxyCodeLine{00012\ \ \ \ \ \mbox{\hyperlink{classPlayer_affe0cc3cb714f6deb4e62f0c0d3f1fd8}{Player}}();}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}constants.hpp"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classPlayer}{Player}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keywordtype}{float}\ speed\ =\ KCConst::PLAYER\_BASE\_SPEED;}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00012\ \ \ \ \ \mbox{\hyperlink{classPlayer}{Player}}()\ =\ \textcolor{keywordflow}{default};}
 \DoxyCodeLine{00013\ \ \ \ \ \mbox{\hyperlink{classPlayer}{\string~Player}}()\ =\ \textcolor{keywordflow}{default};}
-\DoxyCodeLine{00014\ }
-\DoxyCodeLine{00015\ \textcolor{keyword}{private}:}
-\DoxyCodeLine{00016\ \};}
+\DoxyCodeLine{00014\ \};}
 
 \end{DoxyCode}

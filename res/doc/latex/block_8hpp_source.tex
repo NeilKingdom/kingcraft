@@ -1,0 +1,33 @@
+\doxysection{block.\+hpp}
+\hypertarget{block_8hpp_source}{}\label{block_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/block.hpp@{/home/neil/devel/projects/kingcraft/include/block.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}mesh.hpp"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{enum\ class}\ BlockType}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \ \ \ \ DIRT,}
+\DoxyCodeLine{00009\ \ \ \ \ GRASS,}
+\DoxyCodeLine{00010\ \ \ \ \ STONE,}
+\DoxyCodeLine{00011\ \ \ \ \ SAND,}
+\DoxyCodeLine{00012\ \ \ \ \ WATER}
+\DoxyCodeLine{00013\ \};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structBlock}{Block}}}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \ \ \ \ BlockType\ \ \ type;\ \ \ \textcolor{comment}{//\ Block\ type}}
+\DoxyCodeLine{00018\ \ \ \ \ \mbox{\hyperlink{structMesh}{Mesh}}\ \ \ \ \ \ \ \ mesh;\ \ \ \textcolor{comment}{//\ Contains\ the\ vertex\ attribute\ object\ of\ the\ block\ mesh}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{structBlock}{Block}}()\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00022\ \ \ \ \ \mbox{\hyperlink{structBlock}{Block}}(BlockType\ type)}
+\DoxyCodeLine{00023\ \ \ \ \ \{}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ this-\/>type\ =\ type;}
+\DoxyCodeLine{00025\ \ \ \ \ \}}
+\DoxyCodeLine{00026\ \ \ \ \ \mbox{\hyperlink{structBlock}{\string~Block}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00027\ \};}
+
+\end{DoxyCode}

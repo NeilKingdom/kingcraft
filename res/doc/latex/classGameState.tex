@@ -1,0 +1,65 @@
+\doxysection{Game\+State Class Reference}
+\hypertarget{classGameState}{}\label{classGameState}\index{GameState@{GameState}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classGameState_a1c9c800cd3aa07e6609dd5bdd449312a}\label{classGameState_a1c9c800cd3aa07e6609dd5bdd449312a} 
+{\bfseries Game\+State} (const \mbox{\hyperlink{classGameState}{Game\+State}} \&)=delete
+\item 
+\Hypertarget{classGameState_a15d67413b30b79bfa8d4e710191a42cb}\label{classGameState_a15d67413b30b79bfa8d4e710191a42cb} 
+\mbox{\hyperlink{classGameState}{Game\+State}} \& {\bfseries operator=} (const \mbox{\hyperlink{classGameState}{Game\+State}} \&)=delete
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \mbox{\hyperlink{classGameState}{Game\+State}} \& \mbox{\hyperlink{classGameState_a670aad536038d719fddf70a273a75dbd}{get\+\_\+instance}} ()
+\begin{DoxyCompactList}\small\item\em Returns the single instance of \doxylink{classGameState}{Game\+State}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classGameState_ac6074d067c6e34c9a2ea4449b9a02656}\label{classGameState_ac6074d067c6e34c9a2ea4449b9a02656} 
+float {\bfseries fov} = 90.\+0f
+\item 
+\Hypertarget{classGameState_a5787d60a628c202a24a1341f8b342241}\label{classGameState_a5787d60a628c202a24a1341f8b342241} 
+float {\bfseries aspect} = 9.\+0f / 16.\+0f
+\item 
+\Hypertarget{classGameState_a17f1be1f1b16de17aa687506f68a0092}\label{classGameState_a17f1be1f1b16de17aa687506f68a0092} 
+float {\bfseries znear} = 1.\+0f
+\item 
+\Hypertarget{classGameState_a2ab4df30cfc259639b83d2ad5d2a65d3}\label{classGameState_a2ab4df30cfc259639b83d2ad5d2a65d3} 
+float {\bfseries zfar} = 1000.\+0f
+\item 
+\Hypertarget{classGameState_acba82af5853de99c9276f0de2efdb649}\label{classGameState_acba82af5853de99c9276f0de2efdb649} 
+size\+\_\+t {\bfseries chunk\+\_\+size} = 16
+\item 
+\Hypertarget{classGameState_aaceb0786d486bae45dbefc72e675b5e6}\label{classGameState_aaceb0786d486bae45dbefc72e675b5e6} 
+bool {\bfseries is\+\_\+running} = true
+\item 
+\Hypertarget{classGameState_a29868bc048715fa72252e99e11c93dd1}\label{classGameState_a29868bc048715fa72252e99e11c93dd1} 
+\mbox{\hyperlink{classPlayer}{Player}} {\bfseries player} = \mbox{\hyperlink{classPlayer}{Player}}()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classGameState_a670aad536038d719fddf70a273a75dbd}\index{GameState@{GameState}!get\_instance@{get\_instance}}
+\index{get\_instance@{get\_instance}!GameState@{GameState}}
+\doxysubsubsection{\texorpdfstring{get\_instance()}{get\_instance()}}
+{\footnotesize\ttfamily \label{classGameState_a670aad536038d719fddf70a273a75dbd} 
+\mbox{\hyperlink{classGameState}{Game\+State}} \& Game\+State\+::get\+\_\+instance (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Returns the single instance of \doxylink{classGameState}{Game\+State}. 
+
+\begin{DoxySince}{Since}
+14-\/10-\/2024 
+\end{DoxySince}
+\begin{DoxyReturn}{Returns}
+The \doxylink{classGameState}{Game\+State} instance 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/neil/devel/projects/kingcraft/include/game\+\_\+state.\+hpp\item 
+/home/neil/devel/projects/kingcraft/src/\mbox{\hyperlink{game__state_8cpp}{game\+\_\+state.\+cpp}}\end{DoxyCompactItemize}

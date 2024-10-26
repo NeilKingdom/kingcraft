@@ -104,15 +104,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a83af7c48e03331b5c12097ae005e9d97" id="r_a83af7c48e03331b5c12097ae005e9d97"><td class="memItemLeft" align="right" valign="top"><a id="a83af7c48e03331b5c12097ae005e9d97" name="a83af7c48e03331b5c12097ae005e9d97"></a>
 IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_ImplX11_EventHandler</b> (XEvent &amp;event, XEvent *next_event)</td></tr>
 <tr class="separator:a83af7c48e03331b5c12097ae005e9d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4bc8866821df65ee188e4c77340765b1" id="r_a4bc8866821df65ee188e4c77340765b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4bc8866821df65ee188e4c77340765b1">init_imgui</a> (const <a class="el" href="structXObjects.html">XObjects</a> &amp;im_objs)</td></tr>
-<tr class="memdesc:a4bc8866821df65ee188e4c77340765b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the ImGui window with an X11 backend.  <br /></td></tr>
-<tr class="separator:a4bc8866821df65ee188e4c77340765b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb51260f986d0807ebcf592539bfe918" id="r_aeb51260f986d0807ebcf592539bfe918"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeb51260f986d0807ebcf592539bfe918">process_imgui_events</a> (<a class="el" href="structXObjects.html">XObjects</a> &amp;im_objs)</td></tr>
-<tr class="memdesc:aeb51260f986d0807ebcf592539bfe918"><td class="mdescLeft">&#160;</td><td class="mdescRight">Processes any pending X11 events for the ImGui window.  <br /></td></tr>
-<tr class="separator:aeb51260f986d0807ebcf592539bfe918"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af4d77f5be6aa7406e48453ff2a98cc45" id="r_af4d77f5be6aa7406e48453ff2a98cc45"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af4d77f5be6aa7406e48453ff2a98cc45">render_imgui_frame</a> (<a class="el" href="structXObjects.html">XObjects</a> &amp;im_objs, <a class="el" href="classCamera.html">Camera</a> &amp;camera)</td></tr>
-<tr class="memdesc:af4d77f5be6aa7406e48453ff2a98cc45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Renders the ImGui window to the screen.  <br /></td></tr>
-<tr class="separator:af4d77f5be6aa7406e48453ff2a98cc45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7192a8d084ff65ffbf63a46c545f3924" id="r_a7192a8d084ff65ffbf63a46c545f3924"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7192a8d084ff65ffbf63a46c545f3924">init_imgui</a> (const <a class="el" href="structKCWindow.html">KCWindow</a> &amp;win)</td></tr>
+<tr class="memdesc:a7192a8d084ff65ffbf63a46c545f3924"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the ImGui window with an X11 backend.  <br /></td></tr>
+<tr class="separator:a7192a8d084ff65ffbf63a46c545f3924"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a401e6fec67565a029f1e57004098cf04" id="r_a401e6fec67565a029f1e57004098cf04"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a401e6fec67565a029f1e57004098cf04">process_imgui_events</a> (<a class="el" href="structKCWindow.html">KCWindow</a> &amp;win)</td></tr>
+<tr class="memdesc:a401e6fec67565a029f1e57004098cf04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Processes any pending X11 events for the ImGui window.  <br /></td></tr>
+<tr class="separator:a401e6fec67565a029f1e57004098cf04"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a114b367fa8f6170bb5d17441476e0fda" id="r_a114b367fa8f6170bb5d17441476e0fda"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a114b367fa8f6170bb5d17441476e0fda">render_imgui_frame</a> (<a class="el" href="structKCWindow.html">KCWindow</a> &amp;win, <a class="el" href="classCamera.html">Camera</a> &amp;camera)</td></tr>
+<tr class="memdesc:a114b367fa8f6170bb5d17441476e0fda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Renders the ImGui window to the screen.  <br /></td></tr>
+<tr class="separator:a114b367fa8f6170bb5d17441476e0fda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Provides functions for interacting with an ImGui debug window. </p>
@@ -120,8 +120,8 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
 <dl class="section version"><dt>Version</dt><dd>1.0 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>07-05-2024 </dd></dl>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a4bc8866821df65ee188e4c77340765b1" name="a4bc8866821df65ee188e4c77340765b1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4bc8866821df65ee188e4c77340765b1">&#9670;&#160;</a></span>init_imgui()</h2>
+<a id="a7192a8d084ff65ffbf63a46c545f3924" name="a7192a8d084ff65ffbf63a46c545f3924"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7192a8d084ff65ffbf63a46c545f3924">&#9670;&#160;</a></span>init_imgui()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -129,7 +129,7 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
         <tr>
           <td class="memname">void init_imgui </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structXObjects.html">XObjects</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>im_objs</em></span></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="structKCWindow.html">KCWindow</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>win</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -139,15 +139,15 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
 <dl class="section since"><dt>Since</dt><dd>07-05-2024 </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">im_objs</td><td>Reference to and <a class="el" href="structXObjects.html">XObjects</a> instance containing ImGui-related data </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">win</td><td>Reference to the application's window </td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<a id="aeb51260f986d0807ebcf592539bfe918" name="aeb51260f986d0807ebcf592539bfe918"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeb51260f986d0807ebcf592539bfe918">&#9670;&#160;</a></span>process_imgui_events()</h2>
+<a id="a401e6fec67565a029f1e57004098cf04" name="a401e6fec67565a029f1e57004098cf04"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a401e6fec67565a029f1e57004098cf04">&#9670;&#160;</a></span>process_imgui_events()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -155,7 +155,7 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
         <tr>
           <td class="memname">void process_imgui_events </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structXObjects.html">XObjects</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>im_objs</em></span></td><td>)</td>
+          <td class="paramtype"><a class="el" href="structKCWindow.html">KCWindow</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>win</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -165,15 +165,15 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
 <dl class="section since"><dt>Since</dt><dd>07-05-2024 </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">im_objs</td><td>Reference to and <a class="el" href="structXObjects.html">XObjects</a> instance containing ImGui-related data </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">win</td><td>Reference to the application's window </td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<a id="af4d77f5be6aa7406e48453ff2a98cc45" name="af4d77f5be6aa7406e48453ff2a98cc45"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af4d77f5be6aa7406e48453ff2a98cc45">&#9670;&#160;</a></span>render_imgui_frame()</h2>
+<a id="a114b367fa8f6170bb5d17441476e0fda" name="a114b367fa8f6170bb5d17441476e0fda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a114b367fa8f6170bb5d17441476e0fda">&#9670;&#160;</a></span>render_imgui_frame()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -181,7 +181,7 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
         <tr>
           <td class="memname">void render_imgui_frame </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structXObjects.html">XObjects</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>im_objs</em></span>, </td>
+          <td class="paramtype"><a class="el" href="structKCWindow.html">KCWindow</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>win</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -195,7 +195,7 @@ IMGUI_IMPL_API int&#160;</td><td class="memItemRight" valign="bottom"><b>ImGui_I
 <dl class="section since"><dt>Since</dt><dd>07-05-2024 </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">im_objs</td><td>Reference to and <a class="el" href="structXObjects.html">XObjects</a> instance containing ImGui-related data </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">win</td><td>Reference to the application's window </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">camera</td><td>A reference to a <a class="el" href="classCamera.html">Camera</a> object that manages the camera's state </td></tr>
   </table>
   </dd>

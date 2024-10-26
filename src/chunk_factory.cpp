@@ -45,7 +45,7 @@ Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
                     chunk.m_block_faces[z][y][x] &= ~BACK;
                     chunk.m_block_faces[z][y][x - 1] &= ~FRONT;
                 }
-                if (x + 1 < 16)
+                if (x + 1 < game.chunk_size)
                 {
                     chunk.m_block_faces[z][y][x] &= ~FRONT;
                     chunk.m_block_faces[z][y][x + 1] &= ~BACK;
@@ -55,7 +55,7 @@ Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
                     chunk.m_block_faces[z][y][x] &= ~LEFT;
                     chunk.m_block_faces[z][y - 1][x] &= ~RIGHT;
                 }
-                if (y + 1 < 16)
+                if (y + 1 < game.chunk_size)
                 {
                     chunk.m_block_faces[z][y][x] &= ~RIGHT;
                     chunk.m_block_faces[z][y + 1][x] &= ~LEFT;
@@ -65,7 +65,7 @@ Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
                     chunk.m_block_faces[z][y][x] &= ~BOTTOM;
                     chunk.m_block_faces[z - 1][y][x] &= ~TOP;
                 }
-                if (z + 1 < 16)
+                if (z + 1 < game.chunk_size)
                 {
                     chunk.m_block_faces[z][y][x] &= ~TOP;
                     chunk.m_block_faces[z + 1][y][x] &= ~BOTTOM;
@@ -87,7 +87,7 @@ Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
                 chunk.blocks[z][y][x] = block_factory.make_block(
                     chunk.m_block_types[z][y][x],
                     m_blk_trns,
-                    (uint8_t)chunk.m_block_faces[z][y][x]
+                    chunk.m_block_faces[z][y][x]
                 );
             }
         }

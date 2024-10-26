@@ -6,55 +6,54 @@
 \DoxyCodeLine{00002\ }
 \DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
 \DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}constants.hpp"{}}}
-\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}impl\_imgui.hpp"{}}}
-\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}camera.hpp"{}}}
-\DoxyCodeLine{00007\ }
-\DoxyCodeLine{00008\ \textcolor{keyword}{static}\ uint16\_t\ key\_mask\ =\ 0;}
-\DoxyCodeLine{00009\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ query\_pointer\_location\ =\ \textcolor{keyword}{true};}
-\DoxyCodeLine{00010\ }
-\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#define\ KEY\_FORWARD\ \ \ \ \ (1\ <<\ 0)}}
-\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#define\ KEY\_BACKWARD\ \ \ \ (1\ <<\ 1)}}
-\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#define\ KEY\_LEFT\ \ \ \ \ \ \ \ (1\ <<\ 2)}}
-\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#define\ KEY\_RIGHT\ \ \ \ \ \ \ (1\ <<\ 3)}}
-\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#define\ KEY\_UP\ \ \ \ \ \ \ \ \ \ (1\ <<\ 4)}}
-\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#define\ KEY\_DOWN\ \ \ \ \ \ \ \ (1\ <<\ 5)}}
-\DoxyCodeLine{00017\ }
-\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#define\ SET\_KEY(mask,\ key)\ \ \ \ ((mask)\ |=\ (key))}}
-\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#define\ UNSET\_KEY(mask,\ key)\ \ ((mask)\ \&=\ (\string~key))}}
-\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#define\ TOGGLE\_KEY(mask,\ key)\ ((mask)\ \string^=\ (key))}}
-\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#define\ IS\_KEY\_SET(mask,\ key)\ ((((mask)\ \&\ (key))\ ==\ (key))\ ?\ true\ :\ false)}}
-\DoxyCodeLine{00022\ }
-\DoxyCodeLine{00023\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structMvp}{Mvp}}}
-\DoxyCodeLine{00024\ \{}
-\DoxyCodeLine{00025\ \textcolor{keyword}{public}:}
-\DoxyCodeLine{00026\ \ \ \ \ mat4\ m\_model;}
-\DoxyCodeLine{00027\ \ \ \ \ std::shared\_ptr<std::array<float,\ 16>>\ m\_view;}
-\DoxyCodeLine{00028\ \ \ \ \ mat4\ m\_proj;}
-\DoxyCodeLine{00029\ }
-\DoxyCodeLine{00030\ \ \ \ \ \mbox{\hyperlink{structMvp}{Mvp}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classCamera}{Camera}}\ \&camera)\ :}
-\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ m\_model\{\},}
-\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ m\_view(camera.m\_view),}
-\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ m\_proj\{\}}
-\DoxyCodeLine{00034\ \ \ \ \ \{\}}
-\DoxyCodeLine{00035\ \};}
-\DoxyCodeLine{00036\ }
-\DoxyCodeLine{00037\ \textcolor{keyword}{typedef}\ GLXContext\ (*glXCreateContextAttribsARBProc)(}
-\DoxyCodeLine{00038\ \ \ \ \ Display\ *dpy,}
-\DoxyCodeLine{00039\ \ \ \ \ GLXFBConfig\ fb\_conf,}
-\DoxyCodeLine{00040\ \ \ \ \ GLXContext\ glx,}
-\DoxyCodeLine{00041\ \ \ \ \ Bool\ is\_fwd\_compat,}
-\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ *glx\_attribs}
-\DoxyCodeLine{00043\ );}
-\DoxyCodeLine{00044\ }
-\DoxyCodeLine{00045\ \textcolor{comment}{//\ Forward\ function\ declarations}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}camera.hpp"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}block.hpp"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}shader\_program.hpp"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}chunk.hpp"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{static}\ uint16\_t\ key\_mask\ =\ 0;}
+\DoxyCodeLine{00011\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ query\_pointer\_location\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#define\ KEY\_FORWARD\ \ \ \ \ (1\ <<\ 0)}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#define\ KEY\_BACKWARD\ \ \ \ (1\ <<\ 1)}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#define\ KEY\_LEFT\ \ \ \ \ \ \ \ (1\ <<\ 2)}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#define\ KEY\_RIGHT\ \ \ \ \ \ \ (1\ <<\ 3)}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ KEY\_UP\ \ \ \ \ \ \ \ \ \ (1\ <<\ 4)}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#define\ KEY\_DOWN\ \ \ \ \ \ \ \ (1\ <<\ 5)}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#define\ SET\_KEY(mask,\ key)\ \ \ \ ((mask)\ |=\ (key))}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#define\ UNSET\_KEY(mask,\ key)\ \ ((mask)\ \&=\ (\string~key))}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#define\ TOGGLE\_KEY(mask,\ key)\ ((mask)\ \string^=\ (key))}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ IS\_KEY\_SET(mask,\ key)\ ((((mask)\ \&\ (key))\ ==\ (key))\ ?\ true\ :\ false)}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{typedef}\ GLXContext\ (*glXCreateContextAttribsARBProc)(}
+\DoxyCodeLine{00026\ \ \ \ \ Display\ *dpy,}
+\DoxyCodeLine{00027\ \ \ \ \ GLXFBConfig\ fb\_config,}
+\DoxyCodeLine{00028\ \ \ \ \ GLXContext\ glx,}
+\DoxyCodeLine{00029\ \ \ \ \ Bool\ is\_fwd\_compat,}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ *glx\_attribs}
+\DoxyCodeLine{00031\ );}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structMvp}{Mvp}}}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ mat4\ m\_model;}
+\DoxyCodeLine{00036\ \ \ \ \ std::shared\_ptr<std::array<float,\ 16>>\ m\_view;}
+\DoxyCodeLine{00037\ \ \ \ \ mat4\ m\_proj;}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00040\ \ \ \ \ \mbox{\hyperlink{structMvp}{Mvp}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classCamera}{Camera}}\ \&camera)\ :}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ m\_model\{\},}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ m\_view(camera.m\_view),}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ m\_proj\{\}}
+\DoxyCodeLine{00044\ \ \ \ \ \{\}}
+\DoxyCodeLine{00045\ \};}
 \DoxyCodeLine{00046\ }
-\DoxyCodeLine{00047\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ calculate\_frame\_rate(\textcolor{keywordtype}{int}\ \&fps,\ \textcolor{keywordtype}{int}\ \&frames\_elapsed,\ std::chrono::steady\_clock::time\_point\ \&since);}
-\DoxyCodeLine{00048\ \textcolor{keywordtype}{bool}\ \ \ \ \ \ \ \ \ \ \ \ is\_glx\_extension\_supported(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *ext\_list,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *ext\_name);}
-\DoxyCodeLine{00049\ \textcolor{keywordtype}{unsigned}\ \ \ \ \ \ \ \ compile\_shader(\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ type,\ \textcolor{keyword}{const}\ std::string\ source);}
-\DoxyCodeLine{00050\ \textcolor{keywordtype}{unsigned}\ \ \ \ \ \ \ \ create\_shader(\textcolor{keyword}{const}\ std::string\ vertex\_shader,\ \textcolor{keyword}{const}\ std::string\ fragment\_shader);}
-\DoxyCodeLine{00051\ GLXFBConfig\ \ \ \ \ create\_window(\mbox{\hyperlink{structXObjects}{XObjects}}\ \&x\_objs,\ \textcolor{keyword}{const}\ std::string\ win\_name,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ win\_width,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ win\_height);}
-\DoxyCodeLine{00052\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ create\_opengl\_context(\mbox{\hyperlink{structXObjects}{XObjects}}\ \&x\_objs,\ \textcolor{keyword}{const}\ GLXFBConfig\ \&best\_fb\_config);}
-\DoxyCodeLine{00053\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ process\_events(\mbox{\hyperlink{structXObjects}{XObjects}}\ \&x\_objs,\ \mbox{\hyperlink{classCamera}{Camera}}\ \&camera);}
-\DoxyCodeLine{00054\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ render\_frame(\textcolor{keyword}{const}\ \mbox{\hyperlink{structGLObjects}{GLObjects}}\ \&gl\_objs,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structXObjects}{XObjects}}\ \&x\_objs,\ \mbox{\hyperlink{classCamera}{Camera}}\ \&camera,\ \mbox{\hyperlink{structMvp}{Mvp}}\ \&mvp,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ indices\_size);}
+\DoxyCodeLine{00047\ \textcolor{comment}{//\ Forward\ function\ declarations}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ calculate\_frame\_rate(\textcolor{keywordtype}{int}\ \&fps,\ \textcolor{keywordtype}{int}\ \&frames\_elapsed,\ std::chrono::steady\_clock::time\_point\ \&since);}
+\DoxyCodeLine{00050\ GLXFBConfig\ \ \ \ \ create\_window(\mbox{\hyperlink{structKCWindow}{KCWindow}}\ \&win,\ \textcolor{keyword}{const}\ std::string\ win\_name,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ win\_width,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ win\_height);}
+\DoxyCodeLine{00051\ GLXContext\ \ \ \ \ \ create\_opengl\_context(\mbox{\hyperlink{structKCWindow}{KCWindow}}\ \&win,\ \textcolor{keyword}{const}\ GLXFBConfig\ \&best\_fb\_config);}
+\DoxyCodeLine{00052\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ process\_events(\mbox{\hyperlink{structKCWindow}{KCWindow}}\ \&win,\ \mbox{\hyperlink{classCamera}{Camera}}\ \&camera);}
+\DoxyCodeLine{00053\ \textcolor{keywordtype}{void}\ \ \ \ \ \ \ \ \ \ \ \ render\_frame(\textcolor{keyword}{const}\ \mbox{\hyperlink{structKCWindow}{KCWindow}}\ \&win,\ \mbox{\hyperlink{classCamera}{Camera}}\ \&camera,\ \mbox{\hyperlink{structMvp}{Mvp}}\ \&mvp,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classShaderProgram}{ShaderProgram}}\ \&shader,\ \textcolor{keyword}{const}\ std::vector<std::vector<std::vector<Block>>>\ \&blocks);}
 
 \end{DoxyCode}

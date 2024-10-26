@@ -2,7 +2,7 @@
 \hypertarget{window_8cpp}{}\label{window_8cpp}\index{/home/neil/devel/projects/kingcraft/src/window.cpp@{/home/neil/devel/projects/kingcraft/src/window.cpp}}
 
 
-Handles actions related to the X11 window. Has actions for creating the window, handling events, rendering the frame buffer, etc.  
+Handles actions related to the game window. Has actions for creating the window, handling events, rendering the frame buffer, etc.  
 
 
 {\ttfamily \#include "{}window.\+hpp"{}}\newline
@@ -11,24 +11,18 @@ Handles actions related to the X11 window. Has actions for creating the window, 
 \item 
 void \mbox{\hyperlink{window_8cpp_a69235d16147832d174baf4f3af87775d}{calculate\+\_\+frame\+\_\+rate}} (int \&fps, int \&frames\+\_\+elapsed, steady\+\_\+clock\+::time\+\_\+point \&since)
 \begin{DoxyCompactList}\small\item\em Prints the current frame rate to stdout. \end{DoxyCompactList}\item 
-unsigned \mbox{\hyperlink{window_8cpp_a38ab0202327965bfa83b896919747ed3}{compile\+\_\+shader}} (const unsigned type, const std\+::string source)
-\begin{DoxyCompactList}\small\item\em Compiles a GLSL shader and returns its id. \end{DoxyCompactList}\item 
-unsigned \mbox{\hyperlink{window_8cpp_adbc86f63150fbdbad660287b76bf3d68}{create\+\_\+shader}} (const std\+::string vertex\+\_\+shader, const std\+::string fragment\+\_\+shader)
-\begin{DoxyCompactList}\small\item\em Attaches and links the vertex and fragment shaders to a shader program. \end{DoxyCompactList}\item 
-bool \mbox{\hyperlink{window_8cpp_a748d69d04146704b63bd8bbbf3d7315a}{is\+\_\+glx\+\_\+extension\+\_\+supported}} (const char \texorpdfstring{$\ast$}{*}ext\+\_\+list, const char \texorpdfstring{$\ast$}{*}ext\+\_\+name)
-\begin{DoxyCompactList}\small\item\em Checks to see if the X11 extension function is supported by Open\+GL. \end{DoxyCompactList}\item 
-GLXFBConfig \mbox{\hyperlink{window_8cpp_a8fc6195ae452be456c53deb9e4542436}{create\+\_\+window}} (\mbox{\hyperlink{structXObjects}{XObjects}} \&x\+\_\+objs, const std\+::string win\+\_\+name, const size\+\_\+t win\+\_\+width, const size\+\_\+t win\+\_\+height)
+GLXFBConfig \mbox{\hyperlink{window_8cpp_a86ff5f7ca1c7bd4b1157c96eebcb7135}{create\+\_\+window}} (\mbox{\hyperlink{structKCWindow}{KCWindow}} \&win, const std\+::string win\+\_\+name, const size\+\_\+t win\+\_\+width, const size\+\_\+t win\+\_\+height)
 \begin{DoxyCompactList}\small\item\em Creates a new game window. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{window_8cpp_a3df47e7d903b2678d51e9fb0113fdd3e}{create\+\_\+opengl\+\_\+context}} (\mbox{\hyperlink{structXObjects}{XObjects}} \&x\+\_\+objs, const GLXFBConfig \&fb\+\_\+config)
-\begin{DoxyCompactList}\small\item\em Create an Open\+GL context for the given X11 window. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{window_8cpp_a860420ee6463bcdb5c15222b20221545}{process\+\_\+events}} (\mbox{\hyperlink{structXObjects}{XObjects}} \&x\+\_\+objs, \mbox{\hyperlink{classCamera}{Camera}} \&camera)
-\begin{DoxyCompactList}\small\item\em Processes X events in the queue until there aren\textquotesingle{}t any left. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{window_8cpp_a797c4cfa9710cb647c0786b2e74537ac}{render\+\_\+frame}} (const \mbox{\hyperlink{structGLObjects}{GLObjects}} \&gl\+\_\+objs, const \mbox{\hyperlink{structXObjects}{XObjects}} \&x\+\_\+objs, \mbox{\hyperlink{classCamera}{Camera}} \&camera, \mbox{\hyperlink{structMvp}{Mvp}} \&mvp, const size\+\_\+t indices\+\_\+size)
-\begin{DoxyCompactList}\small\item\em Renders the current frame for both Open\+GL and optionally Im\+Gui. \end{DoxyCompactList}\end{DoxyCompactItemize}
+GLXContext \mbox{\hyperlink{window_8cpp_a396e5c5193a13e160ab36aa8f665bf8f}{create\+\_\+opengl\+\_\+context}} (\mbox{\hyperlink{structKCWindow}{KCWindow}} \&win, const GLXFBConfig \&fb\+\_\+config)
+\begin{DoxyCompactList}\small\item\em Create an Open\+GL context for the given window. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{window_8cpp_a717cc0d68c14d6c100c5ee9106ac352e}{process\+\_\+events}} (\mbox{\hyperlink{structKCWindow}{KCWindow}} \&win, \mbox{\hyperlink{classCamera}{Camera}} \&camera)
+\begin{DoxyCompactList}\small\item\em Processes window events in the queue until there aren\textquotesingle{}t any left. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{window_8cpp_a5e447999d022b239a2f5592714a3ae22}{render\+\_\+frame}} (const \mbox{\hyperlink{structKCWindow}{KCWindow}} \&win, \mbox{\hyperlink{classCamera}{Camera}} \&camera, \mbox{\hyperlink{structMvp}{Mvp}} \&mvp, const \mbox{\hyperlink{classShaderProgram}{Shader\+Program}} \&shader, const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ \mbox{\hyperlink{structBlock}{Block}} $>$ $>$ $>$ \&blocks)
+\begin{DoxyCompactList}\small\item\em Renders the current game frame. \end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \doxysubsection{Detailed Description}
-Handles actions related to the X11 window. Has actions for creating the window, handling events, rendering the frame buffer, etc. 
+Handles actions related to the game window. Has actions for creating the window, handling events, rendering the frame buffer, etc. 
 
 \begin{DoxyAuthor}{Author}
 Neil Kingdom 
@@ -70,77 +64,34 @@ Must be called once per frame.
 \mbox{\texttt{ in,out}}  & {\em since} & The amount of time that has passed since the last call to this function \\
 \hline
 \end{DoxyParams}
-\Hypertarget{window_8cpp_a38ab0202327965bfa83b896919747ed3}\index{window.cpp@{window.cpp}!compile\_shader@{compile\_shader}}
-\index{compile\_shader@{compile\_shader}!window.cpp@{window.cpp}}
-\doxysubsubsection{\texorpdfstring{compile\_shader()}{compile\_shader()}}
-{\footnotesize\ttfamily \label{window_8cpp_a38ab0202327965bfa83b896919747ed3} 
-unsigned compile\+\_\+shader (\begin{DoxyParamCaption}\item[{const unsigned}]{type}{, }\item[{const std\+::string}]{source}{}\end{DoxyParamCaption})}
-
-
-
-Compiles a GLSL shader and returns its id. 
-
-\begin{DoxySince}{Since}
-02-\/03-\/2024 
-\end{DoxySince}
-
-\begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in}}  & {\em type} & The type of shader being compiled (GL\+\_\+\+VERTEX\+\_\+\+SHADER or GL\+\_\+\+FRAGMENT\+\_\+\+SHADER) \\
-\hline
-\mbox{\texttt{ in}}  & {\em source} & The GLSL source code for the shader \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-The id of the compiled GLSL shader or 0 on failure 
-\end{DoxyReturn}
-\Hypertarget{window_8cpp_a3df47e7d903b2678d51e9fb0113fdd3e}\index{window.cpp@{window.cpp}!create\_opengl\_context@{create\_opengl\_context}}
+\Hypertarget{window_8cpp_a396e5c5193a13e160ab36aa8f665bf8f}\index{window.cpp@{window.cpp}!create\_opengl\_context@{create\_opengl\_context}}
 \index{create\_opengl\_context@{create\_opengl\_context}!window.cpp@{window.cpp}}
 \doxysubsubsection{\texorpdfstring{create\_opengl\_context()}{create\_opengl\_context()}}
-{\footnotesize\ttfamily \label{window_8cpp_a3df47e7d903b2678d51e9fb0113fdd3e} 
-void create\+\_\+opengl\+\_\+context (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structXObjects}{XObjects}} \&}]{x\+\_\+objs}{, }\item[{const GLXFBConfig \&}]{fb\+\_\+config}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{window_8cpp_a396e5c5193a13e160ab36aa8f665bf8f} 
+GLXContext create\+\_\+opengl\+\_\+context (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structKCWindow}{KCWindow}} \&}]{win}{, }\item[{const GLXFBConfig \&}]{fb\+\_\+config}{}\end{DoxyParamCaption})}
 
 
 
-Create an Open\+GL context for the given X11 window. 
+Create an Open\+GL context for the given window. 
 
 \begin{DoxySince}{Since}
 02-\/03-\/2024 
 \end{DoxySince}
 
 \begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in,out}}  & {\em x\+\_\+objs} & An instance of \doxylink{structXObjects}{XObjects} containing X-\/related data \\
+\mbox{\texttt{ in,out}}  & {\em win} & An instance of \doxylink{structKCWindow}{KCWindow} containing window-\/related data \\
 \hline
 \mbox{\texttt{ in}}  & {\em fb\+\_\+config} & The frame buffer configuration that shall be bound to the Open\+GL context \\
 \hline
 \end{DoxyParams}
-\Hypertarget{window_8cpp_adbc86f63150fbdbad660287b76bf3d68}\index{window.cpp@{window.cpp}!create\_shader@{create\_shader}}
-\index{create\_shader@{create\_shader}!window.cpp@{window.cpp}}
-\doxysubsubsection{\texorpdfstring{create\_shader()}{create\_shader()}}
-{\footnotesize\ttfamily \label{window_8cpp_adbc86f63150fbdbad660287b76bf3d68} 
-unsigned create\+\_\+shader (\begin{DoxyParamCaption}\item[{const std\+::string}]{vertex\+\_\+shader}{, }\item[{const std\+::string}]{fragment\+\_\+shader}{}\end{DoxyParamCaption})}
-
-
-
-Attaches and links the vertex and fragment shaders to a shader program. 
-
-\begin{DoxySince}{Since}
-02-\/03-\/2024 
-\end{DoxySince}
-
-\begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in}}  & {\em vertex\+\_\+shader} & The vertex shader to be attached \\
-\hline
-\mbox{\texttt{ in}}  & {\em fragment\+\_\+shader} & The fragment shader to be attached \\
-\hline
-\end{DoxyParams}
 \begin{DoxyReturn}{Returns}
-The id of the shader program 
+An Open\+GL context for {\bfseries{win}} 
 \end{DoxyReturn}
-\Hypertarget{window_8cpp_a8fc6195ae452be456c53deb9e4542436}\index{window.cpp@{window.cpp}!create\_window@{create\_window}}
+\Hypertarget{window_8cpp_a86ff5f7ca1c7bd4b1157c96eebcb7135}\index{window.cpp@{window.cpp}!create\_window@{create\_window}}
 \index{create\_window@{create\_window}!window.cpp@{window.cpp}}
 \doxysubsubsection{\texorpdfstring{create\_window()}{create\_window()}}
-{\footnotesize\ttfamily \label{window_8cpp_a8fc6195ae452be456c53deb9e4542436} 
-GLXFBConfig create\+\_\+window (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structXObjects}{XObjects}} \&}]{x\+\_\+objs}{, }\item[{const std\+::string}]{win\+\_\+name}{, }\item[{const size\+\_\+t}]{win\+\_\+width}{, }\item[{const size\+\_\+t}]{win\+\_\+height}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{window_8cpp_a86ff5f7ca1c7bd4b1157c96eebcb7135} 
+GLXFBConfig create\+\_\+window (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structKCWindow}{KCWindow}} \&}]{win}{, }\item[{const std\+::string}]{win\+\_\+name}{, }\item[{const size\+\_\+t}]{win\+\_\+width}{, }\item[{const size\+\_\+t}]{win\+\_\+height}{}\end{DoxyParamCaption})}
 
 
 
@@ -151,7 +102,7 @@ Creates a new game window.
 \end{DoxySince}
 
 \begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in,out}}  & {\em x\+\_\+objs} & An instance of \doxylink{structXObjects}{XObjects} containing X11-\/related data \\
+\mbox{\texttt{ in,out}}  & {\em x\+\_\+objs} & An instance of XObjects containing X11-\/related data \\
 \hline
 \mbox{\texttt{ in}}  & {\em win\+\_\+name} & The name of the new window \\
 \hline
@@ -163,69 +114,44 @@ Creates a new game window.
 \begin{DoxyReturn}{Returns}
 The best available frame buffer configuration for the new window 
 \end{DoxyReturn}
-\Hypertarget{window_8cpp_a748d69d04146704b63bd8bbbf3d7315a}\index{window.cpp@{window.cpp}!is\_glx\_extension\_supported@{is\_glx\_extension\_supported}}
-\index{is\_glx\_extension\_supported@{is\_glx\_extension\_supported}!window.cpp@{window.cpp}}
-\doxysubsubsection{\texorpdfstring{is\_glx\_extension\_supported()}{is\_glx\_extension\_supported()}}
-{\footnotesize\ttfamily \label{window_8cpp_a748d69d04146704b63bd8bbbf3d7315a} 
-bool is\+\_\+glx\+\_\+extension\+\_\+supported (\begin{DoxyParamCaption}\item[{const char \texorpdfstring{$\ast$}{*}}]{ext\+\_\+list}{, }\item[{const char \texorpdfstring{$\ast$}{*}}]{ext\+\_\+name}{}\end{DoxyParamCaption})}
-
-
-
-Checks to see if the X11 extension function is supported by Open\+GL. 
-
-\begin{DoxySince}{Since}
-02-\/03-\/2024 
-\end{DoxySince}
-
-\begin{DoxyParams}{Parameters}
-{\em ext\+\_\+list} & The list of supported extensions to be checked \\
-\hline
-{\em ext\+\_\+name} & The name of the extension being searched for in {\bfseries{ext\+\_\+list}} \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-True if the extension is supported or false otherwise 
-\end{DoxyReturn}
-\Hypertarget{window_8cpp_a860420ee6463bcdb5c15222b20221545}\index{window.cpp@{window.cpp}!process\_events@{process\_events}}
+\Hypertarget{window_8cpp_a717cc0d68c14d6c100c5ee9106ac352e}\index{window.cpp@{window.cpp}!process\_events@{process\_events}}
 \index{process\_events@{process\_events}!window.cpp@{window.cpp}}
 \doxysubsubsection{\texorpdfstring{process\_events()}{process\_events()}}
-{\footnotesize\ttfamily \label{window_8cpp_a860420ee6463bcdb5c15222b20221545} 
-void process\+\_\+events (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structXObjects}{XObjects}} \&}]{x\+\_\+objs}{, }\item[{\mbox{\hyperlink{classCamera}{Camera}} \&}]{camera}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{window_8cpp_a717cc0d68c14d6c100c5ee9106ac352e} 
+void process\+\_\+events (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structKCWindow}{KCWindow}} \&}]{win}{, }\item[{\mbox{\hyperlink{classCamera}{Camera}} \&}]{camera}{}\end{DoxyParamCaption})}
 
 
 
-Processes X events in the queue until there aren\textquotesingle{}t any left. 
+Processes window events in the queue until there aren\textquotesingle{}t any left. 
 
 \begin{DoxySince}{Since}
 02-\/03-\/2024 
 \end{DoxySince}
 
 \begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in,out}}  & {\em x\+\_\+objs} & An instance of \doxylink{structXObjects}{XObjects} containing X-\/related data \\
+\mbox{\texttt{ in,out}}  & {\em win} & An instance of \doxylink{structKCWindow}{KCWindow} containing window-\/related data \\
 \hline
 \mbox{\texttt{ in,out}}  & {\em camera} & The active camera which will be updated on Motion\+Notify events \\
 \hline
 \end{DoxyParams}
-\Hypertarget{window_8cpp_a797c4cfa9710cb647c0786b2e74537ac}\index{window.cpp@{window.cpp}!render\_frame@{render\_frame}}
+\Hypertarget{window_8cpp_a5e447999d022b239a2f5592714a3ae22}\index{window.cpp@{window.cpp}!render\_frame@{render\_frame}}
 \index{render\_frame@{render\_frame}!window.cpp@{window.cpp}}
 \doxysubsubsection{\texorpdfstring{render\_frame()}{render\_frame()}}
-{\footnotesize\ttfamily \label{window_8cpp_a797c4cfa9710cb647c0786b2e74537ac} 
-void render\+\_\+frame (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structGLObjects}{GLObjects}} \&}]{gl\+\_\+objs}{, }\item[{const \mbox{\hyperlink{structXObjects}{XObjects}} \&}]{x\+\_\+objs}{, }\item[{\mbox{\hyperlink{classCamera}{Camera}} \&}]{camera}{, }\item[{\mbox{\hyperlink{structMvp}{Mvp}} \&}]{mvp}{, }\item[{const size\+\_\+t}]{indices\+\_\+size}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{window_8cpp_a5e447999d022b239a2f5592714a3ae22} 
+void render\+\_\+frame (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structKCWindow}{KCWindow}} \&}]{win}{, }\item[{\mbox{\hyperlink{classCamera}{Camera}} \&}]{camera}{, }\item[{\mbox{\hyperlink{structMvp}{Mvp}} \&}]{mvp}{, }\item[{const \mbox{\hyperlink{classShaderProgram}{Shader\+Program}} \&}]{shader}{, }\item[{const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ \mbox{\hyperlink{structBlock}{Block}} $>$ $>$ $>$ \&}]{blocks}{}\end{DoxyParamCaption})}
 
 
 
-Renders the current frame for both Open\+GL and optionally Im\+Gui. 
+Renders the current game frame. 
 
 
 \begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in,out}}  & {\em gl\+\_\+objs} & An instance of \doxylink{structGLObjects}{GLObjects} containing Open\+GL-\/related data \\
-\hline
-\mbox{\texttt{ in,out}}  & {\em x\+\_\+objs} & An instance of \doxylink{structXObjects}{XObjects} containing X-\/related data \\
+\mbox{\texttt{ in,out}}  & {\em win} & An instance of \doxylink{structKCWindow}{KCWindow} containing window-\/related data \\
 \hline
 \mbox{\texttt{ in,out}}  & {\em camera} & The currently active camera used for calculating perspective \\
 \hline
 \mbox{\texttt{ in,out}}  & {\em mvp} & The model-\/view-\/projection matrix \\
 \hline
-\mbox{\texttt{ in}}  & {\em indices\+\_\+size} & The number of elements within the Element Array Object (EAO) \\
+\mbox{\texttt{ in}}  & {\em shader} & Shader being used for the current draw call \\
 \hline
 \end{DoxyParams}

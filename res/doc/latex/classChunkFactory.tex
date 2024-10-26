@@ -1,0 +1,66 @@
+\doxysection{Chunk\+Factory Class Reference}
+\hypertarget{classChunkFactory}{}\label{classChunkFactory}\index{ChunkFactory@{ChunkFactory}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classChunkFactory_a857d6b3222c8da85aad544deb1914856}\label{classChunkFactory_a857d6b3222c8da85aad544deb1914856} 
+{\bfseries Chunk\+Factory} (const \mbox{\hyperlink{classChunkFactory}{Chunk\+Factory}} \&)=delete
+\item 
+\Hypertarget{classChunkFactory_a1cd48033f98f880ffd81da2120c626c1}\label{classChunkFactory_a1cd48033f98f880ffd81da2120c626c1} 
+\mbox{\hyperlink{classChunkFactory}{Chunk\+Factory}} \& {\bfseries operator=} (const \mbox{\hyperlink{classChunkFactory}{Chunk\+Factory}} \&)=delete
+\item 
+\mbox{\hyperlink{structChunk}{Chunk}} \mbox{\hyperlink{classChunkFactory_aa7e4cff53ed9cd0f7f4b288687113c56}{make\+\_\+chunk}} (const mat4 m\+\_\+trns, const uint8\+\_\+t sides) const
+\begin{DoxyCompactList}\small\item\em Creates a \doxylink{structChunk}{Chunk} object given a set of input parameters. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \mbox{\hyperlink{classChunkFactory}{Chunk\+Factory}} \& \mbox{\hyperlink{classChunkFactory_a5dcdfc0bbd159b8b82abe55f7feb9776}{get\+\_\+instance}} ()
+\begin{DoxyCompactList}\small\item\em Returns the single instance of \doxylink{classChunkFactory}{Chunk\+Factory}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classChunkFactory_a5dcdfc0bbd159b8b82abe55f7feb9776}\index{ChunkFactory@{ChunkFactory}!get\_instance@{get\_instance}}
+\index{get\_instance@{get\_instance}!ChunkFactory@{ChunkFactory}}
+\doxysubsubsection{\texorpdfstring{get\_instance()}{get\_instance()}}
+{\footnotesize\ttfamily \label{classChunkFactory_a5dcdfc0bbd159b8b82abe55f7feb9776} 
+\mbox{\hyperlink{classChunkFactory}{Chunk\+Factory}} \& Chunk\+Factory\+::get\+\_\+instance (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Returns the single instance of \doxylink{classChunkFactory}{Chunk\+Factory}. 
+
+\begin{DoxySince}{Since}
+24-\/10-\/2024 
+\end{DoxySince}
+\begin{DoxyReturn}{Returns}
+The \doxylink{classChunkFactory}{Chunk\+Factory} instance 
+\end{DoxyReturn}
+\Hypertarget{classChunkFactory_aa7e4cff53ed9cd0f7f4b288687113c56}\index{ChunkFactory@{ChunkFactory}!make\_chunk@{make\_chunk}}
+\index{make\_chunk@{make\_chunk}!ChunkFactory@{ChunkFactory}}
+\doxysubsubsection{\texorpdfstring{make\_chunk()}{make\_chunk()}}
+{\footnotesize\ttfamily \label{classChunkFactory_aa7e4cff53ed9cd0f7f4b288687113c56} 
+\mbox{\hyperlink{structChunk}{Chunk}} Chunk\+Factory\+::make\+\_\+chunk (\begin{DoxyParamCaption}\item[{const mat4}]{m\+\_\+trns}{, }\item[{const uint8\+\_\+t}]{faces}{}\end{DoxyParamCaption}) const}
+
+
+
+Creates a \doxylink{structChunk}{Chunk} object given a set of input parameters. 
+
+\begin{DoxySince}{Since}
+24-\/10-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em m\+\_\+trns} & A 4x4 matrix which determines the offset of the chunk relative to the world origin \\
+\hline
+\mbox{\texttt{ in}}  & {\em faces} & A bitmask representing the faces of the chunk to be rendered \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The constructed \doxylink{structChunk}{Chunk} object 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/neil/devel/projects/kingcraft/include/chunk\+\_\+factory.\+hpp\item 
+/home/neil/devel/projects/kingcraft/src/\mbox{\hyperlink{chunk__factory_8cpp}{chunk\+\_\+factory.\+cpp}}\end{DoxyCompactItemize}

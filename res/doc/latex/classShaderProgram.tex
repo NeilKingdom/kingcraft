@@ -1,0 +1,105 @@
+\doxysection{Shader\+Program Class Reference}
+\hypertarget{classShaderProgram}{}\label{classShaderProgram}\index{ShaderProgram@{ShaderProgram}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classShaderProgram_add585b75cb78f4afa865ea7b27c9651e}{Shader\+Program}} ()
+\begin{DoxyCompactList}\small\item\em Default constructor for \doxylink{classShaderProgram}{Shader\+Program}. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classShaderProgram_ae618b98a1f93983fe00839da78644f36}{Shader\+Program}} (const std\+::string vertex\+\_\+src, const std\+::string fragment\+\_\+src)
+\begin{DoxyCompactList}\small\item\em Constructor for \doxylink{classShaderProgram}{Shader\+Program} which uses {\bfseries{vertex\+\_\+src}} and {\bfseries{fragment\+\_\+src}} for the program. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classShaderProgram_a2d2eadcfc48cc2e2ddb82aba70553a9f}{\texorpdfstring{$\sim$}{\string~}\+Shader\+Program}} ()
+\begin{DoxyCompactList}\small\item\em Default destructor for \doxylink{classShaderProgram}{Shader\+Program}. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classShaderProgram_a538af17b5df18b538ab821e268db461e}{bind}} () const
+\begin{DoxyCompactList}\small\item\em Binds the current shader program as the active one. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classShaderProgram_a8e501476d7ddc6a2d59ead323bd5f39a}{unbind}} () const
+\begin{DoxyCompactList}\small\item\em Unbinds the current shader program. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classShaderProgram_abae36acbe8c4b989d2f9270ebe02245d}\label{classShaderProgram_abae36acbe8c4b989d2f9270ebe02245d} 
+ID {\bfseries id}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{classShaderProgram_add585b75cb78f4afa865ea7b27c9651e}\index{ShaderProgram@{ShaderProgram}!ShaderProgram@{ShaderProgram}}
+\index{ShaderProgram@{ShaderProgram}!ShaderProgram@{ShaderProgram}}
+\doxysubsubsection{\texorpdfstring{ShaderProgram()}{ShaderProgram()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{classShaderProgram_add585b75cb78f4afa865ea7b27c9651e} 
+Shader\+Program\+::\+Shader\+Program (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Default constructor for \doxylink{classShaderProgram}{Shader\+Program}. 
+
+\begin{DoxySince}{Since}
+20-\/10-\/2024 
+\end{DoxySince}
+\Hypertarget{classShaderProgram_ae618b98a1f93983fe00839da78644f36}\index{ShaderProgram@{ShaderProgram}!ShaderProgram@{ShaderProgram}}
+\index{ShaderProgram@{ShaderProgram}!ShaderProgram@{ShaderProgram}}
+\doxysubsubsection{\texorpdfstring{ShaderProgram()}{ShaderProgram()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{classShaderProgram_ae618b98a1f93983fe00839da78644f36} 
+Shader\+Program\+::\+Shader\+Program (\begin{DoxyParamCaption}\item[{const std\+::string}]{vertex\+\_\+src}{, }\item[{const std\+::string}]{fragment\+\_\+src}{}\end{DoxyParamCaption})}
+
+
+
+Constructor for \doxylink{classShaderProgram}{Shader\+Program} which uses {\bfseries{vertex\+\_\+src}} and {\bfseries{fragment\+\_\+src}} for the program. 
+
+\begin{DoxySince}{Since}
+20-\/10-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em vertex\+\_\+src} & GLSL source code for the vertex shader \\
+\hline
+\mbox{\texttt{ in}}  & {\em fragment\+\_\+src} & GLSL source code for the fragment shader \\
+\hline
+\end{DoxyParams}
+\Hypertarget{classShaderProgram_a2d2eadcfc48cc2e2ddb82aba70553a9f}\index{ShaderProgram@{ShaderProgram}!````~ShaderProgram@{\texorpdfstring{$\sim$}{\string~}ShaderProgram}}
+\index{````~ShaderProgram@{\texorpdfstring{$\sim$}{\string~}ShaderProgram}!ShaderProgram@{ShaderProgram}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}ShaderProgram()}{\string~ShaderProgram()}}
+{\footnotesize\ttfamily \label{classShaderProgram_a2d2eadcfc48cc2e2ddb82aba70553a9f} 
+Shader\+Program\+::\texorpdfstring{$\sim$}{\string~}\+Shader\+Program (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Default destructor for \doxylink{classShaderProgram}{Shader\+Program}. 
+
+\begin{DoxySince}{Since}
+20-\/10-\/2024 
+\end{DoxySince}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classShaderProgram_a538af17b5df18b538ab821e268db461e}\index{ShaderProgram@{ShaderProgram}!bind@{bind}}
+\index{bind@{bind}!ShaderProgram@{ShaderProgram}}
+\doxysubsubsection{\texorpdfstring{bind()}{bind()}}
+{\footnotesize\ttfamily \label{classShaderProgram_a538af17b5df18b538ab821e268db461e} 
+void Shader\+Program\+::bind (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+
+
+Binds the current shader program as the active one. 
+
+\begin{DoxySince}{Since}
+20-\/10-\/2024 
+\end{DoxySince}
+\Hypertarget{classShaderProgram_a8e501476d7ddc6a2d59ead323bd5f39a}\index{ShaderProgram@{ShaderProgram}!unbind@{unbind}}
+\index{unbind@{unbind}!ShaderProgram@{ShaderProgram}}
+\doxysubsubsection{\texorpdfstring{unbind()}{unbind()}}
+{\footnotesize\ttfamily \label{classShaderProgram_a8e501476d7ddc6a2d59ead323bd5f39a} 
+void Shader\+Program\+::unbind (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+
+
+Unbinds the current shader program. 
+
+\begin{DoxySince}{Since}
+20-\/10-\/2024 
+\end{DoxySince}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/neil/devel/projects/kingcraft/include/shader\+\_\+program.\+hpp\item 
+/home/neil/devel/projects/kingcraft/src/\mbox{\hyperlink{shader__program_8cpp}{shader\+\_\+program.\+cpp}}\end{DoxyCompactItemize}

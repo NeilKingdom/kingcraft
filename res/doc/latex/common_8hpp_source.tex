@@ -15,55 +15,64 @@
 \DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <vector>}}
 \DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <array>}}
 \DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ <optional>}}
-\DoxyCodeLine{00014\ }
-\DoxyCodeLine{00015\ \textcolor{comment}{//\ C\ APIs}}
-\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ <cstdlib>}}
-\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ <cassert>}}
-\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ <cstring>}}
-\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ <cstdint>}}
-\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ <cstddef>}}
-\DoxyCodeLine{00021\ }
-\DoxyCodeLine{00022\ \textcolor{comment}{//\ X11}}
-\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ <X11/Xlib.h>}}
-\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ <X11/Xutil.h>}}
-\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ <X11/keysymdef.h>}}
-\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ <X11/Xcursor/Xcursor.h>}}
-\DoxyCodeLine{00027\ }
-\DoxyCodeLine{00028\ \textcolor{comment}{//\ OpenGL}}
-\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ <GL/glew.h>}\ \textcolor{comment}{//\ NOTE:\ Must\ be\ placed\ before\ other\ OpenGL\ headers}}
-\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ <GL/gl.h>}\ \ \ \textcolor{comment}{//\ General\ OpenGL\ APIs}}
-\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ <GL/glx.h>}\ \ \textcolor{comment}{//\ X11-\/specific\ OpenGL\ APIs}}
-\DoxyCodeLine{00032\ }
-\DoxyCodeLine{00033\ \textcolor{comment}{//\ liblac}}
-\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ <transforms.h>}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#include\ <tuple>}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#include\ <filesystem>}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{comment}{//\ C\ APIs}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ <cstdlib>}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ <cassert>}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ <cstring>}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ <cstddef>}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{comment}{//\ X11}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ <X11/Xlib.h>}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ <X11/Xutil.h>}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ <X11/keysymdef.h>}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ <X11/Xcursor/Xcursor.h>}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{comment}{//\ OpenGL}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ <GL/glew.h>}\ \textcolor{comment}{//\ NOTE:\ Must\ be\ placed\ before\ other\ OpenGL\ headers}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ <GL/gl.h>}\ \ \ \textcolor{comment}{//\ General\ OpenGL\ APIs}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ <GL/glx.h>}\ \ \textcolor{comment}{//\ X11-\/specific\ OpenGL\ APIs}}
 \DoxyCodeLine{00035\ }
-\DoxyCodeLine{00036\ \textcolor{comment}{//\ Custom\ X\ cursor}}
-\DoxyCodeLine{00037\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structXCursor}{XCursor}}}
-\DoxyCodeLine{00038\ \{}
-\DoxyCodeLine{00039\ \ \ \ \ Cursor\ cursor;}
-\DoxyCodeLine{00040\ \ \ \ \ Pixmap\ cpmap;}
-\DoxyCodeLine{00041\ \};}
-\DoxyCodeLine{00042\ }
-\DoxyCodeLine{00043\ \textcolor{comment}{//\ X11\ data}}
-\DoxyCodeLine{00044\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structXObjects}{XObjects}}}
-\DoxyCodeLine{00045\ \{}
-\DoxyCodeLine{00046\ \ \ \ \ Display\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *dpy;\ \ \ \ \textcolor{comment}{//\ The\ target\ monitor/display\ (assuming\ we\ might\ have\ multiple\ displays)}}
-\DoxyCodeLine{00047\ \ \ \ \ Window\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ win;\ \ \ \ \textcolor{comment}{//\ The\ application's\ parent\ window}}
-\DoxyCodeLine{00048\ \ \ \ \ XVisualInfo\ \ \ \ \ \ \ \ \ \ \ \ *xvi;\ \ \ \ \textcolor{comment}{//\ Struct\ containing\ additional\ info\ about\ the\ window}}
-\DoxyCodeLine{00049\ \ \ \ \ XWindowAttributes\ \ \ \ \ \ \ xwa;\ \ \ \ \textcolor{comment}{//\ Struct\ containing\ the\ window's\ attributes}}
-\DoxyCodeLine{00050\ \ \ \ \ XEvent\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ xev;\ \ \ \ \textcolor{comment}{//\ Stores\ the\ event\ type\ of\ the\ most\ recently\ received\ event}}
-\DoxyCodeLine{00051\ \ \ \ \ Colormap\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cmap;\ \ \ \ \textcolor{comment}{//\ Colormap\ for\ the\ X\ window}}
-\DoxyCodeLine{00052\ \ \ \ \ GLXContext\ \ \ \ \ \ \ \ \ \ \ \ \ \ glx;\ \ \ \ \textcolor{comment}{//\ The\ OpenGL\ context\ for\ X11}}
-\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{structXCursor}{XCursor}}\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cur;\ \ \ \ \textcolor{comment}{//\ Custom\ cursor\ to\ hide\ the\ default\ one}}
-\DoxyCodeLine{00054\ \};}
-\DoxyCodeLine{00055\ }
-\DoxyCodeLine{00056\ \textcolor{comment}{//\ OpenGL\ data}}
-\DoxyCodeLine{00057\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structGLObjects}{GLObjects}}}
-\DoxyCodeLine{00058\ \{}
-\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ vao;}
-\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ vbo;}
-\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ ebo;}
-\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ shader;}
-\DoxyCodeLine{00063\ \};}
+\DoxyCodeLine{00036\ \textcolor{comment}{//\ liblac}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ <transforms.h>}}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \textcolor{comment}{//\ Custom\ cursor\ (right\ now\ only\ X11\ is\ supported)}}
+\DoxyCodeLine{00040\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structKCCursor}{KCCursor}}}
+\DoxyCodeLine{00041\ \{}
+\DoxyCodeLine{00042\ \ \ \ \ Cursor\ cursor;}
+\DoxyCodeLine{00043\ \ \ \ \ Pixmap\ cpmap;}
+\DoxyCodeLine{00044\ \};}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{comment}{//\ Window\ data\ (right\ now\ only\ X11\ is\ supported)}}
+\DoxyCodeLine{00047\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structKCWindow}{KCWindow}}}
+\DoxyCodeLine{00048\ \{}
+\DoxyCodeLine{00049\ \ \ \ \ Display\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *dpy;\ \ \ \ \textcolor{comment}{//\ The\ target\ monitor/display\ (assuming\ we\ might\ have\ multiple\ displays)}}
+\DoxyCodeLine{00050\ \ \ \ \ Window\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ win;\ \ \ \ \textcolor{comment}{//\ The\ application's\ parent\ window}}
+\DoxyCodeLine{00051\ \ \ \ \ XVisualInfo\ \ \ \ \ \ \ \ \ \ \ \ *xvi;\ \ \ \ \textcolor{comment}{//\ Struct\ containing\ additional\ info\ about\ the\ window}}
+\DoxyCodeLine{00052\ \ \ \ \ XWindowAttributes\ \ \ \ \ \ \ xwa;\ \ \ \ \textcolor{comment}{//\ Struct\ containing\ the\ window's\ attributes}}
+\DoxyCodeLine{00053\ \ \ \ \ XEvent\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ xev;\ \ \ \ \textcolor{comment}{//\ Stores\ the\ event\ type\ of\ the\ most\ recently\ received\ event}}
+\DoxyCodeLine{00054\ \ \ \ \ GLXContext\ \ \ \ \ \ \ \ \ \ \ \ \ \ glx;}
+\DoxyCodeLine{00055\ \ \ \ \ Colormap\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cmap;\ \ \ \ \textcolor{comment}{//\ Colormap\ for\ the\ X\ window}}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{structKCCursor}{KCCursor}}\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cur;\ \ \ \ \textcolor{comment}{//\ Custom\ cursor\ to\ replace\ the\ default\ one}}
+\DoxyCodeLine{00057\ \};}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{keyword}{enum}\ BlockFace\ :\ uint8\_t}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \ \ \ \ RIGHT\ \ =\ 1\ <<\ 0,}
+\DoxyCodeLine{00062\ \ \ \ \ LEFT\ \ \ =\ 1\ <<\ 1,}
+\DoxyCodeLine{00063\ \ \ \ \ BACK\ \ \ =\ 1\ <<\ 2,}
+\DoxyCodeLine{00064\ \ \ \ \ FRONT\ \ =\ 1\ <<\ 3,}
+\DoxyCodeLine{00065\ \ \ \ \ BOTTOM\ =\ 1\ <<\ 4,}
+\DoxyCodeLine{00066\ \ \ \ \ TOP\ \ \ \ =\ 1\ <<\ 5,}
+\DoxyCodeLine{00067\ \ \ \ \ ALL\ \ \ \ =\ (RIGHT\ |\ LEFT\ |\ BACK\ |\ FRONT\ |\ BOTTOM\ |\ TOP)}
+\DoxyCodeLine{00068\ \};}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \textcolor{keyword}{typedef}\ \textcolor{keywordtype}{unsigned}\ ID;}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ std::filesystem::path\ tex\_atlas\_path(\textcolor{stringliteral}{"{}res/textures/texture\_atlas.png"{}});}
 
 \end{DoxyCode}

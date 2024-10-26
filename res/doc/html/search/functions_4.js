@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['update_5frotation_5ffrom_5fpointer_0',['update_rotation_from_pointer',['../classCamera.html#a42d3932fba2f04e2647ca477873754bc',1,'Camera']]]
+  ['make_5fblock_0',['make_block',['../classBlockFactory.html#a8e3b3e08060fcf1ff66f5775e948ebf5',1,'BlockFactory']]],
+  ['make_5fchunk_1',['make_chunk',['../classChunkFactory.html#aa7e4cff53ed9cd0f7f4b288687113c56',1,'ChunkFactory']]]
 ];

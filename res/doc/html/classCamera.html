@@ -88,7 +88,6 @@ $(function(){ initResizable(false); });
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classCamera-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">Camera Class Reference</div></div>
 </div><!--header-->
@@ -99,9 +98,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a01f94c3543f56ede7af49dc778f19331" id="r_a01f94c3543f56ede7af49dc778f19331"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a01f94c3543f56ede7af49dc778f19331">Camera</a> ()</td></tr>
 <tr class="memdesc:a01f94c3543f56ede7af49dc778f19331"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor for the <a class="el" href="classCamera.html">Camera</a> class.  <br /></td></tr>
 <tr class="separator:a01f94c3543f56ede7af49dc778f19331"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42d3932fba2f04e2647ca477873754bc" id="r_a42d3932fba2f04e2647ca477873754bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a42d3932fba2f04e2647ca477873754bc">update_rotation_from_pointer</a> (const <a class="el" href="structXObjects.html">XObjects</a> &amp;x_objs)</td></tr>
-<tr class="memdesc:a42d3932fba2f04e2647ca477873754bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the <a class="el" href="classCamera.html">Camera</a>'s rotation matrix given the position of the mouse/pointer on screen.  <br /></td></tr>
-<tr class="separator:a42d3932fba2f04e2647ca477873754bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90044f2fb315e9ff0e8bee7fb989ec53" id="r_a90044f2fb315e9ff0e8bee7fb989ec53"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a90044f2fb315e9ff0e8bee7fb989ec53">update_rotation_from_pointer</a> (const <a class="el" href="structKCWindow.html">KCWindow</a> &amp;win)</td></tr>
+<tr class="memdesc:a90044f2fb315e9ff0e8bee7fb989ec53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the <a class="el" href="classCamera.html">Camera</a>'s rotation matrix given the position of the mouse/pointer on screen.  <br /></td></tr>
+<tr class="separator:a90044f2fb315e9ff0e8bee7fb989ec53"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aacf6d242bd9fcf1bc7518f86f422c4b3" id="r_aacf6d242bd9fcf1bc7518f86f422c4b3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aacf6d242bd9fcf1bc7518f86f422c4b3">calculate_view_matrix</a> ()</td></tr>
 <tr class="memdesc:aacf6d242bd9fcf1bc7518f86f422c4b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the view matrix based on the look direction of the camera.  <br /></td></tr>
 <tr class="separator:aacf6d242bd9fcf1bc7518f86f422c4b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,12 +125,6 @@ vec3&#160;</td><td class="memItemRight" valign="bottom"><b>v_look_dir</b></td></
 <tr class="memitem:aa020ce4d8ef78b601cb34452ef294f4c" id="r_aa020ce4d8ef78b601cb34452ef294f4c"><td class="memItemLeft" align="right" valign="top"><a id="aa020ce4d8ef78b601cb34452ef294f4c" name="aa020ce4d8ef78b601cb34452ef294f4c"></a>
 std::shared_ptr&lt; std::array&lt; float, 16 &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_view</b></td></tr>
 <tr class="separator:aa020ce4d8ef78b601cb34452ef294f4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
-Static Public Attributes</h2></td></tr>
-<tr class="memitem:aeceea7775687dac0124f79ba3d4f06e2" id="r_aeceea7775687dac0124f79ba3d4f06e2"><td class="memItemLeft" align="right" valign="top"><a id="aeceea7775687dac0124f79ba3d4f06e2" name="aeceea7775687dac0124f79ba3d4f06e2"></a>
-static constexpr float&#160;</td><td class="memItemRight" valign="bottom"><b>CAMERA_ROTATION_SPEED</b> = 0.5f</td></tr>
-<tr class="separator:aeceea7775687dac0124f79ba3d4f06e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a01f94c3543f56ede7af49dc778f19331" name="a01f94c3543f56ede7af49dc778f19331"></a>
@@ -175,8 +168,8 @@ static constexpr float&#160;</td><td class="memItemRight" valign="bottom"><b>CAM
 
 </div>
 </div>
-<a id="a42d3932fba2f04e2647ca477873754bc" name="a42d3932fba2f04e2647ca477873754bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a42d3932fba2f04e2647ca477873754bc">&#9670;&#160;</a></span>update_rotation_from_pointer()</h2>
+<a id="a90044f2fb315e9ff0e8bee7fb989ec53" name="a90044f2fb315e9ff0e8bee7fb989ec53"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90044f2fb315e9ff0e8bee7fb989ec53">&#9670;&#160;</a></span>update_rotation_from_pointer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -184,7 +177,7 @@ static constexpr float&#160;</td><td class="memItemRight" valign="bottom"><b>CAM
         <tr>
           <td class="memname">void Camera::update_rotation_from_pointer </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structXObjects.html">XObjects</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>x_objs</em></span></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="structKCWindow.html">KCWindow</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>win</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -194,7 +187,7 @@ static constexpr float&#160;</td><td class="memItemRight" valign="bottom"><b>CAM
 <dl class="section since"><dt>Since</dt><dd>02-03-2024 </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">x_objs</td><td>A structure containing the state of X11 objects </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">win</td><td>A reference to the application's window </td></tr>
   </table>
   </dd>
 </dl>

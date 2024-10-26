@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['update_5frotation_5ffrom_5fpointer_0',['update_rotation_from_pointer',['../classCamera.html#a42d3932fba2f04e2647ca477873754bc',1,'Camera']]]
+  ['player_0',['Player',['../classPlayer.html',1,'']]],
+  ['process_5fevents_1',['process_events',['../window_8cpp.html#a717cc0d68c14d6c100c5ee9106ac352e',1,'window.cpp']]],
+  ['process_5fimgui_5fevents_2',['process_imgui_events',['../impl__imgui_8cpp.html#a401e6fec67565a029f1e57004098cf04',1,'impl_imgui.cpp']]]
 ];

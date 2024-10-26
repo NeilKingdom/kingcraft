@@ -1,0 +1,28 @@
+\doxysection{shader\+\_\+program.\+hpp}
+\hypertarget{shader__program_8hpp_source}{}\label{shader__program_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/shader\_program.hpp@{/home/neil/devel/projects/kingcraft/include/shader\_program.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classShaderProgram}{ShaderProgram}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00008\ \ \ \ \ ID\ id;}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00011\ \ \ \ \ \mbox{\hyperlink{classShaderProgram_add585b75cb78f4afa865ea7b27c9651e}{ShaderProgram}}();}
+\DoxyCodeLine{00012\ \ \ \ \ \mbox{\hyperlink{classShaderProgram_add585b75cb78f4afa865ea7b27c9651e}{ShaderProgram}}(\textcolor{keyword}{const}\ std::string\ vertex\_src,\ \textcolor{keyword}{const}\ std::string\ fragment\_src);}
+\DoxyCodeLine{00013\ \ \ \ \ \mbox{\hyperlink{classShaderProgram_a2d2eadcfc48cc2e2ddb82aba70553a9f}{\string~ShaderProgram}}();}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classShaderProgram_a538af17b5df18b538ab821e268db461e}{bind}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classShaderProgram_a8e501476d7ddc6a2d59ead323bd5f39a}{unbind}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ compile(\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ type,\ \textcolor{keyword}{const}\ std::string\ src)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00022\ \};}
+
+\end{DoxyCode}

@@ -5,7 +5,7 @@
 \item 
 \mbox{\hyperlink{classCamera_a01f94c3543f56ede7af49dc778f19331}{Camera}} ()
 \begin{DoxyCompactList}\small\item\em Default constructor for the \doxylink{classCamera}{Camera} class. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{classCamera_a42d3932fba2f04e2647ca477873754bc}{update\+\_\+rotation\+\_\+from\+\_\+pointer}} (const \mbox{\hyperlink{structXObjects}{XObjects}} \&x\+\_\+objs)
+void \mbox{\hyperlink{classCamera_a90044f2fb315e9ff0e8bee7fb989ec53}{update\+\_\+rotation\+\_\+from\+\_\+pointer}} (const \mbox{\hyperlink{structKCWindow}{KCWindow}} \&win)
 \begin{DoxyCompactList}\small\item\em Update the \doxylink{classCamera}{Camera}\textquotesingle{}s rotation matrix given the position of the mouse/pointer on screen. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classCamera_aacf6d242bd9fcf1bc7518f86f422c4b3}{calculate\+\_\+view\+\_\+matrix}} ()
 \begin{DoxyCompactList}\small\item\em Calculates the view matrix based on the look direction of the camera. \end{DoxyCompactList}\end{DoxyCompactItemize}
@@ -29,12 +29,6 @@ vec3 {\bfseries v\+\_\+look\+\_\+dir}
 \item 
 \Hypertarget{classCamera_aa020ce4d8ef78b601cb34452ef294f4c}\label{classCamera_aa020ce4d8ef78b601cb34452ef294f4c} 
 std\+::shared\+\_\+ptr$<$ std\+::array$<$ float, 16 $>$ $>$ {\bfseries m\+\_\+view}
-\end{DoxyCompactItemize}
-\doxysubsubsection*{Static Public Attributes}
-\begin{DoxyCompactItemize}
-\item 
-\Hypertarget{classCamera_aeceea7775687dac0124f79ba3d4f06e2}\label{classCamera_aeceea7775687dac0124f79ba3d4f06e2} 
-static constexpr float {\bfseries CAMERA\+\_\+\+ROTATION\+\_\+\+SPEED} = 0.\+5f
 \end{DoxyCompactItemize}
 
 
@@ -68,11 +62,11 @@ Calculates the view matrix based on the look direction of the camera.
 \begin{DoxySince}{Since}
 02-\/03-\/2024 
 \end{DoxySince}
-\Hypertarget{classCamera_a42d3932fba2f04e2647ca477873754bc}\index{Camera@{Camera}!update\_rotation\_from\_pointer@{update\_rotation\_from\_pointer}}
+\Hypertarget{classCamera_a90044f2fb315e9ff0e8bee7fb989ec53}\index{Camera@{Camera}!update\_rotation\_from\_pointer@{update\_rotation\_from\_pointer}}
 \index{update\_rotation\_from\_pointer@{update\_rotation\_from\_pointer}!Camera@{Camera}}
 \doxysubsubsection{\texorpdfstring{update\_rotation\_from\_pointer()}{update\_rotation\_from\_pointer()}}
-{\footnotesize\ttfamily \label{classCamera_a42d3932fba2f04e2647ca477873754bc} 
-void Camera\+::update\+\_\+rotation\+\_\+from\+\_\+pointer (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structXObjects}{XObjects}} \&}]{x\+\_\+objs}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{classCamera_a90044f2fb315e9ff0e8bee7fb989ec53} 
+void Camera\+::update\+\_\+rotation\+\_\+from\+\_\+pointer (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structKCWindow}{KCWindow}} \&}]{win}{}\end{DoxyParamCaption})}
 
 
 
@@ -83,7 +77,7 @@ Update the \doxylink{classCamera}{Camera}\textquotesingle{}s rotation matrix giv
 \end{DoxySince}
 
 \begin{DoxyParams}[1]{Parameters}
-\mbox{\texttt{ in}}  & {\em x\+\_\+objs} & A structure containing the state of X11 objects \\
+\mbox{\texttt{ in}}  & {\em win} & A reference to the application\textquotesingle{}s window \\
 \hline
 \end{DoxyParams}
 

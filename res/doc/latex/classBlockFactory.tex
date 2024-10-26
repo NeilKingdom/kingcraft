@@ -1,0 +1,86 @@
+\doxysection{Block\+Factory Class Reference}
+\hypertarget{classBlockFactory}{}\label{classBlockFactory}\index{BlockFactory@{BlockFactory}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classBlockFactory_ade33bd38a4248648f6a020e894522e19}\label{classBlockFactory_ade33bd38a4248648f6a020e894522e19} 
+{\bfseries Block\+Factory} (const \mbox{\hyperlink{classBlockFactory}{Block\+Factory}} \&)=delete
+\item 
+\Hypertarget{classBlockFactory_a23c33a88ba7e728392d65f8818ae4a97}\label{classBlockFactory_a23c33a88ba7e728392d65f8818ae4a97} 
+\mbox{\hyperlink{classBlockFactory}{Block\+Factory}} \& {\bfseries operator=} (const \mbox{\hyperlink{classBlockFactory}{Block\+Factory}} \&)=delete
+\item 
+void \mbox{\hyperlink{classBlockFactory_a90999cb2838d8c64dbfc48536f0c8613}{init}} ()
+\begin{DoxyCompactList}\small\item\em Initializes the texture used for commmon blocks. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structBlock}{Block}} \mbox{\hyperlink{classBlockFactory_a8e3b3e08060fcf1ff66f5775e948ebf5}{make\+\_\+block}} (const Block\+Type type, const mat4 m\+\_\+trns, const uint8\+\_\+t sides)
+\begin{DoxyCompactList}\small\item\em Creates a single block based on a set of given parameters. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \mbox{\hyperlink{classBlockFactory}{Block\+Factory}} \& \mbox{\hyperlink{classBlockFactory_a3d71a1d5c807ec4ddce3760e7454126e}{get\+\_\+instance}} ()
+\begin{DoxyCompactList}\small\item\em Returns the single instance of \doxylink{classBlockFactory}{Block\+Factory}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classBlockFactory_a3d71a1d5c807ec4ddce3760e7454126e}\index{BlockFactory@{BlockFactory}!get\_instance@{get\_instance}}
+\index{get\_instance@{get\_instance}!BlockFactory@{BlockFactory}}
+\doxysubsubsection{\texorpdfstring{get\_instance()}{get\_instance()}}
+{\footnotesize\ttfamily \label{classBlockFactory_a3d71a1d5c807ec4ddce3760e7454126e} 
+\mbox{\hyperlink{classBlockFactory}{Block\+Factory}} \& Block\+Factory\+::get\+\_\+instance (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Returns the single instance of \doxylink{classBlockFactory}{Block\+Factory}. 
+
+\begin{DoxySince}{Since}
+16-\/10-\/2024 
+\end{DoxySince}
+\begin{DoxyReturn}{Returns}
+The \doxylink{classBlockFactory}{Block\+Factory} instance 
+\end{DoxyReturn}
+\Hypertarget{classBlockFactory_a90999cb2838d8c64dbfc48536f0c8613}\index{BlockFactory@{BlockFactory}!init@{init}}
+\index{init@{init}!BlockFactory@{BlockFactory}}
+\doxysubsubsection{\texorpdfstring{init()}{init()}}
+{\footnotesize\ttfamily \label{classBlockFactory_a90999cb2838d8c64dbfc48536f0c8613} 
+void Block\+Factory\+::init (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Initializes the texture used for commmon blocks. 
+
+\begin{DoxyWarning}{Warning}
+This {\itshape must} be invoked after the Open\+GL context has been setup. 
+\end{DoxyWarning}
+\begin{DoxySince}{Since}
+26-\/10-\/2024 
+\end{DoxySince}
+\Hypertarget{classBlockFactory_a8e3b3e08060fcf1ff66f5775e948ebf5}\index{BlockFactory@{BlockFactory}!make\_block@{make\_block}}
+\index{make\_block@{make\_block}!BlockFactory@{BlockFactory}}
+\doxysubsubsection{\texorpdfstring{make\_block()}{make\_block()}}
+{\footnotesize\ttfamily \label{classBlockFactory_a8e3b3e08060fcf1ff66f5775e948ebf5} 
+\mbox{\hyperlink{structBlock}{Block}} Block\+Factory\+::make\+\_\+block (\begin{DoxyParamCaption}\item[{const Block\+Type}]{type}{, }\item[{const mat4}]{m\+\_\+trns}{, }\item[{const uint8\+\_\+t}]{sides}{}\end{DoxyParamCaption})}
+
+
+
+Creates a single block based on a set of given parameters. 
+
+\begin{DoxySince}{Since}
+16-\/10-\/2024 
+\end{DoxySince}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em type} & The block type of the block being created e.\+g. dirt, grass, etc. \\
+\hline
+\mbox{\texttt{ in}}  & {\em m\+\_\+trns} & A 4x4 matrix which determines the location of the block relative to the world origin \\
+\hline
+\mbox{\texttt{ in}}  & {\em sides} & A mask which determines which sides of the cube will be rendered \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A \doxylink{structBlock}{Block} object with the specified attributes 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/neil/devel/projects/kingcraft/include/block\+\_\+factory.\+hpp\item 
+/home/neil/devel/projects/kingcraft/src/\mbox{\hyperlink{block__factory_8cpp}{block\+\_\+factory.\+cpp}}\end{DoxyCompactItemize}

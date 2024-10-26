@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['player_0',['Player',['../classPlayer.html',1,'']]]
+  ['kccursor_0',['KCCursor',['../structKCCursor.html',1,'']]],
+  ['kcwindow_1',['KCWindow',['../structKCWindow.html',1,'']]]
 ];

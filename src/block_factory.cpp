@@ -108,8 +108,9 @@ Block BlockFactory::make_block(
     };
 
     // UV coordinates
-    float uw = 1.0f / KCConst::ATLAS_TEX_SIZE;
-    float vh = 1.0f / KCConst::ATLAS_TEX_SIZE;
+    const float uv_pad = 0.005f;
+    const float uw = (1.0f / KCConst::ATLAS_TEX_SIZE) - uv_pad;
+    const float vh = (1.0f / KCConst::ATLAS_TEX_SIZE) - uv_pad;
 
     auto uv = get_uv_coords(type).value_or(
         std::make_tuple(
@@ -164,57 +165,57 @@ Block BlockFactory::make_block(
     std::memcpy(v7, copy, sizeof(v7));
 
     const face_t right = {
-        v1[0], v1[1], v1[2], uv_sides[0],      uv_sides[1],
-        v7[0], v7[1], v7[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v3[0], v3[1], v3[2], uv_sides[0],      uv_sides[1] + vh,
-        v7[0], v7[1], v7[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v1[0], v1[1], v1[2], uv_sides[0],      uv_sides[1],
-        v5[0], v5[1], v5[2], uv_sides[0] + uw, uv_sides[1]
+        v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v7[0], v7[1], v7[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v3[0], v3[1], v3[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
+        v7[0], v7[1], v7[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v5[0], v5[1], v5[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
     const face_t left = {
-        v4[0], v4[1], v4[2], uv_sides[0],      uv_sides[1],
-        v2[0], v2[1], v2[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v6[0], v6[1], v6[2], uv_sides[0],      uv_sides[1] + vh,
-        v2[0], v2[1], v2[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v4[0], v4[1], v4[2], uv_sides[0],      uv_sides[1],
-        v0[0], v0[1], v0[2], uv_sides[0] + uw, uv_sides[1]
+        v4[0], v4[1], v4[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v2[0], v2[1], v2[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v6[0], v6[1], v6[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
+        v2[0], v2[1], v2[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v4[0], v4[1], v4[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v0[0], v0[1], v0[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
     const face_t back = {
-        v0[0], v0[1], v0[2], uv_sides[0],      uv_sides[1],
-        v3[0], v3[1], v3[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v2[0], v2[1], v2[2], uv_sides[0],      uv_sides[1] + vh,
-        v3[0], v3[1], v3[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v0[0], v0[1], v0[2], uv_sides[0],      uv_sides[1],
-        v1[0], v1[1], v1[2], uv_sides[0] + uw, uv_sides[1]
+        v0[0], v0[1], v0[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v3[0], v3[1], v3[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v2[0], v2[1], v2[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
+        v3[0], v3[1], v3[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v0[0], v0[1], v0[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v1[0], v1[1], v1[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
     const face_t front = {
-        v5[0], v5[1], v5[2], uv_sides[0],      uv_sides[1],
-        v6[0], v6[1], v6[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v7[0], v7[1], v7[2], uv_sides[0],      uv_sides[1] + vh,
-        v6[0], v6[1], v6[2], uv_sides[0] + uw, uv_sides[1] + vh,
-        v5[0], v5[1], v5[2], uv_sides[0],      uv_sides[1],
-        v4[0], v4[1], v4[2], uv_sides[0] + uw, uv_sides[1]
+        v5[0], v5[1], v5[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v6[0], v6[1], v6[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v7[0], v7[1], v7[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
+        v6[0], v6[1], v6[2], uv_sides[0] + uw,     uv_sides[1] + vh,
+        v5[0], v5[1], v5[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
+        v4[0], v4[1], v4[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
     const face_t bottom = {
-        v2[0], v2[1], v2[2], uv_bottom[0],      uv_bottom[1] + vh,
-        v3[0], v3[1], v3[2], uv_bottom[0] + uw, uv_bottom[1] + vh,
-        v6[0], v6[1], v6[2], uv_bottom[0],      uv_bottom[1],
-        v7[0], v7[1], v7[2], uv_bottom[0] + uw, uv_bottom[1],
-        v6[0], v6[1], v6[2], uv_bottom[0],      uv_bottom[1],
-        v3[0], v3[1], v3[2], uv_bottom[0] + uw, uv_bottom[1] + vh
+        v2[0], v2[1], v2[2], uv_bottom[0] + uv_pad, uv_bottom[1] + vh,
+        v3[0], v3[1], v3[2], uv_bottom[0] + uw,     uv_bottom[1] + vh,
+        v6[0], v6[1], v6[2], uv_bottom[0] + uv_pad, uv_bottom[1] + uv_pad,
+        v7[0], v7[1], v7[2], uv_bottom[0] + uw,     uv_bottom[1] + uv_pad,
+        v6[0], v6[1], v6[2], uv_bottom[0] + uv_pad, uv_bottom[1] + uv_pad,
+        v3[0], v3[1], v3[2], uv_bottom[0] + uw,     uv_bottom[1] + vh
     };
 
     const face_t top = {
-        v4[0], v4[1], v4[2], uv_top[0],      uv_top[1],
-        v1[0], v1[1], v1[2], uv_top[0] + uw, uv_top[1] + vh,
-        v0[0], v0[1], v0[2], uv_top[0],      uv_top[1] + vh,
-        v1[0], v1[1], v1[2], uv_top[0] + uw, uv_top[1] + vh,
-        v4[0], v4[1], v4[2], uv_top[0],      uv_top[1],
-        v5[0], v5[1], v5[2], uv_top[0] + uw, uv_top[1]
+        v4[0], v4[1], v4[2], uv_top[0] + uv_pad, uv_top[1] + uv_pad,
+        v1[0], v1[1], v1[2], uv_top[0] + uw,     uv_top[1] + vh,
+        v0[0], v0[1], v0[2], uv_top[0] + uv_pad, uv_top[1] + vh,
+        v1[0], v1[1], v1[2], uv_top[0] + uw,     uv_top[1] + vh,
+        v4[0], v4[1], v4[2], uv_top[0] + uv_pad, uv_top[1] + uv_pad,
+        v5[0], v5[1], v5[2], uv_top[0] + uw,     uv_top[1] + uv_pad
     };
 
     if ((sides & RIGHT) == RIGHT)

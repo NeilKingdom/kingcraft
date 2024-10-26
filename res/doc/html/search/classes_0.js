@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['camera_0',['Camera',['../classCamera.html',1,'']]],
-  ['cube_1',['Cube',['../structCube.html',1,'']]],
-  ['cubefactory_2',['CubeFactory',['../classCubeFactory.html',1,'']]]
+  ['block_0',['Block',['../structBlock.html',1,'']]],
+  ['blockfactory_1',['BlockFactory',['../classBlockFactory.html',1,'']]]
 ];

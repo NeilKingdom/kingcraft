@@ -4,18 +4,35 @@
 \begin{DoxyCode}{0}
 \DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
 \DoxyCodeLine{00002\ }
-\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <atomic>}}
-\DoxyCodeLine{00004\ }
-\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
-\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}player.hpp"{}}}
-\DoxyCodeLine{00007\ }
-\DoxyCodeLine{00008\ \textcolor{keyword}{namespace\ }GameState}
-\DoxyCodeLine{00009\ \{}
-\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keyword}{static}\ std::atomic<bool>\ is\_running\ =\ \textcolor{keyword}{true};}
-\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{static}\ std::atomic<float>\ fov\ =\ 90.0f;}
-\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keyword}{static}\ std::atomic<float>\ aspect\ =\ 9.0f\ /\ 16.0f;}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}player.hpp"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classGameState}{GameState}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keywordtype}{float}\ fov\ =\ 90.0f;}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keywordtype}{float}\ aspect\ =\ 9.0f\ /\ 16.0f;}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{float}\ znear\ =\ 1.0f;}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{float}\ zfar\ =\ 1000.0f;}
 \DoxyCodeLine{00013\ }
-\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{classPlayer}{Player}}\ player\ =\ \mbox{\hyperlink{classPlayer}{Player}}();}
-\DoxyCodeLine{00015\ \};}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ chunk\_size\ =\ 16;}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{bool}\ is\_running\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \ \ \ \ \mbox{\hyperlink{classPlayer}{Player}}\ player\ =\ \mbox{\hyperlink{classPlayer}{Player}}();}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{classGameState}{GameState}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classGameState}{GameState}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00022\ \ \ \ \ \mbox{\hyperlink{classGameState}{GameState}}\ \&operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{classGameState}{GameState}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00023\ \ \ \ \ \mbox{\hyperlink{classGameState}{\string~GameState}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{classGameState}{GameState}}\ \&\mbox{\hyperlink{classGameState_a670aad536038d719fddf70a273a75dbd}{get\_instance}}();}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{comment}{//void\ start()\ const;}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00031\ \ \ \ \ \mbox{\hyperlink{classGameState}{GameState}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00032\ \};}
 
 \end{DoxyCode}

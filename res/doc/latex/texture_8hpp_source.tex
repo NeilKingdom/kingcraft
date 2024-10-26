@@ -1,0 +1,30 @@
+\doxysection{texture.\+hpp}
+\hypertarget{texture_8hpp_source}{}\label{texture_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/texture.hpp@{/home/neil/devel/projects/kingcraft/include/texture.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <png\_parser.h>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classTexture}{Texture}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ ID\ id;}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00013\ \ \ \ \ \mbox{\hyperlink{classTexture_a6c275e3f186675ff6ed73ccf970e552f}{Texture}}();}
+\DoxyCodeLine{00014\ \ \ \ \ \mbox{\hyperlink{classTexture_a6c275e3f186675ff6ed73ccf970e552f}{Texture}}(\textcolor{keyword}{const}\ std::filesystem::path\ path,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ min\_filter,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ mag\_filter,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{bool}\ make\_mipmap\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{classTexture_a09c4bcb7462f64c1d20fa69dba3cee8a}{\string~Texture}}();}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classTexture_a4b85391c6e54686ec566ba38c62dde98}{bind}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classTexture_a451d7afac3848417bb1007d39ee7d545}{unbind}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00022\ \ \ \ \ Pixmap\_t\ \ *m\_pixmap;}
+\DoxyCodeLine{00023\ \ \ \ \ PngHndl\_t\ *m\_png\_hndl;}
+\DoxyCodeLine{00024\ \};}
+
+\end{DoxyCode}

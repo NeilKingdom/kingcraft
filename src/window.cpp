@@ -401,7 +401,6 @@ void process_events(KCWindow &win, Camera &camera)
 
     vec3 v_fwd      = {};
     vec3 v_right    = {};
-    vec3 v_up       = {};
     vec3 v_velocity = {};
     float magnitude = 0.0f;
 
@@ -411,14 +410,11 @@ void process_events(KCWindow &win, Camera &camera)
     lac_calc_cross_prod(&v_right, camera.v_up, v_fwd);
     lac_normalize_vec3(&v_right, v_right);
 
-    lac_calc_cross_prod(&v_up, v_right, v_fwd);
-    lac_normalize_vec3(&v_up, v_up);
-
     if (IS_KEY_SET(key_mask, KEY_FORWARD))
     {
         lac_subtract_vec3(&v_velocity, v_velocity, v_fwd);
     }
-    else if (IS_KEY_SET(key_mask, KEY_BACKWARD))
+    if (IS_KEY_SET(key_mask, KEY_BACKWARD))
     {
         lac_add_vec3(&v_velocity, v_velocity, v_fwd);
     }
@@ -426,17 +422,17 @@ void process_events(KCWindow &win, Camera &camera)
     {
         lac_subtract_vec3(&v_velocity, v_velocity, v_right);
     }
-    else if (IS_KEY_SET(key_mask, KEY_RIGHT))
+    if (IS_KEY_SET(key_mask, KEY_RIGHT))
     {
         lac_add_vec3(&v_velocity, v_velocity, v_right);
     }
     if (IS_KEY_SET(key_mask, KEY_DOWN))
     {
-        lac_subtract_vec3(&v_velocity, v_velocity, v_up);
+        lac_subtract_vec3(&v_velocity, v_velocity, camera.v_up);
     }
-    else if (IS_KEY_SET(key_mask, KEY_UP))
+    if (IS_KEY_SET(key_mask, KEY_UP))
     {
-        lac_add_vec3(&v_velocity, v_velocity, v_up);
+        lac_add_vec3(&v_velocity, v_velocity, camera.v_up);
     }
 
     lac_calc_magnitude_vec4(&magnitude, v_velocity);
@@ -464,7 +460,7 @@ void render_frame(
 )
 {
     // Set background color
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+    glClearColor(0.1f, 0.4, 0.7f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader.bind();

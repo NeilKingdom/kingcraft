@@ -1,0 +1,36 @@
+\doxysection{block\+\_\+factory.\+hpp}
+\hypertarget{block__factory_8hpp_source}{}\label{block__factory_8hpp_source}\index{/home/neil/devel/projects/kingcraft/include/block\_factory.hpp@{/home/neil/devel/projects/kingcraft/include/block\_factory.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}common.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}constants.hpp"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}block.hpp"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{typedef}\ std::array<float,\ 2>\ UvCoords;}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classBlockFactory}{BlockFactory}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00013\ \ \ \ \ \mbox{\hyperlink{classBlockFactory}{BlockFactory}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classBlockFactory}{BlockFactory}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00014\ \ \ \ \ \mbox{\hyperlink{classBlockFactory}{BlockFactory}}\ \&operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{classBlockFactory}{BlockFactory}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00015\ \ \ \ \ \mbox{\hyperlink{classBlockFactory}{\string~BlockFactory}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{classBlockFactory}{BlockFactory}}\ \&\mbox{\hyperlink{classBlockFactory_a3d71a1d5c807ec4ddce3760e7454126e}{get\_instance}}();}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classBlockFactory_a90999cb2838d8c64dbfc48536f0c8613}{init}}();}
+\DoxyCodeLine{00020\ \ \ \ \ \mbox{\hyperlink{structBlock}{Block}}\ \mbox{\hyperlink{classBlockFactory_a8e3b3e08060fcf1ff66f5775e948ebf5}{make\_block}}(\textcolor{keyword}{const}\ BlockType\ type,\ \textcolor{keyword}{const}\ mat4\ m\_trns,\ \textcolor{keyword}{const}\ uint8\_t\ sides);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00023\ \ \ \ \ \mbox{\hyperlink{classTexture}{Texture}}\ m\_block\_tex;}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//\ Special\ member\ functions}}
+\DoxyCodeLine{00026\ \ \ \ \ \mbox{\hyperlink{classBlockFactory}{BlockFactory}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{comment}{//\ General}}
+\DoxyCodeLine{00029\ \ \ \ \ std::optional<std::tuple<UvCoords,\ UvCoords,\ UvCoords>>\ get\_uv\_coords(\textcolor{keyword}{const}\ BlockType\ type)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00030\ \};}
+
+\end{DoxyCode}

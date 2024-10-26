@@ -4,8 +4,12 @@
 \begin{DoxyCode}{0}
 \DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
 \DoxyCodeLine{00002\ }
-\DoxyCodeLine{00003\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{long}\ SEC\_AS\_NANO\ =\ 1000L\ *\ 1000L\ *\ 1000L;}
-\DoxyCodeLine{00004\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ znear\ =\ 1.0f;}
-\DoxyCodeLine{00005\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ zfar\ =\ 1000.0f;}
+\DoxyCodeLine{00003\ \textcolor{keyword}{namespace\ }KCConst\ \{}
+\DoxyCodeLine{00004\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{long}\ \ \ \ \ \ \ SEC\_AS\_NANO\ =\ 1000L\ *\ 1000L\ *\ 1000L;}
+\DoxyCodeLine{00005\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{unsigned}\ \ \ CUBE\_FACES\ =\ 6;}
+\DoxyCodeLine{00006\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{unsigned}\ \ \ ATLAS\_TEX\_SIZE\ =\ 16;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Number\ of\ texture\ columns\ in\ the\ atlas}}
+\DoxyCodeLine{00007\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \ \ \ \ \ CAMERA\_ROTATION\_SPEED\ =\ 0.5f;\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Normalized\ rotation\ speed}}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \ \ \ \ \ PLAYER\_BASE\_SPEED\ =\ 0.2f;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Normalized\ speed}}
+\DoxyCodeLine{00009\ \};}
 
 \end{DoxyCode}
