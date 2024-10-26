@@ -16,12 +16,15 @@ public:
 
     // General
     static BlockFactory &get_instance();
-    Block make_block(const BlockType type, const mat4 m_trns, const Face sides) const;
+    void init();
+    Block make_block(const BlockType type, const mat4 m_trns, const uint8_t sides);
 
 private:
+    Texture m_block_tex;
+
     // Special member functions
-    BlockFactory();
+    BlockFactory() = default;
 
     // General
-    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_tex_by_block_type(const BlockType type) const;
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type) const;
 };

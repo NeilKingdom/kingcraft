@@ -1,29 +1,58 @@
+/**
+ * @file block_factory.cpp
+ * @author Neil Kingdom
+ * @since 16-10-2024
+ * @version 1.0
+ * @brief A singleton class which constructs a Block object.
+ */
+
 #include "block_factory.hpp"
 
-BlockFactory::BlockFactory()
-{}
-
+/**
+ * @brief Returns the single instance of BlockFactory.
+ * @since 16-10-2024
+ * @returns The BlockFactory instance
+ */
 BlockFactory &BlockFactory::get_instance()
 {
     static BlockFactory instance;
     return instance;
 }
 
-std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> BlockFactory::get_tex_by_block_type(
-    const BlockType type
-) const
+/**
+ * @brief Initializes the texture used for commmon blocks.
+ * @warning This _must_ be invoked after the OpenGL context has been setup.
+ * @since 26-10-2024
+ */
+void BlockFactory::init()
+{
+    m_block_tex = Texture(tex_atlas_path, GL_NEAREST, GL_NEAREST);
+}
+
+/**
+ * @brief Returns a tuple of UV coordinates for each face of the block based on __type__.
+ * @since 24-10-2024
+ * @param[in] type The block type that we are retrieving UV coordinates for
+ * @returns Optionally returns a tuple of UV coordinates for the top, sides, and bottom of the block, respectively
+ */
+std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>
+BlockFactory::get_uv_coords(const BlockType type) const
 {
     unsigned row, col;
     float tx_offset, ty_offset;
     UvCoords uv_top, uv_sides, uv_bottom;
-    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> textures;
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> uv_coords;
 
     switch (type)
     {
-        case BlockType::AIR:
-            textures = std::nullopt;
-            break;
         case BlockType::DIRT:
+            ty_offset = 0.0f;
+            tx_offset = 2.0f;
+
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KCConst::ATLAS_TEX_SIZE;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset;
+            break;
+        case BlockType::GRASS:
             ty_offset = 0.0f;
 
             // Top
@@ -41,31 +70,33 @@ std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> BlockFactory::get_tex_by
             uv_bottom[0] = tx_offset / (float)KCConst::ATLAS_TEX_SIZE;
             uv_bottom[1] = ty_offset;
 
-            textures = std::make_tuple(uv_top, uv_sides, uv_bottom);
+            uv_coords = std::make_tuple(uv_top, uv_sides, uv_bottom);
             break;
         default:
-            textures = std::nullopt;
+            uv_coords = std::nullopt;
             break;
     }
 
-    return textures;
+    return uv_coords;
 }
 
-/*
- *              z (+up)
- * (+forward) x |
- *             \|
- *              +---y (+right)
+/**
+ * @brief Creates a single block based on a set of given parameters.
+ * @since 16-10-2024
+ * @param[in] type The block type of the block being created e.g. dirt, grass, etc.
+ * @param[in] m_trns A 4x4 matrix which determines the location of the block relative to the world origin
+ * @param[in] sides A mask which determines which sides of the cube will be rendered
+ * @returns A Block object with the specified attributes
  */
 Block BlockFactory::make_block(
     const BlockType type,
     const mat4 m_trns,
-    const Face sides
-) const
+    const uint8_t sides
+)
 {
     typedef const std::array<float, 30> face_t;
 
-    Block block = Block(type);
+    Block block(type);
     auto vertices = std::vector<float>();
 
     const auto add_face = [&](face_t a)
@@ -77,10 +108,10 @@ Block BlockFactory::make_block(
     };
 
     // UV coordinates
-    float u_off = 1.0f / KCConst::ATLAS_TEX_SIZE;
-    float v_off = 1.0f / KCConst::ATLAS_TEX_SIZE;
+    float uw = 1.0f / KCConst::ATLAS_TEX_SIZE;
+    float vh = 1.0f / KCConst::ATLAS_TEX_SIZE;
 
-    auto uv = get_tex_by_block_type(type).value_or(
+    auto uv = get_uv_coords(type).value_or(
         std::make_tuple(
             UvCoords{ 0.0f, 0.0f },
             UvCoords{ 0.0f, 0.0f },
@@ -133,57 +164,57 @@ Block BlockFactory::make_block(
     std::memcpy(v7, copy, sizeof(v7));
 
     const face_t right = {
-        v1[0], v1[1], v1[2], uv_sides[0],         uv_sides[1],
-        v7[0], v7[1], v7[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v3[0], v3[1], v3[2], uv_sides[0],         uv_sides[1] + v_off,
-        v7[0], v7[1], v7[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v1[0], v1[1], v1[2], uv_sides[0],         uv_sides[1],
-        v5[0], v5[1], v5[2], uv_sides[0] + u_off, uv_sides[1]
+        v1[0], v1[1], v1[2], uv_sides[0],      uv_sides[1],
+        v7[0], v7[1], v7[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v3[0], v3[1], v3[2], uv_sides[0],      uv_sides[1] + vh,
+        v7[0], v7[1], v7[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v1[0], v1[1], v1[2], uv_sides[0],      uv_sides[1],
+        v5[0], v5[1], v5[2], uv_sides[0] + uw, uv_sides[1]
     };
 
     const face_t left = {
-        v4[0], v4[1], v4[2], uv_sides[0],         uv_sides[1],
-        v2[0], v2[1], v2[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v6[0], v6[1], v6[2], uv_sides[0],         uv_sides[1] + v_off,
-        v2[0], v2[1], v2[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v4[0], v4[1], v4[2], uv_sides[0],         uv_sides[1],
-        v0[0], v0[1], v0[2], uv_sides[0] + u_off, uv_sides[1]
+        v4[0], v4[1], v4[2], uv_sides[0],      uv_sides[1],
+        v2[0], v2[1], v2[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v6[0], v6[1], v6[2], uv_sides[0],      uv_sides[1] + vh,
+        v2[0], v2[1], v2[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v4[0], v4[1], v4[2], uv_sides[0],      uv_sides[1],
+        v0[0], v0[1], v0[2], uv_sides[0] + uw, uv_sides[1]
     };
 
     const face_t back = {
-        v0[0], v0[1], v0[2], uv_sides[0],         uv_sides[1],
-        v3[0], v3[1], v3[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v2[0], v2[1], v2[2], uv_sides[0],         uv_sides[1] + v_off,
-        v3[0], v3[1], v3[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v0[0], v0[1], v0[2], uv_sides[0],         uv_sides[1],
-        v1[0], v1[1], v1[2], uv_sides[0] + u_off, uv_sides[1]
+        v0[0], v0[1], v0[2], uv_sides[0],      uv_sides[1],
+        v3[0], v3[1], v3[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v2[0], v2[1], v2[2], uv_sides[0],      uv_sides[1] + vh,
+        v3[0], v3[1], v3[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v0[0], v0[1], v0[2], uv_sides[0],      uv_sides[1],
+        v1[0], v1[1], v1[2], uv_sides[0] + uw, uv_sides[1]
     };
 
     const face_t front = {
-        v5[0], v5[1], v5[2], uv_sides[0],         uv_sides[1],
-        v6[0], v6[1], v6[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v7[0], v7[1], v7[2], uv_sides[0],         uv_sides[1] + v_off,
-        v6[0], v6[1], v6[2], uv_sides[0] + u_off, uv_sides[1] + v_off,
-        v5[0], v5[1], v5[2], uv_sides[0],         uv_sides[1],
-        v4[0], v4[1], v4[2], uv_sides[0] + u_off, uv_sides[1]
+        v5[0], v5[1], v5[2], uv_sides[0],      uv_sides[1],
+        v6[0], v6[1], v6[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v7[0], v7[1], v7[2], uv_sides[0],      uv_sides[1] + vh,
+        v6[0], v6[1], v6[2], uv_sides[0] + uw, uv_sides[1] + vh,
+        v5[0], v5[1], v5[2], uv_sides[0],      uv_sides[1],
+        v4[0], v4[1], v4[2], uv_sides[0] + uw, uv_sides[1]
     };
 
     const face_t bottom = {
-        v2[0], v2[1], v2[2], uv_bottom[0],         uv_bottom[1] + v_off,
-        v3[0], v3[1], v3[2], uv_bottom[0] + u_off, uv_bottom[1] + v_off,
-        v6[0], v6[1], v6[2], uv_bottom[0],         uv_bottom[1],
-        v7[0], v7[1], v7[2], uv_bottom[0] + u_off, uv_bottom[1],
-        v6[0], v6[1], v6[2], uv_bottom[0],         uv_bottom[1],
-        v3[0], v3[1], v3[2], uv_bottom[0] + u_off, uv_bottom[1] + v_off
+        v2[0], v2[1], v2[2], uv_bottom[0],      uv_bottom[1] + vh,
+        v3[0], v3[1], v3[2], uv_bottom[0] + uw, uv_bottom[1] + vh,
+        v6[0], v6[1], v6[2], uv_bottom[0],      uv_bottom[1],
+        v7[0], v7[1], v7[2], uv_bottom[0] + uw, uv_bottom[1],
+        v6[0], v6[1], v6[2], uv_bottom[0],      uv_bottom[1],
+        v3[0], v3[1], v3[2], uv_bottom[0] + uw, uv_bottom[1] + vh
     };
 
     const face_t top = {
-        v4[0], v4[1], v4[2], uv_top[0],         uv_top[1],
-        v1[0], v1[1], v1[2], uv_top[0] + u_off, uv_top[1] + v_off,
-        v0[0], v0[1], v0[2], uv_top[0],         uv_top[1] + v_off,
-        v1[0], v1[1], v1[2], uv_top[0] + u_off, uv_top[1] + v_off,
-        v4[0], v4[1], v4[2], uv_top[0],         uv_top[1],
-        v5[0], v5[1], v5[2], uv_top[0] + u_off, uv_top[1]
+        v4[0], v4[1], v4[2], uv_top[0],      uv_top[1],
+        v1[0], v1[1], v1[2], uv_top[0] + uw, uv_top[1] + vh,
+        v0[0], v0[1], v0[2], uv_top[0],      uv_top[1] + vh,
+        v1[0], v1[1], v1[2], uv_top[0] + uw, uv_top[1] + vh,
+        v4[0], v4[1], v4[2], uv_top[0],      uv_top[1],
+        v5[0], v5[1], v5[2], uv_top[0] + uw, uv_top[1]
     };
 
     if ((sides & RIGHT) == RIGHT)
@@ -212,6 +243,7 @@ Block BlockFactory::make_block(
     }
 
     block.mesh.vertices = vertices.size();
+    block.mesh.texture = m_block_tex;
 
     // Create vertex attribute array and vertex buffer object
     glGenVertexArrays(1, &block.mesh.vao);

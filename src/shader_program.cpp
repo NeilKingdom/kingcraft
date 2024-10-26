@@ -1,43 +1,73 @@
+/**
+ * @file shader_program.cpp
+ * @author Neil Kingdom
+ * @version 1.0
+ * @since 20-10-2024
+ * @brief Creates an OpenGL shader program given GLSL code for fragment and vertex shaders.
+ */
+
 #include "shader_program.hpp"
 
+/**
+ * @brief Default constructor for ShaderProgram.
+ * @since 20-10-2024
+ */
 ShaderProgram::ShaderProgram() :
     id(0)
 {}
 
+/**
+ * @brief Constructor for ShaderProgram which uses __vertex_src__ and __fragment_src__ for the program.
+ * @since 20-10-2024
+ * @param[in] vertex_src GLSL source code for the vertex shader
+ * @param[in] fragment_src GLSL source code for the fragment shader
+ */
 ShaderProgram::ShaderProgram(const std::string vertex_src, const std::string fragment_src)
 {
-    ID program = glCreateProgram();
+    ID id = glCreateProgram();
     ID vs = compile(GL_VERTEX_SHADER, vertex_src);
     ID fs = compile(GL_FRAGMENT_SHADER, fragment_src);
 
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program);
+    glAttachShader(id, vs);
+    glAttachShader(id, fs);
+    glLinkProgram(id);
+    glValidateProgram(id);
 
     glDeleteShader(vs);
     glDeleteShader(fs);
 
-    id = program;
+    this->id = id;
 }
 
+/**
+ * @brief Default destructor for ShaderProgram
+ * @since 20-10-2024
+ */
 ShaderProgram::~ShaderProgram()
 {
     glUseProgram(0);
 }
 
+/**
+ * @brief Binds the current shader program as the active one.
+ * @since 20-10-2024
+ */
 void ShaderProgram::bind() const
 {
     glUseProgram(id);
 }
 
+/**
+ * @brief Unbinds the current shader program.
+ * @since 20-10-2024
+ */
 void ShaderProgram::unbind() const
 {
     glUseProgram(0);
 }
 
 /**
- * @brief Compiles a GLSL shader and returns its id.
+ * @brief Compiles a GLSL shader and returns its ID.
  * @since 02-03-2024
  * @param[in] type The type of shader being compiled (GL_VERTEX_SHADER or GL_FRAGMENT_SHADER)
  * @param[in] source The GLSL source code for the shader

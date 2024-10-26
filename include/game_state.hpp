@@ -11,6 +11,8 @@ public:
     float znear = 1.0f;
     float zfar = 1000.0f;
 
+    size_t chunk_size = 16;
+
     bool is_running = true;
 
     Player player = Player();
@@ -26,5 +28,5 @@ public:
 
 private:
     // Special member functions
-    GameState();
+    GameState() = default;
 };

@@ -5,6 +5,7 @@
 #include "camera.hpp"
 #include "block.hpp"
 #include "shader_program.hpp"
+#include "chunk.hpp"
 
 static uint16_t key_mask = 0;
 static bool query_pointer_location = true;
@@ -49,4 +50,4 @@ void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono:
 GLXFBConfig     create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
 GLXContext      create_opengl_context(KCWindow &win, const GLXFBConfig &best_fb_config);
 void            process_events(KCWindow &win, Camera &camera);
-void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const ShaderProgram &shader, const std::vector<Block> &blocks);
+void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const ShaderProgram &shader, const std::vector<std::vector<std::vector<Block>>> &blocks);

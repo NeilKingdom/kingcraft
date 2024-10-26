@@ -65,10 +65,10 @@ void render_imgui_frame(KCWindow &win, Camera &camera)
 
     // ImGui widgets
     ImGui::Begin("KingCraft");
-    ImGui::SliderFloat("FOV", const_cast<float*>(&GameState::get_instance().fov), 0.0f, 180.0f);
-    ImGui::SliderFloat("Player X Pos", &camera.v_eye[0], camera.v_eye[0] - 1.0f, camera.v_eye[0] + 1.0f);
-    ImGui::SliderFloat("Player Y Pos", &camera.v_eye[1], camera.v_eye[1] - 1.0f, camera.v_eye[1] + 1.0f);
-    ImGui::SliderFloat("Player Z Pos", &camera.v_eye[2], camera.v_eye[2] - 1.0f, camera.v_eye[2] + 1.0f);
+    ImGui::SliderFloat("FOV", &GameState::get_instance().fov, 0.0f, 180.0f);
+    ImGui::SliderFloat("Camera X Pos", &camera.v_eye[0], camera.v_eye[0] - 1.0f, camera.v_eye[0] + 1.0f);
+    ImGui::SliderFloat("Camera Y Pos", &camera.v_eye[1], camera.v_eye[1] - 1.0f, camera.v_eye[1] + 1.0f);
+    ImGui::SliderFloat("Camera Z Pos", &camera.v_eye[2], camera.v_eye[2] - 1.0f, camera.v_eye[2] + 1.0f);
     ImGui::Checkbox("Game Running", &GameState::get_instance().is_running);
     ImGui::End();
 

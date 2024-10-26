@@ -3,7 +3,7 @@
  * @author Neil Kingdom
  * @version 1.0
  * @since 02-03-2024
- * @brief Handles actions related to the X11 window.
+ * @brief Handles actions related to the game window.
  * Has actions for creating the window, handling events, rendering the frame buffer, etc.
  *
  * References:
@@ -228,9 +228,9 @@ GLXFBConfig create_window(
 }
 
 /**
- * @brief Create an OpenGL context for the given X11 window.
+ * @brief Create an OpenGL context for the given window.
  * @since 02-03-2024
- * @param[in,out] win An instance of XObjects containing X-related data
+ * @param[in,out] win An instance of KCWindow containing window-related data
  * @param[in] fb_config The frame buffer configuration that shall be bound to the OpenGL context
  * @returns An OpenGL context for __win__
  */
@@ -275,9 +275,9 @@ GLXContext create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
 }
 
 /**
- * @brief Processes X events in the queue until there aren't any left.
+ * @brief Processes window events in the queue until there aren't any left.
  * @since 02-03-2024
- * @param[in,out] x_objs An instance of XObjects containing X-related data
+ * @param[in,out] win An instance of KCWindow containing window-related data
  * @param[in,out] camera The active camera which will be updated on MotionNotify events
  */
 void process_events(KCWindow &win, Camera &camera)
@@ -449,17 +449,18 @@ void process_events(KCWindow &win, Camera &camera)
 }
 
 /**
- * @brief Renders the current frame for both OpenGL and optionally ImGui
- * @param[in,out] win An instance of XObjects containing X-related data
+ * @brief Renders the current game frame.
+ * @param[in,out] win An instance of KCWindow containing window-related data
  * @param[in,out] camera The currently active camera used for calculating perspective
  * @param[in,out] mvp The model-view-projection matrix
+ * @param[in] shader Shader being used for the current draw call
  */
 void render_frame(
     const KCWindow &win,
     Camera &camera,
     Mvp &mvp,
     const ShaderProgram &shader,
-    const std::vector<Block> &blocks
+    const std::vector<std::vector<std::vector<Block>>> &blocks
 )
 {
     // Set background color
@@ -489,18 +490,24 @@ void render_frame(
     int proj_uniform = glGetUniformLocation(shader.id, "proj");
     glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
 
-    for (auto block = blocks.begin(); block != blocks.end(); ++block)
+    for (int z = 0; z < 16; ++z)
     {
-        // Bind
-        block->mesh.texture.bind();
-        glBindVertexArray(block->mesh.vao);
+        for (int y = 0; y < 16; ++y)
+        {
+            for (int x = 0; x < 16; ++x)
+            {
+                // Bind
+                blocks[z][y][x].mesh.texture.bind();
+                glBindVertexArray(blocks[z][y][x].mesh.vao);
 
-        // Issue draw call
-        glDrawArrays(GL_TRIANGLES, 0, block->mesh.vertices);
+                // Issue draw call
+                glDrawArrays(GL_TRIANGLES, 0, blocks[z][y][x].mesh.vertices);
 
-        // Unbind
-        block->mesh.texture.unbind();
-        glBindVertexArray(0);
+                // Unbind
+                blocks[z][y][x].mesh.texture.unbind();
+                glBindVertexArray(0);
+            }
+        }
     }
 
     // Blit

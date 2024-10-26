@@ -36,8 +36,8 @@
 // liblac
 #include <transforms.h>
 
-// Custom X cursor
-struct XCursor
+// Custom cursor (right now only X11 is supported)
+struct KCCursor
 {
     Cursor cursor;
     Pixmap cpmap;
@@ -53,10 +53,10 @@ struct KCWindow
     XEvent                  xev;    // Stores the event type of the most recently received event
     GLXContext              glx;
     Colormap               cmap;    // Colormap for the X window
-    XCursor                 cur;    // Custom cursor to replace the default one
+    KCCursor                cur;    // Custom cursor to replace the default one
 };
 
-enum Face : uint8_t
+enum BlockFace : uint8_t
 {
     RIGHT  = 1 << 0,
     LEFT   = 1 << 1,
@@ -64,7 +64,9 @@ enum Face : uint8_t
     FRONT  = 1 << 3,
     BOTTOM = 1 << 4,
     TOP    = 1 << 5,
-    ALL    = 0xFF
+    ALL    = (RIGHT | LEFT | BACK | FRONT | BOTTOM | TOP)
 };
 
 typedef unsigned ID;
+
+static const std::filesystem::path tex_atlas_path("res/textures/texture_atlas.png");

@@ -32,7 +32,6 @@ static void cleanup(
         ImGui::DestroyContext();
 
         // X11
-
         // TODO: Put cursor back to default
         XDestroyWindow(imgui_win.value().dpy, imgui_win.value().win);
         XFreeColormap(imgui_win.value().dpy, imgui_win.value().cmap);
@@ -58,11 +57,14 @@ int main()
 
     /*** Variable declarations ***/
 
+    mat4 m_trns = {};
+
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
 
     GameState &game = GameState::get_instance();
     BlockFactory &block_factory = BlockFactory::get_instance();
+    ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
     int frames_elapsed = 0;
     time_point<steady_clock> since = steady_clock::now();
@@ -108,7 +110,7 @@ int main()
     glDepthFunc(GL_LESS);
 
     // Enable culling
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
 
@@ -129,24 +131,8 @@ int main()
 
     ShaderProgram shader = ShaderProgram(vertex_shader, fragment_shader);
 
-    std::filesystem::path tex_atlas("/home/neil/devel/projects/kingcraft/res/textures/texture_atlas.png");
-    Texture main_texture = Texture(tex_atlas, GL_NEAREST, GL_NEAREST);
-
-    /*** Load assets e.g. textures ***/
-
-    mat4 m_trns = {};
-
-    std::memcpy(m_trns, lac_ident_mat4, sizeof(m_trns));
-    Block block1 = block_factory.make_block(BlockType::DIRT, m_trns, (Face)(FRONT | BACK | LEFT | TOP | BOTTOM));
-    block1.mesh.texture = main_texture;
-
-    lac_get_translation_mat4(&m_trns, 0.0f, 1.0f, 0.0f);
-    Block block2 = block_factory.make_block(BlockType::DIRT, m_trns, (Face)(FRONT | BACK | RIGHT | TOP | BOTTOM));
-    block2.mesh.texture = main_texture;
-
-    auto blocks = std::vector<Block>();
-    blocks.push_back(block1);
-    blocks.push_back(block2);
+    block_factory.init();
+    Chunk chunk = chunk_factory.make_chunk(m_trns, ALL);
 
     /*** Game loop ***/
 
@@ -156,7 +142,7 @@ int main()
         game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
         process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, shader, blocks);
+        render_frame(app_win, camera, mvp, shader, chunk.blocks);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

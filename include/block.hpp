@@ -5,16 +5,15 @@
 
 enum class BlockType
 {
-    AIR,
     DIRT,
     GRASS,
+    STONE,
     SAND,
     WATER
 };
 
-class Block
+struct Block
 {
-public:
     BlockType   type;   // Block type
     Mesh        mesh;   // Contains the vertex attribute object of the block mesh
 
