@@ -61,6 +61,7 @@ int main()
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
+    KCShaders shaders = {};
 
     GameState &game = GameState::get_instance();
     BlockFactory &block_factory = BlockFactory::get_instance();
@@ -120,16 +121,46 @@ int main()
     /*** Create shader program(s) ***/
 
     auto ifs = std::ifstream();
+    std::string vertex_shader;
+    std::string fragment_shader;
 
-    ifs.open("res/shader/vertex.shader");
-    const std::string vertex_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    // Create block shader
+
+    ifs.open("res/shader/block.vs");
+    vertex_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    ifs.open("res/shader/fragment.shader");
-    const std::string fragment_shader(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    ifs.open("res/shader/block.fs");
+    fragment_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    ShaderProgram shader = ShaderProgram(vertex_shader, fragment_shader);
+    shaders.block = ShaderProgram(vertex_shader, fragment_shader);
+
+    // Create skybox shader
+
+    ifs.open("res/shader/skybox.vs");
+    vertex_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    ifs.close();
+
+    ifs.open("res/shader/skybox.fs");
+    fragment_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    ifs.close();
+
+    shaders.skybox = ShaderProgram(vertex_shader, fragment_shader);
+
+    // Create skybox
+
+    auto skybox_tex_paths = std::array<std::filesystem::path, 6> {
+        "res/textures/skybox_right.png",
+        "res/textures/skybox_left.png",
+        "res/textures/skybox_front.png",
+        "res/textures/skybox_back.png",
+        "res/textures/skybox_top.png",
+        "res/textures/skybox_bottom.png"
+    };
+    SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
+
+    // Make chunk
 
     block_factory.init();
     Chunk chunk = chunk_factory.make_chunk(m_trns, ALL);
@@ -142,7 +173,7 @@ int main()
         game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
         process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, shader, chunk.blocks);
+        render_frame(app_win, camera, mvp, shaders, chunk.blocks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

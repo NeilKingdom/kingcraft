@@ -455,24 +455,25 @@ void render_frame(
     const KCWindow &win,
     Camera &camera,
     Mvp &mvp,
-    const ShaderProgram &shader,
-    const std::vector<std::vector<std::vector<Block>>> &blocks
+    const KCShaders &shaders,
+    const std::vector<std::vector<std::vector<Block>>> &blocks,
+    SkyBox &skybox
 )
 {
     // Set background color
     glClearColor(0.1f, 0.4, 0.7f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    shader.bind();
+    shaders.block.bind();
 
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
-    int model_uniform = glGetUniformLocation(shader.id, "model");
+    int model_uniform = glGetUniformLocation(shaders.block.id, "model");
     glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
     camera.calculate_view_matrix();
-    int view_uniform = glGetUniformLocation(shader.id, "view");
+    int view_uniform = glGetUniformLocation(shaders.block.id, "view");
     glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
@@ -483,8 +484,10 @@ void render_frame(
         GameState::get_instance().znear,
         GameState::get_instance().zfar
     );
-    int proj_uniform = glGetUniformLocation(shader.id, "proj");
+    int proj_uniform = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
+
+    // Render block data
 
     for (int z = 0; z < 16; ++z)
     {
@@ -506,7 +509,40 @@ void render_frame(
         }
     }
 
+    shaders.block.unbind();
+
+    // Render skybox
+
+    glDepthFunc(GL_LEQUAL);
+    shaders.skybox.bind();
+
+    mat4 tmp = {};
+    lac_get_translation_mat4(&tmp, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
+    model_uniform = glGetUniformLocation(shaders.skybox.id, "model");
+    glUniformMatrix4fv(model_uniform, 1, GL_TRUE, tmp);
+
+    // View matrix (translate to view space)
+    view_uniform = glGetUniformLocation(shaders.skybox.id, "view");
+    glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
+
+    // Projection matrix (translate to projection space)
+    proj_uniform = glGetUniformLocation(shaders.skybox.id, "projection");
+    glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
+
+    // Bind
+    skybox.bind();
+    glBindVertexArray(skybox.mesh.vao);
+
+    // Issue draw call
+    glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices);
+
+    // Unbind
+    skybox.unbind();
+    glBindVertexArray(0);
+
+    shaders.skybox.unbind();
+    glDepthFunc(GL_LESS);
+
     // Blit
     glXSwapBuffers(win.dpy, win.win);
-    shader.unbind();
 }
