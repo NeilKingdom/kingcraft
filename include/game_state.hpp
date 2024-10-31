@@ -13,6 +13,7 @@ public:
 
     size_t chunk_size = 16;
 
+    unsigned long seed = 12345L; // Temporarily hard-coded
     bool is_running = true;
 
     Player player = Player();

@@ -12,13 +12,14 @@
 #include <array>
 #include <optional>
 #include <tuple>
+#include <random>
 #include <filesystem>
 
 // C APIs
+#include <cmath>
 #include <cstdlib>
 #include <cassert>
 #include <cstring>
-#include <cstdint>
 #include <cstdint>
 #include <cstddef>
 

@@ -71,6 +71,10 @@ int main()
     time_point<steady_clock> since = steady_clock::now();
     nanoseconds::rep frame_duration = 0L;
 
+    // Seed the RNG generator
+    srandom(game.seed);
+    output_noise_test();
+
     /*** Window and OpenGL context initialization ***/
 
     KCWindow app_win;
@@ -151,12 +155,18 @@ int main()
     // Create skybox
 
     auto skybox_tex_paths = std::array<std::filesystem::path, 6> {
-        "res/textures/skybox_right.png",
-        "res/textures/skybox_left.png",
-        "res/textures/skybox_front.png",
-        "res/textures/skybox_back.png",
-        "res/textures/skybox_top.png",
-        "res/textures/skybox_bottom.png"
+        //"res/textures/skybox_right.png",
+        //"res/textures/skybox_left.png",
+        //"res/textures/skybox_front.png",
+        //"res/textures/skybox_back.png",
+        //"res/textures/skybox_top.png",
+        //"res/textures/skybox_bottom.png"
+        "res/textures/test_skybox.png",
+        "res/textures/test_skybox.png",
+        "res/textures/test_skybox.png",
+        "res/textures/test_skybox.png",
+        "res/textures/test_skybox.png",
+        "res/textures/test_skybox.png"
     };
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
