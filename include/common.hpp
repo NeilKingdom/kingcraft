@@ -37,6 +37,8 @@
 // liblac
 #include <transforms.h>
 
+#define IS_BIT_SET(mask, bit) (((mask) & (bit)) == (bit))
+
 // Custom cursor (right now only X11 is supported)
 struct KCCursor
 {

@@ -41,7 +41,6 @@ BlockFactory::get_uv_coords(const BlockType type) const
     unsigned row, col;
     float tx_offset, ty_offset;
     UvCoords uv_top, uv_sides, uv_bottom;
-    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> uv_coords;
 
     switch (type)
     {
@@ -69,15 +68,12 @@ BlockFactory::get_uv_coords(const BlockType type) const
             tx_offset = 2.0f;
             uv_bottom[0] = tx_offset / (float)KCConst::ATLAS_TEX_SIZE;
             uv_bottom[1] = ty_offset;
-
-            uv_coords = std::make_tuple(uv_top, uv_sides, uv_bottom);
             break;
         default:
-            uv_coords = std::nullopt;
-            break;
+            return std::nullopt;
     }
 
-    return uv_coords;
+    return std::make_tuple(uv_top, uv_sides, uv_bottom);
 }
 
 /**
@@ -94,6 +90,11 @@ Block BlockFactory::make_block(
     const uint8_t sides
 )
 {
+    if (sides == 0 || type == BlockType::AIR)
+    {
+        return Block(BlockType::AIR);
+    }
+
     typedef const std::array<float, 30> face_t;
 
     Block block(type);
@@ -182,7 +183,7 @@ Block BlockFactory::make_block(
         v0[0], v0[1], v0[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
-    const face_t back = {
+    const face_t front = {
         v0[0], v0[1], v0[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
         v3[0], v3[1], v3[2], uv_sides[0] + uw,     uv_sides[1] + vh,
         v2[0], v2[1], v2[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
@@ -191,7 +192,7 @@ Block BlockFactory::make_block(
         v1[0], v1[1], v1[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
-    const face_t front = {
+    const face_t back = {
         v5[0], v5[1], v5[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
         v6[0], v6[1], v6[2], uv_sides[0] + uw,     uv_sides[1] + vh,
         v7[0], v7[1], v7[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
@@ -218,27 +219,27 @@ Block BlockFactory::make_block(
         v5[0], v5[1], v5[2], uv_top[0] + uw,     uv_top[1] + uv_pad
     };
 
-    if ((sides & RIGHT) == RIGHT)
+    if (IS_BIT_SET(sides, RIGHT))
     {
         add_face(right);
     }
-    if ((sides & LEFT) == LEFT)
+    if (IS_BIT_SET(sides, LEFT))
     {
         add_face(left);
     }
-    if ((sides & BACK) == BACK)
+    if (IS_BIT_SET(sides, BACK))
     {
         add_face(back);
     }
-    if ((sides & FRONT) == FRONT)
+    if (IS_BIT_SET(sides, FRONT))
     {
         add_face(front);
     }
-    if ((sides & BOTTOM) == BOTTOM)
+    if (IS_BIT_SET(sides, BOTTOM))
     {
         add_face(bottom);
     }
-    if ((sides & TOP) == TOP)
+    if (IS_BIT_SET(sides, TOP))
     {
         add_face(top);
     }

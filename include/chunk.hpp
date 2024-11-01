@@ -51,7 +51,7 @@ struct Chunk
             {
                 for (size_t x = 0; x < game.chunk_size; ++x)
                 {
-                    m_block_faces[z][y][x] = ALL;
+                    m_block_faces[z][y][x] = 0;
                     // TODO: Determine block type based off y value
                     m_block_types[z][y][x] = BlockType::GRASS;
                 }

@@ -12,6 +12,9 @@
 
 #include "window.hpp"
 
+// TODO: Debugging flag. Remove
+static bool active = true;
+
 using namespace std::chrono;
 
 /**
@@ -309,7 +312,7 @@ void process_events(KCWindow &win, Camera &camera)
             {
                 // Only perform this check every other frame
                 query_pointer_location = !query_pointer_location;
-                if (query_pointer_location)
+                if (query_pointer_location && active)
                 {
                     camera.update_rotation_from_pointer(win);
                 }
@@ -350,6 +353,9 @@ void process_events(KCWindow &win, Camera &camera)
                         SET_KEY(key_mask, KEY_DOWN);
                         break;
                     }
+                    case XK_Escape:
+                        active ^= true;
+                        break;
                 }
                 break;
             }
@@ -467,7 +473,7 @@ void render_frame(
     shaders.block.bind();
 
     // Model matrix (translate to world space)
-    lac_get_translation_mat4(&mvp.m_model, -1.5f, 0.0f, 0.0f);
+    lac_get_translation_mat4(&mvp.m_model, 0.0f, 0.0f, 0.0f);
     int model_uniform = glGetUniformLocation(shaders.block.id, "model");
     glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
 
@@ -495,6 +501,11 @@ void render_frame(
         {
             for (int x = 0; x < 16; ++x)
             {
+                if (blocks[z][y][x].type == BlockType::AIR)
+                {
+                    continue;
+                }
+
                 // Bind
                 blocks[z][y][x].mesh.texture.bind();
                 glBindVertexArray(blocks[z][y][x].mesh.vao);
