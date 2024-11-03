@@ -6,8 +6,8 @@
 class GameState
 {
 public:
-    float fov = 90.0f;
-    float aspect = 9.0f / 16.0f;
+    float fov = 89.0f;
+    float aspect = 16.0f / 9.0f;
     float znear = 1.0f;
     float zfar = 1000.0f;
 

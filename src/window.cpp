@@ -297,7 +297,7 @@ void process_events(KCWindow &win, Camera &camera)
                 {
                     win.xwa.width = win.xev.xconfigure.width;
                     win.xwa.height = win.xev.xconfigure.height;
-                    GameState::get_instance().aspect = (float)win.xwa.height / (float)win.xwa.width;
+                    GameState::get_instance().aspect = (float)win.xwa.width / (float)win.xwa.height;
                 }
                 break;
             }
