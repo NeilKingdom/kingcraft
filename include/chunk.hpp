@@ -7,8 +7,9 @@
 // Forward declaration
 class ChunkFactory;
 
-struct Chunk
+class Chunk
 {
+public:
     std::vector<std::vector<std::vector<Block>>> blocks;
 
     // Special member functions
@@ -16,53 +17,28 @@ struct Chunk
     {
         GameState &game = GameState::get_instance();
 
-        blocks.reserve(game.chunk_size);
+        blocks.resize(
+            game.chunk_size,
+            std::vector<std::vector<Block>>(
+                game.chunk_size,
+                // TODO: Determine block type based off z coordinates
+                std::vector<Block>(game.chunk_size, Block(BlockType::GRASS))
+            )
+        );
 
-        for (size_t i = 0; i < game.chunk_size; ++i)
-        {
-            blocks.emplace_back();
-            blocks[i].reserve(game.chunk_size);
-
-            for (size_t j = 0; j < game.chunk_size; ++j)
-            {
-                blocks[i].emplace_back();
-                blocks[i][j].reserve(game.chunk_size);
-            }
-        }
-
-        m_block_faces = std::vector(
+        m_block_faces.resize(
             game.chunk_size,
             std::vector<std::vector<uint8_t>>(
                 game.chunk_size,
-                std::vector<uint8_t>(game.chunk_size)
+                std::vector<uint8_t>(
+                    game.chunk_size, 0)
             )
         );
-        m_block_types = std::vector(
-            game.chunk_size,
-            std::vector<std::vector<BlockType>>(
-                game.chunk_size,
-                std::vector<BlockType>(game.chunk_size)
-            )
-        );
-
-        for (size_t z = 0; z < game.chunk_size; ++z)
-        {
-            for (size_t y = 0; y < game.chunk_size; ++y)
-            {
-                for (size_t x = 0; x < game.chunk_size; ++x)
-                {
-                    m_block_faces[z][y][x] = 0;
-                    // TODO: Determine block type based off y value
-                    m_block_types[z][y][x] = BlockType::GRASS;
-                }
-            }
-        }
     }
     ~Chunk() = default;
 
 private:
     friend ChunkFactory;
 
-    std::vector<std::vector<std::vector<uint8_t>>>   m_block_faces;
-    std::vector<std::vector<std::vector<BlockType>>> m_block_types;
+    std::vector<std::vector<std::vector<uint8_t>>> m_block_faces;
 };

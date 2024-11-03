@@ -462,8 +462,8 @@ void render_frame(
     Camera &camera,
     Mvp &mvp,
     const KCShaders &shaders,
-    const std::vector<std::vector<std::vector<Block>>> &blocks,
-    SkyBox &skybox
+    const std::list<Chunk> &chunks,
+    const SkyBox skybox
 )
 {
     // Set background color
@@ -495,27 +495,30 @@ void render_frame(
 
     // Render block data
 
-    for (int z = 0; z < 16; ++z)
+    for (Chunk chunk : chunks)
     {
-        for (int y = 0; y < 16; ++y)
+        for (int z = 0; z < 16; ++z)
         {
-            for (int x = 0; x < 16; ++x)
+            for (int y = 0; y < 16; ++y)
             {
-                if (blocks[z][y][x].type == BlockType::AIR)
+                for (int x = 0; x < 16; ++x)
                 {
-                    continue;
+                    if (chunk.blocks[z][y][x].type == BlockType::AIR)
+                    {
+                        continue;
+                    }
+
+                    // Bind
+                    chunk.blocks[z][y][x].mesh.texture.bind();
+                    glBindVertexArray(chunk.blocks[z][y][x].mesh.vao);
+
+                    // Issue draw call
+                    glDrawArrays(GL_TRIANGLES, 0, chunk.blocks[z][y][x].mesh.vertices);
+
+                    // Unbind
+                    chunk.blocks[z][y][x].mesh.texture.unbind();
+                    glBindVertexArray(0);
                 }
-
-                // Bind
-                blocks[z][y][x].mesh.texture.bind();
-                glBindVertexArray(blocks[z][y][x].mesh.vao);
-
-                // Issue draw call
-                glDrawArrays(GL_TRIANGLES, 0, blocks[z][y][x].mesh.vertices);
-
-                // Unbind
-                blocks[z][y][x].mesh.texture.unbind();
-                glBindVertexArray(0);
             }
         }
     }
@@ -527,10 +530,9 @@ void render_frame(
     glDepthFunc(GL_LEQUAL);
     shaders.skybox.bind();
 
-    mat4 tmp = {};
-    lac_get_translation_mat4(&tmp, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
+    lac_get_translation_mat4(&mvp.m_model, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
     model_uniform = glGetUniformLocation(shaders.skybox.id, "model");
-    glUniformMatrix4fv(model_uniform, 1, GL_TRUE, tmp);
+    glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
     view_uniform = glGetUniformLocation(shaders.skybox.id, "view");

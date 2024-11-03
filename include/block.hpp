@@ -15,8 +15,8 @@ enum class BlockType
 
 struct Block
 {
-    BlockType   type;   // Block type
-    Mesh        mesh;   // Contains the vertex attribute object of the block mesh
+    BlockType type;   // Block type
+    Mesh      mesh;   // Contains the vertex attribute object of the block mesh
 
     // Special member functions
     Block() = delete;

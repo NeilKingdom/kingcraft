@@ -10,5 +10,6 @@
 #include "shader_program.hpp"
 #include "block_factory.hpp"
 #include "chunk_factory.hpp"
+#include "my_fifo.hpp"
 
 #include "noise_generator.hpp"

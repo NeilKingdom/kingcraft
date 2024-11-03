@@ -62,6 +62,7 @@ int main()
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
     KCShaders shaders = {};
+    auto chunks = std::list<Chunk>();
 
     GameState &game = GameState::get_instance();
     BlockFactory &block_factory = BlockFactory::get_instance();
@@ -173,23 +174,34 @@ int main()
     // Make chunk
 
     block_factory.init();
-    Chunk chunk = chunk_factory.make_chunk(m_trns, ALL);
 
     /*** Game loop ***/
+
+    float x = 1.0f;
+    float y = 1.0f;
 
     while (game.is_running)
     {
         auto frame_start = steady_clock::now();
         game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
+        // Create chunks that are nearest to player's position
+        if (chunks.size() < 5)
+        {
+            lac_get_translation_mat4(&m_trns, x, y, 0);
+            chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
+            x += 16;
+            y += 16;
+        }
+
         process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, shaders, chunk.blocks, skybox);
+        render_frame(app_win, camera, mvp, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
         //calculate_frame_rate(fps, frames_elapsed, since);
 
-#ifdef DEBUG
+#if 0
         // Switch OpenGL context to ImGui window
         glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
         process_imgui_events(imgui_win);

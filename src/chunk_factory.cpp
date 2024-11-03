@@ -26,16 +26,14 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
+Chunk ChunkFactory::make_chunk(const mat4 &m_trns, const uint8_t faces) const
 {
-    Chunk chunk;
+    Chunk chunk = Chunk();
     BlockFactory &block_factory = BlockFactory::get_instance();
     GameState &game = GameState::get_instance();
 
     ssize_t chunk_size = game.chunk_size;
     mat4 m_blk_trns = {};
-
-    chunk.m_block_types[15][8][2] = BlockType::AIR;
 
     // Determine which faces to render for each block within the chunk
     for (ssize_t z = 0; z < chunk_size; ++z)
@@ -45,7 +43,7 @@ Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 // Check if on the exterior of the chunk
-                if (chunk.m_block_types[z][y][x] != BlockType::AIR)
+                if (chunk.blocks[z][y][x].type != BlockType::AIR)
                 {
                     if (x == 0 && IS_BIT_SET(faces, FRONT))
                     {
@@ -112,11 +110,13 @@ Chunk ChunkFactory::make_chunk(const mat4 m_trns, const uint8_t faces) const
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 // TODO: Need to add m_trns (I think)...
+                mat4 tmp = {};
                 lac_get_translation_mat4(&m_blk_trns, (float)x, (float)y, (float)(z - chunk_size));
+                lac_multiply_mat4(&tmp, m_trns, m_blk_trns);
 
                 chunk.blocks[z][y][x] = block_factory.make_block(
-                    chunk.m_block_types[z][y][x],
-                    m_blk_trns,
+                    chunk.blocks[z][y][x].type,
+                    tmp,
                     chunk.m_block_faces[z][y][x]
                 );
             }
