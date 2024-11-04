@@ -109,7 +109,6 @@ Chunk ChunkFactory::make_chunk(const mat4 &m_trns, const uint8_t faces) const
         {
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
-                // TODO: Need to add m_trns (I think)...
                 mat4 tmp = {};
                 lac_get_translation_mat4(&m_blk_trns, (float)x, (float)y, (float)(z - chunk_size));
                 lac_multiply_mat4(&tmp, m_trns, m_blk_trns);

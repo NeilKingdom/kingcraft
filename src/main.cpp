@@ -58,11 +58,12 @@ int main()
     /*** Variable declarations ***/
 
     mat4 m_trns = {};
+    vec2 old_chunk_location = { -1.0f, -1.0f };
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
     KCShaders shaders = {};
-    auto chunks = std::list<Chunk>();
+    auto chunks = std::vector<Chunk>();
 
     GameState &game = GameState::get_instance();
     BlockFactory &block_factory = BlockFactory::get_instance();
@@ -177,21 +178,46 @@ int main()
 
     /*** Game loop ***/
 
-    float x = 1.0f;
-    float y = 1.0f;
+    float x = -2.0f;
+    float y = -2.0f;
 
     while (game.is_running)
     {
         auto frame_start = steady_clock::now();
         game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
 
-        // Create chunks that are nearest to player's position
-        if (chunks.size() < 5)
+        // Update player chunk offset
+        vec2 new_chunk_location = {
+             floorf(camera.v_eye[0] / game.chunk_size),
+             floorf(camera.v_eye[1] / game.chunk_size)
+        };
+
+        // Create chunks that are nearest to player's position (throttle to one chunk per frame)
+        if (new_chunk_location[0] != old_chunk_location[0]
+            || new_chunk_location[1] != old_chunk_location[1])
         {
-            lac_get_translation_mat4(&m_trns, x, y, 0);
+            old_chunk_location[0] = new_chunk_location[0];
+            old_chunk_location[1] = new_chunk_location[1];
+
+            if (chunks.size() == 16)
+            {
+                chunks.erase(chunks.begin());
+                std::rotate(chunks.begin(), chunks.begin() + 1, chunks.end());
+                lac_get_translation_mat4(&m_trns, new_chunk_location[0] * 16, new_chunk_location[1] * 16, 0);
+                chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
+            }
+        }
+
+        if (chunks.size() < 16)
+        {
+            lac_get_translation_mat4(&m_trns, (x++ + new_chunk_location[0] + 1) * 16, (y++ + new_chunk_location[1] + 1) * 16, 0);
             chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
-            x += 16;
-            y += 16;
+        }
+
+        if (x == 2.0f || y == 2.0f)
+        {
+            x = -2.0f;
+            y = -2.0f;
         }
 
         process_events(app_win, camera);

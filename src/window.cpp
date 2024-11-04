@@ -462,7 +462,7 @@ void render_frame(
     Camera &camera,
     Mvp &mvp,
     const KCShaders &shaders,
-    const std::list<Chunk> &chunks,
+    const std::vector<Chunk> &chunks,
     const SkyBox skybox
 )
 {
