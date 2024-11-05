@@ -1,8 +1,11 @@
 #pragma once
 
 #include "common.hpp"
+#include "constants.hpp"
 #include "texture.hpp"
 #include "mesh.hpp"
+
+typedef std::array<std::filesystem::path, KC::CUBE_FACES> cube_map_textures_t;
 
 class SkyBox
 {
@@ -12,7 +15,7 @@ public:
 
     // Special member functions
     SkyBox();
-    SkyBox(std::array<std::filesystem::path, 6> tex_paths, const unsigned min_filter, const unsigned mag_filter);
+    SkyBox(const cube_map_textures_t textures, const unsigned min_filter, const unsigned mag_filter);
     ~SkyBox();
 
     // General

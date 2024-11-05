@@ -9,22 +9,29 @@
 #include "shader_program.hpp"
 
 /**
- * @brief Default constructor for ShaderProgram.
+ * @brief Constructor for ShaderProgram which uses __vertex_path__ and __fragment_path__ for the program.
  * @since 20-10-2024
+ * @param[in] vertex_path Path to the GLSL source code for the vertex shader
+ * @param[in] fragment_path Path to the GLSL source code for the fragment shader
  */
-ShaderProgram::ShaderProgram() :
-    id(0)
-{}
-
-/**
- * @brief Constructor for ShaderProgram which uses __vertex_src__ and __fragment_src__ for the program.
- * @since 20-10-2024
- * @param[in] vertex_src GLSL source code for the vertex shader
- * @param[in] fragment_src GLSL source code for the fragment shader
- */
-ShaderProgram::ShaderProgram(const std::string vertex_src, const std::string fragment_src)
+ShaderProgram::ShaderProgram(
+    const std::filesystem::path vertex_path,
+    const std::filesystem::path fragment_path
+)
 {
-    ID id = glCreateProgram();
+    auto ifs = std::ifstream();
+    std::string vertex_src;
+    std::string fragment_src;
+
+    ifs.open(std::filesystem::absolute(vertex_path));
+    vertex_src = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    ifs.close();
+
+    ifs.open(std::filesystem::absolute(fragment_path));
+    fragment_src = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
+    ifs.close();
+
+    id = glCreateProgram();
     ID vs = compile(GL_VERTEX_SHADER, vertex_src);
     ID fs = compile(GL_FRAGMENT_SHADER, fragment_src);
 
@@ -35,8 +42,6 @@ ShaderProgram::ShaderProgram(const std::string vertex_src, const std::string fra
 
     glDeleteShader(vs);
     glDeleteShader(fs);
-
-    this->id = id;
 }
 
 /**

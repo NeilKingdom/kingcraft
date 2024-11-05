@@ -8,8 +8,8 @@ public:
     ID id;
 
     // Special member functions
-    ShaderProgram();
-    ShaderProgram(const std::string vertex_src, const std::string fragment_src);
+    ShaderProgram() = delete;
+    ShaderProgram(const std::filesystem::path vertex_path, const std::filesystem::path fragment_path);
     ~ShaderProgram();
 
     // General

@@ -9,14 +9,6 @@
 #include "texture.hpp"
 
 /**
- * @brief The default constructor for Texture.
- * @since 01-10-2024
- */
-Texture::Texture() :
-    id(0)
-{}
-
-/**
  * @brief Constructor for Texture which creates a texture from the PNG file specified by __path__.
  * @warning This class uses my own image loading library (libimc), which as of current date, only supports PNGs.
  * @since 01-10-2024
@@ -54,6 +46,8 @@ Texture::Texture(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    imc_pixmap_to_ppm(m_pixmap, "test.ppm", Rgb_t{ 255, 255, 255 });
 }
 
 /**

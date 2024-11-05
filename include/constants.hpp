@@ -1,6 +1,7 @@
 #pragma once
 
-namespace KCConst {
+namespace KC
+{
     static constexpr long       SEC_AS_NANO = 1000L * 1000L * 1000L;
     static constexpr unsigned   CUBE_FACES = 6;
     static constexpr unsigned   ATLAS_TEX_SIZE = 16;                    // Number of texture columns in the atlas

@@ -17,11 +17,9 @@ public:
     // General
     static BlockFactory &get_instance();
     void init();
-    Block make_block(const BlockType type, const mat4 m_trns, const uint8_t sides);
+    Block make_block(const BlockType type, const mat4 m_block_trns, const uint8_t sides);
 
 private:
-    Texture m_block_tex;
-
     // Special member functions
     BlockFactory() = default;
 

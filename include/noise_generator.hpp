@@ -2,9 +2,12 @@
 
 #include "common.hpp"
 
-static inline float my_lerp(const float a, const float b, const float t)
+namespace KC
 {
-    return (b - a) * t + a;
+    static inline float lerp(const float a, const float b, const float t)
+    {
+        return (b - a) * t + a;
+    }
 }
 
 static inline float fade(const float t)
@@ -47,13 +50,13 @@ static float perlin(const float x, const float y)
 
     n0 = dot_grid_gradient(x0, y0, x, y);
     n1 = dot_grid_gradient(x1, y0, x, y);
-    ix0 = my_lerp(n0, n1, dx);
+    ix0 = KC::lerp(n0, n1, dx);
 
     n0 = dot_grid_gradient(x0, y1, x, y);
     n1 = dot_grid_gradient(x1, y1, x, y);
-    ix1 = my_lerp(n0, n1, dx);
+    ix1 = KC::lerp(n0, n1, dx);
 
-    return my_lerp(ix0, ix1, dy);
+    return KC::lerp(ix0, ix1, dy);
 }
 
 static float octave_perlin(

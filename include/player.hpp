@@ -6,7 +6,7 @@
 class Player
 {
 public:
-    float speed = KCConst::PLAYER_BASE_SPEED;
+    float speed = KC::PLAYER_BASE_SPEED;
 
     // Special member functions
     Player() = default;

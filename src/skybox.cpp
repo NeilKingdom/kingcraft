@@ -7,24 +7,25 @@ SkyBox::SkyBox() :
 // TODO: Do cube textures support mipmaps?
 
 SkyBox::SkyBox(
-    std::array<std::filesystem::path, 6> tex_paths,
+    const cube_map_textures_t textures,
     const unsigned min_filter,
     const unsigned mag_filter
 )
 {
+    mat4 m_scale = {};
     PngHndl_t *png_hndl = nullptr;
     Pixmap_t  *pixmap = nullptr;
 
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-    for (auto i = tex_paths.begin(); i != tex_paths.end(); ++i)
+    for (auto i = textures.begin(); i != textures.end(); ++i)
     {
         png_hndl = imc_png_open(std::filesystem::absolute(*i).c_str());
         pixmap = imc_png_parse(png_hndl);
 
         glTexImage2D(
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i - tex_paths.begin()),
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i - textures.begin()),
             0, GL_RGBA, pixmap->width, pixmap->height,
             0, GL_RGBA, GL_UNSIGNED_BYTE, pixmap->data
         );
@@ -44,17 +45,39 @@ SkyBox::SkyBox(
     // Unbind texture
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-    vec4 v0 = { -200.0f, -200.0f,  200.0f, 1.0f };
-    vec4 v1 = { -200.0f,  200.0f,  200.0f, 1.0f };
-    vec4 v2 = { -200.0f, -200.0f, -200.0f, 1.0f };
-    vec4 v3 = { -200.0f,  200.0f, -200.0f, 1.0f };
-    vec4 v4 = {  200.0f, -200.0f,  200.0f, 1.0f };
-    vec4 v5 = {  200.0f,  200.0f,  200.0f, 1.0f };
-    vec4 v6 = {  200.0f, -200.0f, -200.0f, 1.0f };
-    vec4 v7 = {  200.0f,  200.0f, -200.0f, 1.0f };
+    vec4 v0 = { -0.5f, -0.5f,  0.5f, 1.0f };
+    vec4 v1 = { -0.5f,  0.5f,  0.5f, 1.0f };
+    vec4 v2 = { -0.5f, -0.5f, -0.5f, 1.0f };
+    vec4 v3 = { -0.5f,  0.5f, -0.5f, 1.0f };
+    vec4 v4 = {  0.5f, -0.5f,  0.5f, 1.0f };
+    vec4 v5 = {  0.5f,  0.5f,  0.5f, 1.0f };
+    vec4 v6 = {  0.5f, -0.5f, -0.5f, 1.0f };
+    vec4 v7 = {  0.5f,  0.5f, -0.5f, 1.0f };
+
+    // Scale skybox
+    lac_get_scalar_mat4(&m_scale, 200.0f, 200.0f, 200.0f);
+
+    // TODO: Remove memcpys once liblac is fixed
+    vec4 copy = { 1.0f, 1.0f, 1.0f, 1.0f };
+    lac_multiply_vec4_mat4(&copy, v0, m_scale);
+    std::memcpy(v0, copy, sizeof(v0));
+    lac_multiply_vec4_mat4(&copy, v1, m_scale);
+    std::memcpy(v1, copy, sizeof(v1));
+    lac_multiply_vec4_mat4(&copy, v2, m_scale);
+    std::memcpy(v2, copy, sizeof(v2));
+    lac_multiply_vec4_mat4(&copy, v3, m_scale);
+    std::memcpy(v3, copy, sizeof(v3));
+    lac_multiply_vec4_mat4(&copy, v4, m_scale);
+    std::memcpy(v4, copy, sizeof(v4));
+    lac_multiply_vec4_mat4(&copy, v5, m_scale);
+    std::memcpy(v5, copy, sizeof(v5));
+    lac_multiply_vec4_mat4(&copy, v6, m_scale);
+    std::memcpy(v6, copy, sizeof(v6));
+    lac_multiply_vec4_mat4(&copy, v7, m_scale);
+    std::memcpy(v7, copy, sizeof(v7));
 
     // Static mesh coordinates
-    std::vector<float> vertices = {
+    std::array<float, 108> vertices = {
         // Right
         v3[0], v3[1], v3[2],
         v7[0], v7[1], v7[2],
@@ -117,19 +140,23 @@ SkyBox::SkyBox(
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
     // Unbind VAO and VBO
-    glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 SkyBox::~SkyBox()
-{}
+{
+    // TODO: Destroy textures
+}
 
 void SkyBox::bind() const
 {
+    glBindVertexArray(mesh.vao);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 }
 
 void SkyBox::unbind() const
 {
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    glBindVertexArray(0);
 }

@@ -12,9 +12,9 @@
 /**
  * @brief Cleanup all of the application's resources.
  * @since 02-03-2024
- * @param[in] gl_objs An instance of GLObjects containing OpenGL-related resources
- * @param[in] x_objs An instance of XObjects containing X11-related resources
- * @param[in] im_objs An optional instance of XObjects containing ImGui-related resources
+ * @param[in] glx An instance of the OpenGL context object
+ * @param[in] app_win An instance of KCWindow containing X11-related resources
+ * @param[in] imgui_win An optional instance of KCWindow containing ImGui-related resources
  */
 static void cleanup(
     GLXContext glx,
@@ -58,12 +58,11 @@ int main()
     /*** Variable declarations ***/
 
     mat4 m_trns = {};
-    vec2 old_chunk_location = { -1.0f, -1.0f };
+    vec2 prev_chunk_location = {};
+    auto chunks = std::vector<Chunk>();
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
-    KCShaders shaders = {};
-    auto chunks = std::vector<Chunk>();
 
     GameState &game = GameState::get_instance();
     BlockFactory &block_factory = BlockFactory::get_instance();
@@ -72,10 +71,6 @@ int main()
     int frames_elapsed = 0;
     time_point<steady_clock> since = steady_clock::now();
     nanoseconds::rep frame_duration = 0L;
-
-    // Seed the RNG generator
-    srandom(game.seed);
-    output_noise_test();
 
     /*** Window and OpenGL context initialization ***/
 
@@ -126,102 +121,45 @@ int main()
 
     /*** Create shader program(s) ***/
 
-    auto ifs = std::ifstream();
-    std::string vertex_shader;
-    std::string fragment_shader;
+    ShaderProgram block_shader = ShaderProgram("res/shader/block.vs", "res/shader/block.fs");
+    ShaderProgram skybox_shader = ShaderProgram("res/shader/skybox.vs", "res/shader/skybox.fs");
+    KCShaders shaders = { block_shader, skybox_shader };
 
-    // Create block shader
+    // Create texture atlas
 
-    ifs.open("res/shader/block.vs");
-    vertex_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
-    ifs.close();
-
-    ifs.open("res/shader/block.fs");
-    fragment_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
-    ifs.close();
-
-    shaders.block = ShaderProgram(vertex_shader, fragment_shader);
-
-    // Create skybox shader
-
-    ifs.open("res/shader/skybox.vs");
-    vertex_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
-    ifs.close();
-
-    ifs.open("res/shader/skybox.fs");
-    fragment_shader = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
-    ifs.close();
-
-    shaders.skybox = ShaderProgram(vertex_shader, fragment_shader);
+    const std::filesystem::path tex_atlas_path("res/textures/texture_atlas.png");
+    Texture texture_atlas = Texture(tex_atlas_path, GL_NEAREST, GL_NEAREST);
 
     // Create skybox
 
-    auto skybox_tex_paths = std::array<std::filesystem::path, 6> {
-        //"res/textures/skybox_right.png",
-        //"res/textures/skybox_left.png",
-        //"res/textures/skybox_front.png",
-        //"res/textures/skybox_back.png",
-        //"res/textures/skybox_top.png",
-        //"res/textures/skybox_bottom.png"
-        "res/textures/test_skybox.png",
-        "res/textures/test_skybox.png",
-        "res/textures/test_skybox.png",
-        "res/textures/test_skybox.png",
-        "res/textures/test_skybox.png",
-        "res/textures/test_skybox.png"
-    };
+    //auto skybox_tex_paths = cube_map_textures_t{
+    //    "res/textures/skybox_right.png",
+    //    "res/textures/skybox_left.png",
+    //    "res/textures/skybox_front.png",
+    //    "res/textures/skybox_back.png",
+    //    "res/textures/skybox_top.png",
+    //    "res/textures/skybox_bottom.png"
+    //};
+    auto skybox_tex_paths = cube_map_textures_t();
+    std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
-    // Make chunk
-
-    block_factory.init();
+    // Seed the RNG generator
+    srandom(game.seed);
+    output_noise_test();
 
     /*** Game loop ***/
 
-    float x = -2.0f;
-    float y = -2.0f;
+    lac_get_translation_mat4(&m_trns, 16, 16, 0);
+    chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
 
     while (game.is_running)
     {
         auto frame_start = steady_clock::now();
-        game.player.speed = KCConst::PLAYER_BASE_SPEED * (frame_duration / (float)KCConst::SEC_AS_NANO);
-
-        // Update player chunk offset
-        vec2 new_chunk_location = {
-             floorf(camera.v_eye[0] / game.chunk_size),
-             floorf(camera.v_eye[1] / game.chunk_size)
-        };
-
-        // Create chunks that are nearest to player's position (throttle to one chunk per frame)
-        if (new_chunk_location[0] != old_chunk_location[0]
-            || new_chunk_location[1] != old_chunk_location[1])
-        {
-            old_chunk_location[0] = new_chunk_location[0];
-            old_chunk_location[1] = new_chunk_location[1];
-
-            if (chunks.size() == 16)
-            {
-                chunks.erase(chunks.begin());
-                std::rotate(chunks.begin(), chunks.begin() + 1, chunks.end());
-                lac_get_translation_mat4(&m_trns, new_chunk_location[0] * 16, new_chunk_location[1] * 16, 0);
-                chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
-            }
-        }
-
-        if (chunks.size() < 16)
-        {
-            lac_get_translation_mat4(&m_trns, (x++ + new_chunk_location[0] + 1) * 16, (y++ + new_chunk_location[1] + 1) * 16, 0);
-            chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
-        }
-
-        if (x == 2.0f || y == 2.0f)
-        {
-            x = -2.0f;
-            y = -2.0f;
-        }
+        game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
         process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, shaders, chunks, skybox);
+        render_frame(app_win, camera, mvp, texture_atlas, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

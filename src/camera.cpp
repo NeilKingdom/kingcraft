@@ -3,7 +3,7 @@
  * @author Neil Kingdom
  * @version 1.0
  * @since 02-03-2024
- * @brief Camera class used to create and maintain the view matrix.
+ * @brief Camera class used to create and update the view matrix.
  */
 
 #include "camera.hpp"
@@ -13,16 +13,13 @@
  * @since 02-03-2024
  */
 Camera::Camera() :
-    camera_yaw(0),
-    camera_pitch(0),
+    camera_yaw(0.0f),
+    camera_pitch(0.0f),
     v_eye{},
     v_look_dir{},
-    m_cam_rot{},
-    m_point_at{},
     m_view(std::make_shared<std::array<float, 16>>())
 {
     std::fill(m_view->begin(), m_view->end(), 0.0f);
-    std::memcpy(m_cam_rot, lac_ident_mat4, sizeof(m_cam_rot));
 }
 
 /**
@@ -66,8 +63,8 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     norm_dy  = (center_y - (float)win_off_y) / (float)win.xwa.height;
 
     // Convert from pixel space to degrees
-    camera_yaw += norm_dx * 180.0f * KCConst::CAMERA_ROTATION_SPEED;
-    camera_pitch += norm_dy * 180.0f * KCConst::CAMERA_ROTATION_SPEED;
+    camera_yaw += norm_dx * 180.0f * KC::CAMERA_ROTATION_SPEED;
+    camera_pitch += norm_dy * 180.0f * KC::CAMERA_ROTATION_SPEED;
     camera_pitch = std::clamp(camera_pitch, -89.0f, 89.0f);
 
     // Warp back to center of screen
@@ -83,9 +80,14 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
  */
 void Camera::calculate_view_matrix()
 {
-    mat4 m_yaw, m_pitch;
     vec3 v3_new_look_dir = {};
     vec4 v4_new_look_dir = {};
+    mat4 m_point_at = {};
+
+    mat4 m_yaw = {};
+    mat4 m_pitch = {};
+    mat4 m_cam_rot = {};
+    std::memcpy(m_cam_rot, lac_ident_mat4, sizeof(m_cam_rot));
 
     // Calculate camera's rotation matrix from pitch and yaw
     lac_get_yaw_mat4(&m_yaw, lac_deg_to_rad(camera_yaw));

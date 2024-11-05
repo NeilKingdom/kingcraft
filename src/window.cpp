@@ -15,32 +15,6 @@
 // TODO: Debugging flag. Remove
 static bool active = true;
 
-using namespace std::chrono;
-
-/**
- * @brief Prints the current frame rate to stdout.
- * @warning Must be called once per frame.
- * @since 02-03-2024
- * @param[in,out] fps The current frames per second (FPS)
- * @param[in,out] frames_elapsed The amount of frames that have elapsed since __since__
- * @param[in,out] since The amount of time that has passed since the last call to this function
- */
-void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_point &since)
-{
-    auto curr_time = steady_clock::now();
-    auto time_elapsed = duration_cast<nanoseconds>(curr_time - since).count();
-    ++frames_elapsed;
-
-    if (time_elapsed > KCConst::SEC_AS_NANO)
-    {
-        since = curr_time;
-        fps = frames_elapsed;
-        frames_elapsed = 0;
-
-        std::cout << "FPS: " << fps << std::endl;
-    }
-}
-
 /**
  * @brief Checks to see if the X11 extension function is supported by OpenGL.
  * @since 02-03-2024
@@ -76,6 +50,32 @@ static bool _is_glx_extension_supported(const char *ext_list, const char *ext_na
         }
 
         start = terminator;
+    }
+}
+
+using namespace std::chrono;
+
+/**
+ * @brief Prints the current frame rate to stdout.
+ * @warning Must be called once per frame.
+ * @since 02-03-2024
+ * @param[in,out] fps The current frames per second (FPS)
+ * @param[in,out] frames_elapsed The amount of frames that have elapsed since __since__
+ * @param[in,out] since The amount of time that has passed since the last call to this function
+ */
+void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_point &since)
+{
+    auto curr_time = steady_clock::now();
+    auto time_elapsed = duration_cast<nanoseconds>(curr_time - since).count();
+    ++frames_elapsed;
+
+    if (time_elapsed > KC::SEC_AS_NANO)
+    {
+        since = curr_time;
+        fps = frames_elapsed;
+        frames_elapsed = 0;
+
+        std::cout << "FPS: " << fps << std::endl;
     }
 }
 
@@ -321,79 +321,18 @@ void process_events(KCWindow &win, Camera &camera)
             case KeyPress:
             {
                 KeySym sym = XLookupKeysym(&win.xev.xkey, 0);
-                switch (sym)
+                if (key_binds.find(sym) != key_binds.end())
                 {
-                    case XK_w:
-                    {
-                        SET_KEY(key_mask, KEY_FORWARD);
-                        break;
-                    }
-                    case XK_s:
-                    {
-                        SET_KEY(key_mask, KEY_BACKWARD);
-                        break;
-                    }
-                    case XK_a:
-                    {
-                        SET_KEY(key_mask, KEY_LEFT);
-                        break;
-                    }
-                    case XK_d:
-                    {
-                        SET_KEY(key_mask, KEY_RIGHT);
-                        break;
-                    }
-                    case XK_space:
-                    {
-                        SET_KEY(key_mask, KEY_UP);
-                        break;
-                    }
-                    case XK_BackSpace:
-                    {
-                        SET_KEY(key_mask, KEY_DOWN);
-                        break;
-                    }
-                    case XK_Escape:
-                        active ^= true;
-                        break;
+                    SET_BIT(key_mask, key_binds.at(sym));
                 }
                 break;
             }
             case KeyRelease:
             {
                 KeySym sym = XLookupKeysym(&win.xev.xkey, 0);
-                switch (sym)
+                if (key_binds.find(sym) != key_binds.end())
                 {
-                    case XK_w:
-                    {
-                        UNSET_KEY(key_mask, KEY_FORWARD);
-                        break;
-                    }
-                    case XK_s:
-                    {
-                        UNSET_KEY(key_mask, KEY_BACKWARD);
-                        break;
-                    }
-                    case XK_a:
-                    {
-                        UNSET_KEY(key_mask, KEY_LEFT);
-                        break;
-                    }
-                    case XK_d:
-                    {
-                        UNSET_KEY(key_mask, KEY_RIGHT);
-                        break;
-                    }
-                    case XK_space:
-                    {
-                        UNSET_KEY(key_mask, KEY_UP);
-                        break;
-                    }
-                    case XK_BackSpace:
-                    {
-                        UNSET_KEY(key_mask, KEY_DOWN);
-                        break;
-                    }
+                    UNSET_BIT(key_mask, key_binds.at(sym));
                 }
                 break;
             }
@@ -416,27 +355,27 @@ void process_events(KCWindow &win, Camera &camera)
     lac_calc_cross_prod(&v_right, camera.v_up, v_fwd);
     lac_normalize_vec3(&v_right, v_right);
 
-    if (IS_KEY_SET(key_mask, KEY_FORWARD))
+    if (IS_BIT_SET(key_mask, KEY_FORWARD))
     {
         lac_subtract_vec3(&v_velocity, v_velocity, v_fwd);
     }
-    if (IS_KEY_SET(key_mask, KEY_BACKWARD))
+    if (IS_BIT_SET(key_mask, KEY_BACKWARD))
     {
         lac_add_vec3(&v_velocity, v_velocity, v_fwd);
     }
-    if (IS_KEY_SET(key_mask, KEY_LEFT))
+    if (IS_BIT_SET(key_mask, KEY_LEFT))
     {
         lac_subtract_vec3(&v_velocity, v_velocity, v_right);
     }
-    if (IS_KEY_SET(key_mask, KEY_RIGHT))
+    if (IS_BIT_SET(key_mask, KEY_RIGHT))
     {
         lac_add_vec3(&v_velocity, v_velocity, v_right);
     }
-    if (IS_KEY_SET(key_mask, KEY_DOWN))
+    if (IS_BIT_SET(key_mask, KEY_DOWN))
     {
         lac_subtract_vec3(&v_velocity, v_velocity, camera.v_up);
     }
-    if (IS_KEY_SET(key_mask, KEY_UP))
+    if (IS_BIT_SET(key_mask, KEY_UP))
     {
         lac_add_vec3(&v_velocity, v_velocity, camera.v_up);
     }
@@ -445,7 +384,7 @@ void process_events(KCWindow &win, Camera &camera)
     if (magnitude > 0.0f)
     {
         lac_normalize_vec3(&v_velocity, v_velocity);
-        lac_multiply_vec3(&v_velocity, v_velocity, KCConst::PLAYER_BASE_SPEED);
+        lac_multiply_vec3(&v_velocity, v_velocity, KC::PLAYER_BASE_SPEED);
         lac_add_vec3(&camera.v_eye, camera.v_eye, v_velocity);
     }
 }
@@ -461,26 +400,28 @@ void render_frame(
     const KCWindow &win,
     Camera &camera,
     Mvp &mvp,
-    const KCShaders &shaders,
+    Texture &texture_atlas,
+    KCShaders &shaders,
     const std::vector<Chunk> &chunks,
-    const SkyBox skybox
+    SkyBox &skybox
 )
 {
-    // Set background color
-    glClearColor(0.1f, 0.4, 0.7f, 1.0);
+    int u_model, u_view, u_proj, u_texture;
+
+    glClearColor(1.0f, 1.0, 1.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shaders.block.bind();
 
     // Model matrix (translate to world space)
     lac_get_translation_mat4(&mvp.m_model, 0.0f, 0.0f, 0.0f);
-    int model_uniform = glGetUniformLocation(shaders.block.id, "model");
-    glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
+    u_model = glGetUniformLocation(shaders.block.id, "model");
+    glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
     camera.calculate_view_matrix();
-    int view_uniform = glGetUniformLocation(shaders.block.id, "view");
-    glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
+    u_view = glGetUniformLocation(shaders.block.id, "view");
+    glUniformMatrix4fv(u_view, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
     lac_get_projection_mat4(
@@ -490,10 +431,12 @@ void render_frame(
         GameState::get_instance().znear,
         GameState::get_instance().zfar
     );
-    int proj_uniform = glGetUniformLocation(shaders.block.id, "proj");
-    glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
+    u_proj = glGetUniformLocation(shaders.block.id, "proj");
+    glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
     // Render block data
+
+    texture_atlas.bind();
 
     for (Chunk chunk : chunks)
     {
@@ -508,21 +451,16 @@ void render_frame(
                         continue;
                     }
 
-                    // Bind
-                    chunk.blocks[z][y][x].mesh.texture.bind();
-                    glBindVertexArray(chunk.blocks[z][y][x].mesh.vao);
-
                     // Issue draw call
+                    glBindVertexArray(chunk.blocks[z][y][x].mesh.vao);
                     glDrawArrays(GL_TRIANGLES, 0, chunk.blocks[z][y][x].mesh.vertices);
-
-                    // Unbind
-                    chunk.blocks[z][y][x].mesh.texture.unbind();
                     glBindVertexArray(0);
                 }
             }
         }
     }
 
+    texture_atlas.unbind();
     shaders.block.unbind();
 
     // Render skybox
@@ -531,27 +469,21 @@ void render_frame(
     shaders.skybox.bind();
 
     lac_get_translation_mat4(&mvp.m_model, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
-    model_uniform = glGetUniformLocation(shaders.skybox.id, "model");
-    glUniformMatrix4fv(model_uniform, 1, GL_TRUE, mvp.m_model);
+    u_model = glGetUniformLocation(shaders.skybox.id, "model");
+    glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
-    view_uniform = glGetUniformLocation(shaders.skybox.id, "view");
-    glUniformMatrix4fv(view_uniform, 1, GL_TRUE, mvp.m_view->data());
+    u_view = glGetUniformLocation(shaders.skybox.id, "view");
+    glUniformMatrix4fv(u_view, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
-    proj_uniform = glGetUniformLocation(shaders.skybox.id, "projection");
-    glUniformMatrix4fv(proj_uniform, 1, GL_TRUE, mvp.m_proj);
-
-    // Bind
-    skybox.bind();
-    glBindVertexArray(skybox.mesh.vao);
+    u_proj = glGetUniformLocation(shaders.skybox.id, "proj");
+    glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
     // Issue draw call
+    skybox.bind();
     glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices);
-
-    // Unbind
     skybox.unbind();
-    glBindVertexArray(0);
 
     shaders.skybox.unbind();
     glDepthFunc(GL_LESS);
