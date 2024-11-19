@@ -31,8 +31,8 @@ SkyBox::SkyBox(
         );
 
         // TODO: Destroy pixmap via library...
-        delete pixmap->data;
-        delete pixmap;
+        std::free(pixmap->data);
+        std::free(pixmap);
         imc_png_close(png_hndl);
     }
 
@@ -55,26 +55,16 @@ SkyBox::SkyBox(
     vec4 v7 = {  0.5f,  0.5f, -0.5f, 1.0f };
 
     // Scale skybox
-    lac_get_scalar_mat4(&m_scale, 200.0f, 200.0f, 200.0f);
+    lac_get_scalar_mat4(m_scale, 200.0f, 200.0f, 200.0f);
 
-    // TODO: Remove memcpys once liblac is fixed
-    vec4 copy = { 1.0f, 1.0f, 1.0f, 1.0f };
-    lac_multiply_vec4_mat4(&copy, v0, m_scale);
-    std::memcpy(v0, copy, sizeof(v0));
-    lac_multiply_vec4_mat4(&copy, v1, m_scale);
-    std::memcpy(v1, copy, sizeof(v1));
-    lac_multiply_vec4_mat4(&copy, v2, m_scale);
-    std::memcpy(v2, copy, sizeof(v2));
-    lac_multiply_vec4_mat4(&copy, v3, m_scale);
-    std::memcpy(v3, copy, sizeof(v3));
-    lac_multiply_vec4_mat4(&copy, v4, m_scale);
-    std::memcpy(v4, copy, sizeof(v4));
-    lac_multiply_vec4_mat4(&copy, v5, m_scale);
-    std::memcpy(v5, copy, sizeof(v5));
-    lac_multiply_vec4_mat4(&copy, v6, m_scale);
-    std::memcpy(v6, copy, sizeof(v6));
-    lac_multiply_vec4_mat4(&copy, v7, m_scale);
-    std::memcpy(v7, copy, sizeof(v7));
+    lac_multiply_vec4_mat4(v0, v0, m_scale);
+    lac_multiply_vec4_mat4(v1, v1, m_scale);
+    lac_multiply_vec4_mat4(v2, v2, m_scale);
+    lac_multiply_vec4_mat4(v3, v3, m_scale);
+    lac_multiply_vec4_mat4(v4, v4, m_scale);
+    lac_multiply_vec4_mat4(v5, v5, m_scale);
+    lac_multiply_vec4_mat4(v6, v6, m_scale);
+    lac_multiply_vec4_mat4(v7, v7, m_scale);
 
     // Static mesh coordinates
     std::array<float, 108> vertices = {

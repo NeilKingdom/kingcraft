@@ -90,22 +90,70 @@ void Camera::calculate_view_matrix()
     std::memcpy(m_cam_rot, lac_ident_mat4, sizeof(m_cam_rot));
 
     // Calculate camera's rotation matrix from pitch and yaw
-    lac_get_yaw_mat4(&m_yaw, lac_deg_to_rad(camera_yaw));
-    lac_get_pitch_mat4(&m_pitch, lac_deg_to_rad(camera_pitch));
-    lac_multiply_mat4(&m_cam_rot, m_yaw, m_pitch);
+    lac_get_yaw_mat4(m_yaw, lac_deg_to_rad(camera_yaw));
+    lac_get_pitch_mat4(m_pitch, lac_deg_to_rad(camera_pitch));
+    lac_multiply_mat4(m_cam_rot, m_yaw, m_pitch);
 
     std::memcpy(v4_new_look_dir, v_fwd, sizeof(v_fwd));
     v4_new_look_dir[3] = 1.0f;
-
-    // TODO: Should not need to make a copy of this. Bug with liblac where v_out and v_in point to same mem
-    vec4 v4_copy = {};
-    std::memcpy(v4_copy, v4_new_look_dir, sizeof(v4_copy));
-
-    lac_multiply_vec4_mat4(&v4_new_look_dir, v4_copy, m_cam_rot);
+    lac_multiply_vec4_mat4(v4_new_look_dir, v4_new_look_dir, m_cam_rot);
     std::memcpy(v_look_dir, v4_new_look_dir, sizeof(v_look_dir));
 
     // New look direction is the rotated look vector + camera's current position
-    lac_add_vec3(&v3_new_look_dir, v_eye, v_look_dir);
-    lac_get_point_at_mat4(&m_point_at, v_eye, v3_new_look_dir, v_up);
-    lac_invert_mat4(reinterpret_cast<mat4*>(m_view->data()), m_point_at);
+    lac_add_vec3(v3_new_look_dir, v_eye, v_look_dir);
+    lac_get_point_at_mat4(m_point_at, v_eye, v3_new_look_dir, v_up);
+    lac_invert_mat4(m_view->data(), m_point_at);
+
+    lac_normalize_vec3(v_look_dir, v_look_dir);
 }
+
+/**
+ * Frustum:
+ *
+ *       w_half
+ *  v_B _______________ v_C
+ *      \      ^      /
+ *       \     |     /
+ *        \    |    /
+ *    hyp  \   |   /
+ *          \  |  /
+ *           \ | /
+ *            \|/
+ *        v_eye / v_A
+ */
+CullingFrustum Camera::get_frustum_coords(uint8_t distance)
+{
+    GameState &game = GameState::get_instance();
+    ssize_t chunk_size = game.chunk_size;
+
+    const float zfar = chunk_size * distance;
+    const float w_half = std::tanf(lac_deg_to_rad(game.fov / 2.0f)) * zfar;
+
+    vec2 tmp = {};
+    vec2 v_A = { v_eye[0], v_eye[1] };
+
+    vec2 v_look_dir = { this->v_look_dir[0], this->v_look_dir[1] };
+    // TODO: Why does this need normalizing if we're doing it in calculate_view_matrix?
+    lac_normalize_vec2(v_look_dir, v_look_dir);
+    lac_multiply_vec2(v_look_dir, v_look_dir, zfar);
+    lac_add_vec2(v_look_dir, v_look_dir, v_A);
+
+    lac_subtract_vec4(tmp, v_A, v_look_dir);
+
+    vec2 v_B = { -tmp[1], tmp[0] };
+    lac_normalize_vec2(v_B, v_B);
+    lac_multiply_vec2(v_B, v_B, w_half);
+    lac_add_vec2(v_B, v_B, v_look_dir);
+
+    vec2 v_C = { tmp[1], -tmp[0] };
+    lac_normalize_vec2(v_C, v_C);
+    lac_multiply_vec2(v_C, v_C, w_half);
+    lac_add_vec2(v_C, v_C, v_look_dir);
+
+    return CullingFrustum{
+        std::array<float, 2>{ v_A[0], v_A[1] },
+        std::array<float, 2>{ v_B[0], v_B[1] },
+        std::array<float, 2>{ v_C[0], v_C[1] }
+    };
+}
+

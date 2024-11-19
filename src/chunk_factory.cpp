@@ -26,12 +26,51 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-Chunk ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const uint8_t faces) const
+std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const uint8_t faces) const
 {
-    Chunk chunk = Chunk();
+    auto chunk = std::make_unique<Chunk>();
     BlockFactory &block_factory = BlockFactory::get_instance();
     ssize_t chunk_size = GameState::get_instance().chunk_size;
 
+    assert(chunk_size > 1);
+
+    struct BlockData
+    {
+        uint8_t faces;
+        BlockType type;
+    };
+
+    chunk->location[0] = m_chunk_trns[3];
+    chunk->location[1] = m_chunk_trns[7];
+
+    std::vector<std::vector<std::vector<BlockData>>> tmp_data;
+    tmp_data.resize(
+        chunk_size,
+        std::vector<std::vector<BlockData>>(
+            chunk_size,
+            std::vector<BlockData>(chunk_size)
+        )
+    );
+
+    std::vector<std::vector<uint8_t>> heights;
+    heights.resize(
+        chunk_size,
+        std::vector<uint8_t>(chunk_size)
+    );
+
+    for (ssize_t z = 0; z < chunk_size; ++z)
+    {
+        for (ssize_t y = 0; y < chunk_size; ++y)
+        {
+            for (ssize_t x = 0; x < chunk_size; ++x)
+            {
+                tmp_data[z][y][x].faces = 0;
+                heights[y][x] = (std::rand() % (14 - 12 + 1)) + 12;
+            }
+        }
+    }
+
+    mat4 tmp = {};
     mat4 m_block_trns = {};
     mat4 m_location = {};
 
@@ -42,29 +81,70 @@ Chunk ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const uint8_t faces) co
         {
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
+                // Air block
+                if (z > heights[y][x])
+                {
+                    tmp_data[z][y][x].type = BlockType::AIR;
+                    continue;
+                }
+
+                // TODO: Determine block type based off z-value
+                tmp_data[z][y][x].type = BlockType::GRASS;
+
+                // Front
                 if (x == 0 && IS_BIT_SET(faces, FRONT))
                 {
-                    chunk.m_block_faces[z][y][x] |= FRONT;
+                    tmp_data[z][y][x].faces |= FRONT;
                 }
-                if (x == chunk_size - 1 && IS_BIT_SET(faces, BACK))
+                else if (x > 0 && z > heights[y][x - 1])
                 {
-                    chunk.m_block_faces[z][y][x] |= BACK;
+                    tmp_data[z][y][x].faces |= FRONT;
                 }
+
+                // Back
+                if (x == (chunk_size - 1) && IS_BIT_SET(faces, BACK))
+                {
+                    tmp_data[z][y][x].faces |= BACK;
+                }
+                else if (x < (chunk_size - 1) && z > heights[y][x + 1])
+                {
+                    tmp_data[z][y][x].faces |= BACK;
+                }
+
+                // Left
                 if (y == 0 && IS_BIT_SET(faces, LEFT))
                 {
-                    chunk.m_block_faces[z][y][x] |= LEFT;
+                    tmp_data[z][y][x].faces |= LEFT;
                 }
-                if (y == chunk_size - 1 && IS_BIT_SET(faces, RIGHT))
+                else if (y > 0 && z > heights[y - 1][x])
                 {
-                    chunk.m_block_faces[z][y][x] |= RIGHT;
+                    tmp_data[z][y][x].faces |= LEFT;
                 }
+
+                // Right
+                if (y == (chunk_size - 1) && IS_BIT_SET(faces, RIGHT))
+                {
+                    tmp_data[z][y][x].faces |= RIGHT;
+                }
+                else if (y < (chunk_size - 1) && z > heights[y + 1][x])
+                {
+                    tmp_data[z][y][x].faces |= RIGHT;
+                }
+
+                // Top
+                if (z == (chunk_size - 1) && IS_BIT_SET(faces, TOP))
+                {
+                    tmp_data[z][y][x].faces |= TOP;
+                }
+                else if (z == heights[y][x])
+                {
+                    tmp_data[z][y][x].faces |= TOP;
+                }
+
+                // Bottom
                 if (z == 0 && IS_BIT_SET(faces, BOTTOM))
                 {
-                    chunk.m_block_faces[z][y][x] |= BOTTOM;
-                }
-                if (z == chunk_size - 1 && IS_BIT_SET(faces, TOP))
-                {
-                    chunk.m_block_faces[z][y][x] |= TOP;
+                    tmp_data[z][y][x].faces |= BOTTOM;
                 }
             }
         }
@@ -72,25 +152,36 @@ Chunk ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const uint8_t faces) co
 
     // Create the actual Block objects for the chunk
 
-    chunk.blocks.resize(chunk_size);
+    chunk->blocks.resize(chunk_size);
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
-        chunk.blocks[z].resize(chunk_size);
+        chunk->blocks[z].resize(chunk_size);
         for (ssize_t y = 0; y < chunk_size; ++y)
         {
+            chunk->blocks[z][y].resize(chunk_size);
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
-                // Block location = chunk's translation matrix * the block's translation matrix
-                lac_get_translation_mat4(&m_block_trns, (float)x, (float)y, (float)(z - chunk_size));
-                lac_multiply_mat4(&m_location, m_chunk_trns, m_block_trns);
+                // Air block
+                if (tmp_data[z][y][x].type == BlockType::AIR)
+                {
+                    chunk->blocks[z][y][x] = std::make_unique<Block>(Block(BlockType::AIR));
+                    continue;
+                }
 
-                // TODO: Determine block type by z coordinate
-                chunk.blocks[z][y].push_back(
-                    block_factory.make_block(
-                        BlockType::GRASS,
-                        m_location,
-                        chunk.m_block_faces[z][y][x]
-                    )
+                std::memcpy(tmp, lac_ident_mat4, sizeof(tmp));
+                tmp[3]  = m_chunk_trns[3] * chunk_size;
+                tmp[7]  = m_chunk_trns[7] * chunk_size;
+                tmp[11] = m_chunk_trns[11] * chunk_size;
+
+                // Block location = chunk's translation matrix * the block's translation matrix
+                lac_get_translation_mat4(m_block_trns, (float)x, (float)y, (float)z);
+                lac_multiply_mat4(m_location, m_block_trns, tmp);
+
+                // TODO: Don't like :(
+                chunk->blocks[z][y][x] = block_factory.make_block(
+                    tmp_data[z][y][x].type,
+                    m_location,
+                    tmp_data[z][y][x].faces
                 );
             }
         }

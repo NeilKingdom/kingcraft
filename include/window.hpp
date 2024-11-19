@@ -6,8 +6,10 @@
 #include "block.hpp"
 #include "shader_program.hpp"
 #include "chunk.hpp"
+#include "chunk_factory.hpp"
 
 #include "skybox.hpp"
+#include "chunk_list.hpp"
 
 struct KCShaders
 {
@@ -19,23 +21,24 @@ static bool query_pointer_location = true;
 
 enum KeyLabel : uint64_t
 {
-    KEY_JUMP     = 0,
-    KEY_FORWARD  = (1 << 0),
-    KEY_BACKWARD = (1 << 1),
-    KEY_LEFT     = (1 << 2),
-    KEY_RIGHT    = (1 << 3),
-    KEY_UP       = (1 << 4),
-    KEY_DOWN     = (1 << 5)
+    KEY_MOVE_FORWARD  = (1 << 0),
+    KEY_MOVE_BACKWARD = (1 << 1),
+    KEY_MOVE_LEFT     = (1 << 2),
+    KEY_MOVE_RIGHT    = (1 << 3),
+    KEY_MOVE_UP       = (1 << 4),
+    KEY_MOVE_DOWN     = (1 << 5),
+    KEY_EXIT_GAME     = (1 << 6),
 };
 
 static uint64_t key_mask = 0;
 static auto key_binds = std::map<KeySym, KeyLabel>{
-    { XK_w,             KeyLabel::KEY_FORWARD },
-    { XK_s,             KeyLabel::KEY_BACKWARD },
-    { XK_a,             KeyLabel::KEY_LEFT },
-    { XK_d,             KeyLabel::KEY_RIGHT },
-    { XK_space,         KeyLabel::KEY_UP },
-    { XK_BackSpace,     KeyLabel::KEY_DOWN }
+    { XK_w,             KeyLabel::KEY_MOVE_FORWARD },
+    { XK_s,             KeyLabel::KEY_MOVE_BACKWARD },
+    { XK_a,             KeyLabel::KEY_MOVE_LEFT },
+    { XK_d,             KeyLabel::KEY_MOVE_RIGHT },
+    { XK_space,         KeyLabel::KEY_MOVE_UP },
+    { XK_BackSpace,     KeyLabel::KEY_MOVE_DOWN },
+    { XK_q,             KeyLabel::KEY_EXIT_GAME }
 };
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(
@@ -67,4 +70,4 @@ void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono:
 GLXFBConfig     create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
 GLXContext      create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);
 void            process_events(KCWindow &win, Camera &camera);
-void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, Texture &texture_atlas, KCShaders &shaders, const std::vector<Chunk> &chunks, SkyBox &skybox);
+void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const GameState &game, Texture &texture_atlas, KCShaders &shaders, const chunk_list_t &chunks, SkyBox &skybox);

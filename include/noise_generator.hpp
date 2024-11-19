@@ -102,8 +102,8 @@ static void output_noise_test()
     {
         for (size_t x = 0; x < width; ++x)
         {
-            alpha = (int)(perlin(x * scale, y * scale) * 255.0f);
-            //alpha = octave_perlin(x, y, 4, scale, 0, 255);
+            //alpha = (int)(perlin(x * scale, y * scale) * 255.0f);
+            alpha = octave_perlin(x, y, 4, scale, 0, 255);
             os << alpha << alpha << alpha;
         }
     }

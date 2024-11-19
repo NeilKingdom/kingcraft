@@ -6,9 +6,10 @@
 class Player
 {
 public:
-    float speed = KC::PLAYER_BASE_SPEED;
+    float speed;
+    float height;
 
     // Special member functions
-    Player() = default;
+    Player();
     ~Player() = default;
 };

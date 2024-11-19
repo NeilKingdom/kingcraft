@@ -12,9 +12,6 @@
 
 #include "window.hpp"
 
-// TODO: Debugging flag. Remove
-static bool active = true;
-
 /**
  * @brief Checks to see if the X11 extension function is supported by OpenGL.
  * @since 02-03-2024
@@ -312,7 +309,7 @@ void process_events(KCWindow &win, Camera &camera)
             {
                 // Only perform this check every other frame
                 query_pointer_location = !query_pointer_location;
-                if (query_pointer_location && active)
+                if (query_pointer_location)
                 {
                     camera.update_rotation_from_pointer(win);
                 }
@@ -324,6 +321,11 @@ void process_events(KCWindow &win, Camera &camera)
                 if (key_binds.find(sym) != key_binds.end())
                 {
                     SET_BIT(key_mask, key_binds.at(sym));
+                }
+
+                if (IS_BIT_SET(key_mask, KEY_EXIT_GAME))
+                {
+                    GameState::get_instance().is_running = false;
                 }
                 break;
             }
@@ -344,48 +346,45 @@ void process_events(KCWindow &win, Camera &camera)
         }
     }
 
-    vec3 v_fwd      = {};
-    vec3 v_right    = {};
-    vec3 v_velocity = {};
     float magnitude = 0.0f;
+    vec3 v_velocity = {};
+    vec3 v_right = {};
+    vec3 v_fwd = { camera.v_look_dir[0], camera.v_look_dir[1], camera.v_look_dir[2] };
 
-    std::memcpy(v_fwd, camera.v_look_dir, sizeof(v_fwd));
-    lac_normalize_vec3(&v_fwd, v_fwd);
+    lac_calc_cross_prod(v_right, camera.v_up, v_fwd);
+    lac_normalize_vec3(v_right, v_right);
 
-    lac_calc_cross_prod(&v_right, camera.v_up, v_fwd);
-    lac_normalize_vec3(&v_right, v_right);
-
-    if (IS_BIT_SET(key_mask, KEY_FORWARD))
+    if (IS_BIT_SET(key_mask, KEY_MOVE_FORWARD))
     {
-        lac_subtract_vec3(&v_velocity, v_velocity, v_fwd);
+        lac_subtract_vec3(v_velocity, v_velocity, v_fwd);
     }
-    if (IS_BIT_SET(key_mask, KEY_BACKWARD))
+    if (IS_BIT_SET(key_mask, KEY_MOVE_BACKWARD))
     {
-        lac_add_vec3(&v_velocity, v_velocity, v_fwd);
+        lac_add_vec3(v_velocity, v_velocity, v_fwd);
     }
-    if (IS_BIT_SET(key_mask, KEY_LEFT))
+    if (IS_BIT_SET(key_mask, KEY_MOVE_LEFT))
     {
-        lac_subtract_vec3(&v_velocity, v_velocity, v_right);
+        lac_subtract_vec3(v_velocity, v_velocity, v_right);
     }
-    if (IS_BIT_SET(key_mask, KEY_RIGHT))
+    if (IS_BIT_SET(key_mask, KEY_MOVE_RIGHT))
     {
-        lac_add_vec3(&v_velocity, v_velocity, v_right);
+        lac_add_vec3(v_velocity, v_velocity, v_right);
     }
-    if (IS_BIT_SET(key_mask, KEY_DOWN))
+    if (IS_BIT_SET(key_mask, KEY_MOVE_DOWN))
     {
-        lac_subtract_vec3(&v_velocity, v_velocity, camera.v_up);
+        lac_subtract_vec3(v_velocity, v_velocity, camera.v_up);
     }
-    if (IS_BIT_SET(key_mask, KEY_UP))
+    if (IS_BIT_SET(key_mask, KEY_MOVE_UP))
     {
-        lac_add_vec3(&v_velocity, v_velocity, camera.v_up);
+        lac_add_vec3(v_velocity, v_velocity, camera.v_up);
     }
 
     lac_calc_magnitude_vec4(&magnitude, v_velocity);
     if (magnitude > 0.0f)
     {
-        lac_normalize_vec3(&v_velocity, v_velocity);
-        lac_multiply_vec3(&v_velocity, v_velocity, KC::PLAYER_BASE_SPEED);
-        lac_add_vec3(&camera.v_eye, camera.v_eye, v_velocity);
+        lac_normalize_vec3(v_velocity, v_velocity);
+        lac_multiply_vec3(v_velocity, v_velocity, KC::PLAYER_BASE_SPEED);
+        lac_add_vec3(camera.v_eye, camera.v_eye, v_velocity);
     }
 }
 
@@ -400,13 +399,15 @@ void render_frame(
     const KCWindow &win,
     Camera &camera,
     Mvp &mvp,
+    const GameState &game,
     Texture &texture_atlas,
     KCShaders &shaders,
-    const std::vector<Chunk> &chunks,
+    const chunk_list_t &chunks,
     SkyBox &skybox
 )
 {
-    int u_model, u_view, u_proj, u_texture;
+    ssize_t chunk_size = game.chunk_size;
+    unsigned u_model, u_view, u_proj;
 
     glClearColor(1.0f, 1.0, 1.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -414,18 +415,17 @@ void render_frame(
     shaders.block.bind();
 
     // Model matrix (translate to world space)
-    lac_get_translation_mat4(&mvp.m_model, 0.0f, 0.0f, 0.0f);
+    lac_get_translation_mat4(mvp.m_model, 0.0f, 0.0f, (float)(-chunk_size - game.player.height));
     u_model = glGetUniformLocation(shaders.block.id, "model");
     glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
 
     // View matrix (translate to view space)
-    camera.calculate_view_matrix();
     u_view = glGetUniformLocation(shaders.block.id, "view");
     glUniformMatrix4fv(u_view, 1, GL_TRUE, mvp.m_view->data());
 
     // Projection matrix (translate to projection space)
     lac_get_projection_mat4(
-        &mvp.m_proj,
+        mvp.m_proj,
         GameState::get_instance().aspect,
         GameState::get_instance().fov,
         GameState::get_instance().znear,
@@ -438,22 +438,23 @@ void render_frame(
 
     texture_atlas.bind();
 
-    for (Chunk chunk : chunks)
+    for (auto &chunk : chunks)
     {
-        for (int z = 0; z < 16; ++z)
+        for (int z = 0; z < chunk_size; ++z)
         {
-            for (int y = 0; y < 16; ++y)
+            for (int y = 0; y < chunk_size; ++y)
             {
-                for (int x = 0; x < 16; ++x)
+                for (int x = 0; x < chunk_size; ++x)
                 {
-                    if (chunk.blocks[z][y][x].type == BlockType::AIR)
+                    if (chunk->blocks[z][y][x]->type == BlockType::AIR
+                        || chunk->blocks[z][y][x]->faces == 0)
                     {
                         continue;
                     }
 
                     // Issue draw call
-                    glBindVertexArray(chunk.blocks[z][y][x].mesh.vao);
-                    glDrawArrays(GL_TRIANGLES, 0, chunk.blocks[z][y][x].mesh.vertices);
+                    glBindVertexArray(chunk->blocks[z][y][x]->mesh.vao);
+                    glDrawArrays(GL_TRIANGLES, 0, chunk->blocks[z][y][x]->mesh.vertices);
                     glBindVertexArray(0);
                 }
             }
@@ -468,7 +469,8 @@ void render_frame(
     glDepthFunc(GL_LEQUAL);
     shaders.skybox.bind();
 
-    lac_get_translation_mat4(&mvp.m_model, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
+    // Model matrix (translate to world space)
+    lac_get_translation_mat4(mvp.m_model, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
     u_model = glGetUniformLocation(shaders.skybox.id, "model");
     glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
 

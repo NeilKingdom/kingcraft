@@ -4,6 +4,13 @@
 #include "constants.hpp"
 #include "game_state.hpp"
 
+struct CullingFrustum
+{
+    std::array<float, 2> v_eye;
+    std::array<float, 2> v_left;
+    std::array<float, 2> v_right;
+};
+
 class Camera
 {
 public:
@@ -22,6 +29,7 @@ public:
     // General
     void update_rotation_from_pointer(const KCWindow &win);
     void calculate_view_matrix();
+    CullingFrustum get_frustum_coords(uint8_t distance);
 
 private:
     float camera_yaw;       // Rotation about the z axis

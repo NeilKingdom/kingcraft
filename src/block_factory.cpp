@@ -74,34 +74,35 @@ BlockFactory::get_uv_coords(const BlockType type) const
  * @param[in] sides A mask which determines which sides of the cube will be rendered
  * @returns A Block object with the specified attributes
  */
-Block BlockFactory::make_block(
+std::unique_ptr<Block> BlockFactory::make_block(
     const BlockType type,
     const mat4 m_block_trns,
     const uint8_t sides
 )
 {
-    if (sides == 0 || type == BlockType::AIR)
+    typedef const std::array<float, 30> face_t;
+    auto block = std::make_unique<Block>(Block(type));
+
+    if (sides == 0 || block->type == BlockType::AIR)
     {
-        return Block(BlockType::AIR);
+        return block;
     }
 
-    typedef const std::array<float, 30> face_t;
-
-    Block block(type);
     auto vertices = std::vector<float>();
+    vertices.reserve(sizeof(face_t) / sizeof(float) * KC::CUBE_FACES);
 
     const auto add_face = [&](face_t f)
     {
         for (auto i = f.begin(); i != f.end(); ++i)
         {
-            vertices.push_back(*i);
+            vertices.emplace_back(*i);
         }
     };
 
     // UV coordinates
-    const float uv_pad = 0.005f;
-    const float uw = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
-    const float vh = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
+    constexpr float uv_pad = 0.005f;
+    constexpr float uw = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
+    constexpr float vh = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
 
     auto uv = get_uv_coords(type).value_or(
         std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
@@ -131,25 +132,14 @@ Block BlockFactory::make_block(
     vec4 v7 = {  0.5f,  0.5f, -0.5f, 1.0f };
 
     // Translate cube
-    vec4 copy = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-    // TODO: Remove memcpys once liblac is fixed
-    lac_multiply_vec4_mat4(&copy, v0, m_block_trns);
-    std::memcpy(v0, copy, sizeof(v0));
-    lac_multiply_vec4_mat4(&copy, v1, m_block_trns);
-    std::memcpy(v1, copy, sizeof(v1));
-    lac_multiply_vec4_mat4(&copy, v2, m_block_trns);
-    std::memcpy(v2, copy, sizeof(v2));
-    lac_multiply_vec4_mat4(&copy, v3, m_block_trns);
-    std::memcpy(v3, copy, sizeof(v3));
-    lac_multiply_vec4_mat4(&copy, v4, m_block_trns);
-    std::memcpy(v4, copy, sizeof(v4));
-    lac_multiply_vec4_mat4(&copy, v5, m_block_trns);
-    std::memcpy(v5, copy, sizeof(v5));
-    lac_multiply_vec4_mat4(&copy, v6, m_block_trns);
-    std::memcpy(v6, copy, sizeof(v6));
-    lac_multiply_vec4_mat4(&copy, v7, m_block_trns);
-    std::memcpy(v7, copy, sizeof(v7));
+    lac_multiply_vec4_mat4(v0, v0, m_block_trns);
+    lac_multiply_vec4_mat4(v1, v1, m_block_trns);
+    lac_multiply_vec4_mat4(v2, v2, m_block_trns);
+    lac_multiply_vec4_mat4(v3, v3, m_block_trns);
+    lac_multiply_vec4_mat4(v4, v4, m_block_trns);
+    lac_multiply_vec4_mat4(v5, v5, m_block_trns);
+    lac_multiply_vec4_mat4(v6, v6, m_block_trns);
+    lac_multiply_vec4_mat4(v7, v7, m_block_trns);
 
     const face_t right = {
         v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
@@ -208,36 +198,43 @@ Block BlockFactory::make_block(
     if (IS_BIT_SET(sides, RIGHT))
     {
         add_face(right);
+        SET_BIT(block->faces, RIGHT);
     }
     if (IS_BIT_SET(sides, LEFT))
     {
         add_face(left);
+        SET_BIT(block->faces, LEFT);
     }
     if (IS_BIT_SET(sides, BACK))
     {
         add_face(back);
+        SET_BIT(block->faces, BACK);
     }
     if (IS_BIT_SET(sides, FRONT))
     {
         add_face(front);
+        SET_BIT(block->faces, FRONT);
     }
     if (IS_BIT_SET(sides, BOTTOM))
     {
         add_face(bottom);
+        SET_BIT(block->faces, BOTTOM);
     }
     if (IS_BIT_SET(sides, TOP))
     {
         add_face(top);
+        SET_BIT(block->faces, TOP);
     }
 
-    block.mesh.vertices = vertices.size();
+    vertices.shrink_to_fit();
+    block->mesh.vertices = vertices.size();
 
     // Create vertex attribute array and vertex buffer object
-    glGenVertexArrays(1, &block.mesh.vao);
-    glGenBuffers(1, &block.mesh.vbo);
+    glGenVertexArrays(1, &block->mesh.vao);
+    glGenBuffers(1, &block->mesh.vbo);
 
-    glBindVertexArray(block.mesh.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, block.mesh.vbo);
+    glBindVertexArray(block->mesh.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, block->mesh.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 
     // Position attribute

@@ -59,7 +59,7 @@ int main()
 
     mat4 m_trns = {};
     vec2 prev_chunk_location = {};
-    auto chunks = std::vector<Chunk>();
+    auto chunks = chunk_list_t();
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
@@ -68,6 +68,7 @@ int main()
     BlockFactory &block_factory = BlockFactory::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
+    int fps;
     int frames_elapsed = 0;
     time_point<steady_clock> since = steady_clock::now();
     nanoseconds::rep frame_duration = 0L;
@@ -96,8 +97,15 @@ int main()
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     // Enable debug logging
-    glEnable(GL_DEBUG_OUTPUT);
+    //glEnable(GL_DEBUG_OUTPUT);
+    glDisable(GL_DEBUG_OUTPUT);
     // Set debug logging callback
+    glDebugMessageControl(
+        GL_DEBUG_SOURCE_API,
+        GL_DEBUG_TYPE_PERFORMANCE,
+        GL_DEBUG_SEVERITY_MEDIUM,
+        0, 0, GL_TRUE
+    );
     if (glDebugMessageCallback)
     {
         glDebugMessageCallback(debug_callback, nullptr);
@@ -146,26 +154,139 @@ int main()
 
     // Seed the RNG generator
     srandom(game.seed);
-    output_noise_test();
+    //output_noise_test();
+
+    CullingFrustum frustum;
+    vec3 v_cross = {};
+
+    ssize_t x = 0, y = 0;
+    ssize_t min_x, min_y, max_x, max_y;
+    ssize_t chunk_size = game.chunk_size;
 
     /*** Game loop ***/
-
-    lac_get_translation_mat4(&m_trns, 16, 16, 0);
-    chunks.push_back(chunk_factory.make_chunk(m_trns, ALL));
 
     while (game.is_running)
     {
         auto frame_start = steady_clock::now();
         game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
+        frustum = camera.get_frustum_coords(5);
+
+        // Top left-most point of the encapsulating grid square
+        min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+        min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+
+        // Bottom right-most point of the encapsulating grid square
+        max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+        max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+
+        min_x -= (min_x % chunk_size);
+        min_y -= (min_y % chunk_size);
+        max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
+        max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
+
+        if (chunks.size() > 5)
+        {
+            x = min_x;
+            y = min_y;
+
+            chunks.erase(chunks.begin());
+        }
+
+        bool render_chunk = true;
+
+        // Rasterize chunks within camera's frustum (throttled to one chunk per frame)
+
+        // TODO: Redundant
+        vec4 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f, 0.0f };
+        vec4 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f, 0.0f };
+        vec4 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f, 0.0f };
+
+        vec4 vA_vC, vB_vA, vC_vB;
+        vec4 p_vA, p_vB, p_vC;
+        vec4 v_P = { (float)x, (float)y, 0.0f, 0.0f };
+
+        lac_subtract_vec4(vA_vC, v_A, v_C);
+        lac_subtract_vec4(vB_vA, v_B, v_A);
+        lac_subtract_vec4(vC_vB, v_C, v_B);
+
+        lac_subtract_vec4(p_vA, v_P, v_A);
+        lac_subtract_vec4(p_vB, v_P, v_B);
+        lac_subtract_vec4(p_vC, v_P, v_C);
+
+        lac_calc_cross_prod(v_cross, vA_vC, p_vC);
+        if (v_cross[2] < 0.0f)
+        {
+            render_chunk = false;
+        }
+
+        lac_calc_cross_prod(v_cross, vB_vA, p_vA);
+        if (v_cross[2] < 0.0f)
+        {
+            render_chunk = false;
+        }
+
+        lac_calc_cross_prod(v_cross, vC_vB, p_vB);
+        if (v_cross[2] < 0.0f)
+        {
+            render_chunk = false;
+        }
+
+        if (render_chunk)
+        {
+            lac_get_translation_mat4(m_trns, (float)x / chunk_size, (float)y / chunk_size, 0);
+            chunks.insert(chunk_factory.make_chunk(m_trns, ALL));
+        }
+
+        if (y < max_y)
+        {
+            if (x < max_x)
+            {
+                x += chunk_size;
+            }
+            else
+            {
+                x = min_x;
+                y += chunk_size;
+            }
+        }
+
+        //for (size_t y = 0; y < map.height; ++y)
+        //{
+        //    for (size_t x = 0; x < map.width; ++x)
+        //    {
+        //        if (x > 0 && map.occupied[(y * map.width) + x - 1] == true)
+        //        {
+        //            map.faces[(y * map.width) + x - 1] &= ~RIGHT;
+        //            map.faces[(y * map.width) + x] &= ~LEFT;
+        //        }
+        //        if (x < (map.width - 1) && map.occupied[(y * map.width) + x + 1] == true)
+        //        {
+        //            map.faces[(y * map.width) + x + 1] &= ~LEFT;
+        //            map.faces[(y * map.width) + x] &= ~RIGHT;
+        //        }
+        //        if (y > 0 && map.occupied[((y - 1) * map.width) + x] == true)
+        //        {
+        //            map.faces[((y - 1) * map.width) + x] &= ~FRONT;
+        //            map.faces[(y * map.width) + x] &= ~BACK;
+        //        }
+        //        if (y < (map.height - 1) && map.occupied[((y + 1) * map.width) + x] == true)
+        //        {
+        //            map.faces[((y + 1) * map.width) + x] &= ~BACK;
+        //            map.faces[(y * map.width) + x] &= ~FRONT;
+        //        }
+        //    }
+        //}
+
         process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, texture_atlas, shaders, chunks, skybox);
+        camera.calculate_view_matrix();
+        render_frame(app_win, camera, mvp, game, texture_atlas, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
-        //calculate_frame_rate(fps, frames_elapsed, since);
+        calculate_frame_rate(fps, frames_elapsed, since);
 
-#if 0
+#if DEBUG
         // Switch OpenGL context to ImGui window
         glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
         process_imgui_events(imgui_win);
