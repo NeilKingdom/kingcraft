@@ -16,10 +16,9 @@ Camera::Camera() :
     camera_yaw(0.0f),
     camera_pitch(0.0f),
     v_eye{},
-    v_look_dir{},
     m_view(std::make_shared<std::array<float, 16>>())
 {
-    std::fill(m_view->begin(), m_view->end(), 0.0f);
+    std::memcpy(v_look_dir, v_fwd, sizeof(v_look_dir));
 }
 
 /**
@@ -81,7 +80,7 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
 void Camera::calculate_view_matrix()
 {
     vec3 v3_new_look_dir = {};
-    vec4 v4_new_look_dir = {};
+    vec4 v4_new_look_dir = { v_fwd[0], v_fwd[1], v_fwd[2], 1.0f };
     mat4 m_point_at = {};
 
     mat4 m_yaw = {};
@@ -94,17 +93,16 @@ void Camera::calculate_view_matrix()
     lac_get_pitch_mat4(m_pitch, lac_deg_to_rad(camera_pitch));
     lac_multiply_mat4(m_cam_rot, m_yaw, m_pitch);
 
-    std::memcpy(v4_new_look_dir, v_fwd, sizeof(v_fwd));
-    v4_new_look_dir[3] = 1.0f;
     lac_multiply_vec4_mat4(v4_new_look_dir, v4_new_look_dir, m_cam_rot);
-    std::memcpy(v_look_dir, v4_new_look_dir, sizeof(v_look_dir));
+    v_look_dir[0] = v4_new_look_dir[0];
+    v_look_dir[1] = v4_new_look_dir[1];
+    v_look_dir[2] = v4_new_look_dir[2];
+    lac_normalize_vec3(v_look_dir, v_look_dir);
 
     // New look direction is the rotated look vector + camera's current position
     lac_add_vec3(v3_new_look_dir, v_eye, v_look_dir);
     lac_get_point_at_mat4(m_point_at, v_eye, v3_new_look_dir, v_up);
     lac_invert_mat4(m_view->data(), m_point_at);
-
-    lac_normalize_vec3(v_look_dir, v_look_dir);
 }
 
 /**
@@ -132,23 +130,23 @@ CullingFrustum Camera::get_frustum_coords(uint8_t distance)
     vec2 tmp = {};
     vec2 v_A = { v_eye[0], v_eye[1] };
 
-    vec2 v_look_dir = { this->v_look_dir[0], this->v_look_dir[1] };
+    vec2 v_LD = { v_look_dir[0], v_look_dir[1] };
     // TODO: Why does this need normalizing if we're doing it in calculate_view_matrix?
-    lac_normalize_vec2(v_look_dir, v_look_dir);
-    lac_multiply_vec2(v_look_dir, v_look_dir, zfar);
-    lac_add_vec2(v_look_dir, v_look_dir, v_A);
+    lac_normalize_vec2(v_LD, v_LD);
+    lac_multiply_vec2(v_LD, v_LD, zfar);
+    lac_add_vec2(v_LD, v_LD, v_A);
 
-    lac_subtract_vec4(tmp, v_A, v_look_dir);
+    lac_subtract_vec4(tmp, v_A, v_LD);
 
     vec2 v_B = { -tmp[1], tmp[0] };
     lac_normalize_vec2(v_B, v_B);
     lac_multiply_vec2(v_B, v_B, w_half);
-    lac_add_vec2(v_B, v_B, v_look_dir);
+    lac_add_vec2(v_B, v_B, v_LD);
 
     vec2 v_C = { tmp[1], -tmp[0] };
     lac_normalize_vec2(v_C, v_C);
     lac_multiply_vec2(v_C, v_C, w_half);
-    lac_add_vec2(v_C, v_C, v_look_dir);
+    lac_add_vec2(v_C, v_C, v_LD);
 
     return CullingFrustum{
         std::array<float, 2>{ v_A[0], v_A[1] },

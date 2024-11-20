@@ -99,13 +99,6 @@ int main()
     // Enable debug logging
     //glEnable(GL_DEBUG_OUTPUT);
     glDisable(GL_DEBUG_OUTPUT);
-    // Set debug logging callback
-    glDebugMessageControl(
-        GL_DEBUG_SOURCE_API,
-        GL_DEBUG_TYPE_PERFORMANCE,
-        GL_DEBUG_SEVERITY_MEDIUM,
-        0, 0, GL_TRUE
-    );
     if (glDebugMessageCallback)
     {
         glDebugMessageCallback(debug_callback, nullptr);
@@ -170,6 +163,7 @@ int main()
         auto frame_start = steady_clock::now();
         game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
+        camera.calculate_view_matrix();
         frustum = camera.get_frustum_coords(5);
 
         // Top left-most point of the encapsulating grid square
@@ -185,7 +179,7 @@ int main()
         max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
         max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
 
-        if (chunks.size() > 5)
+        if (chunks.size() > 20)
         {
             x = min_x;
             y = min_y;
@@ -198,21 +192,21 @@ int main()
         // Rasterize chunks within camera's frustum (throttled to one chunk per frame)
 
         // TODO: Redundant
-        vec4 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f, 0.0f };
-        vec4 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f, 0.0f };
-        vec4 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f, 0.0f };
+        vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
+        vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
+        vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
 
-        vec4 vA_vC, vB_vA, vC_vB;
-        vec4 p_vA, p_vB, p_vC;
-        vec4 v_P = { (float)x, (float)y, 0.0f, 0.0f };
+        vec3 vA_vC, vB_vA, vC_vB;
+        vec3 p_vA, p_vB, p_vC;
+        vec3 v_P = { (float)x, (float)y, 0.0f };
 
-        lac_subtract_vec4(vA_vC, v_A, v_C);
-        lac_subtract_vec4(vB_vA, v_B, v_A);
-        lac_subtract_vec4(vC_vB, v_C, v_B);
+        lac_subtract_vec3(vA_vC, v_A, v_C);
+        lac_subtract_vec3(vB_vA, v_B, v_A);
+        lac_subtract_vec3(vC_vB, v_C, v_B);
 
-        lac_subtract_vec4(p_vA, v_P, v_A);
-        lac_subtract_vec4(p_vB, v_P, v_B);
-        lac_subtract_vec4(p_vC, v_P, v_C);
+        lac_subtract_vec3(p_vA, v_P, v_A);
+        lac_subtract_vec3(p_vB, v_P, v_B);
+        lac_subtract_vec3(p_vC, v_P, v_C);
 
         lac_calc_cross_prod(v_cross, vA_vC, p_vC);
         if (v_cross[2] < 0.0f)
@@ -279,7 +273,6 @@ int main()
         //}
 
         process_events(app_win, camera);
-        camera.calculate_view_matrix();
         render_frame(app_win, camera, mvp, game, texture_atlas, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
