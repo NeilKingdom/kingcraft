@@ -24,28 +24,31 @@ Texture::Texture(
     const bool make_mipmap
 )
 {
-    m_png_hndl = imc_png_open(std::filesystem::absolute(path).c_str());
-    m_pixmap = imc_png_parse(m_png_hndl);
+    PngHndl_t *png_hndl = imc_png_open(std::filesystem::absolute(path).c_str());
+    Pixmap_t *pixmap = imc_png_parse(png_hndl);
 
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id);
+
     glTexImage2D(
         GL_TEXTURE_2D, 0, GL_RGB,
-        m_pixmap->width, m_pixmap->height,
+        pixmap->width, pixmap->height,
         0, GL_RGB, GL_UNSIGNED_BYTE,
-        m_pixmap->data
+        pixmap->data
     );
+
+    imc_pixmap_destroy(pixmap);
+    imc_png_close(png_hndl);
 
     if (make_mipmap)
     {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /**
@@ -54,8 +57,7 @@ Texture::Texture(
  */
 Texture::~Texture()
 {
-    // TODO: destroy pixmap and close PNG
-    //imc_png_close(m_png_hndl);
+    glDeleteTextures(1, &id);
 }
 
 /**

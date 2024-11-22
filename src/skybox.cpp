@@ -1,20 +1,15 @@
 #include "skybox.hpp"
 
-SkyBox::SkyBox() :
-    id(0), mesh{}
-{}
-
-// TODO: Do cube textures support mipmaps?
-
 SkyBox::SkyBox(
     const cube_map_textures_t textures,
     const unsigned min_filter,
-    const unsigned mag_filter
+    const unsigned mag_filter,
+    const bool make_mipmap
 )
 {
     mat4 m_scale = {};
     PngHndl_t *png_hndl = nullptr;
-    Pixmap_t  *pixmap = nullptr;
+    Pixmap_t *pixmap = nullptr;
 
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
@@ -30,9 +25,12 @@ SkyBox::SkyBox(
             0, GL_RGBA, GL_UNSIGNED_BYTE, pixmap->data
         );
 
-        // TODO: Destroy pixmap via library...
-        std::free(pixmap->data);
-        std::free(pixmap);
+        if (make_mipmap)
+        {
+            glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+        }
+
+        imc_pixmap_destroy(pixmap);
         imc_png_close(png_hndl);
     }
 
@@ -41,9 +39,6 @@ SkyBox::SkyBox(
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    // Unbind texture
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     vec4 v0 = { -0.5f, -0.5f,  0.5f, 1.0f };
     vec4 v1 = { -0.5f,  0.5f,  0.5f, 1.0f };
@@ -136,17 +131,7 @@ SkyBox::SkyBox(
 
 SkyBox::~SkyBox()
 {
-    // TODO: Destroy textures
-}
-
-void SkyBox::bind() const
-{
-    glBindVertexArray(mesh.vao);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-}
-
-void SkyBox::unbind() const
-{
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    glBindVertexArray(0);
+    glDeleteTextures(1, &id);
+    glDeleteBuffers(1, &mesh.vbo);
+    glDeleteVertexArrays(1, &mesh.vao);
 }

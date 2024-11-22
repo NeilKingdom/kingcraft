@@ -164,6 +164,7 @@ int main()
         game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
         camera.calculate_view_matrix();
+
         frustum = camera.get_frustum_coords(5);
 
         // Top left-most point of the encapsulating grid square
@@ -179,14 +180,7 @@ int main()
         max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
         max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
 
-        if (chunks.size() > 20)
-        {
-            x = min_x;
-            y = min_y;
-
-            chunks.erase(chunks.begin());
-        }
-
+Jump:
         bool render_chunk = true;
 
         // Rasterize chunks within camera's frustum (throttled to one chunk per frame)
@@ -209,27 +203,52 @@ int main()
         lac_subtract_vec3(p_vC, v_P, v_C);
 
         lac_calc_cross_prod(v_cross, vA_vC, p_vC);
-        if (v_cross[2] < 0.0f)
+        if (v_cross[2] >= 0.0f)
         {
             render_chunk = false;
         }
 
         lac_calc_cross_prod(v_cross, vB_vA, p_vA);
-        if (v_cross[2] < 0.0f)
+        if (v_cross[2] >= 0.0f)
         {
             render_chunk = false;
         }
 
         lac_calc_cross_prod(v_cross, vC_vB, p_vB);
-        if (v_cross[2] < 0.0f)
+        if (v_cross[2] >= 0.0f)
         {
             render_chunk = false;
         }
 
         if (render_chunk)
         {
+            if (chunks.size() > 20)
+            {
+                chunks.erase(chunks.begin());
+            }
             lac_get_translation_mat4(m_trns, (float)x / chunk_size, (float)y / chunk_size, 0);
-            chunks.insert(chunk_factory.make_chunk(m_trns, ALL));
+            auto result = chunks.insert(chunk_factory.make_chunk(m_trns, ALL));
+            if (std::get<1>(result) == false)
+            {
+                if (y < max_y)
+                {
+                    if (x < max_x)
+                    {
+                        x += chunk_size;
+                    }
+                    else
+                    {
+                        x = min_x;
+                        y += chunk_size;
+                    }
+                }
+                else
+                {
+                    x = min_x;
+                    y = min_y;
+                }
+                goto Jump;
+            }
         }
 
         if (y < max_y)
@@ -243,6 +262,11 @@ int main()
                 x = min_x;
                 y += chunk_size;
             }
+        }
+        else
+        {
+            x = min_x;
+            y = min_y;
         }
 
         //for (size_t y = 0; y < map.height; ++y)
@@ -277,9 +301,9 @@ int main()
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
-        calculate_frame_rate(fps, frames_elapsed, since);
+        //calculate_frame_rate(fps, frames_elapsed, since);
 
-#if DEBUG
+#if 0
         // Switch OpenGL context to ImGui window
         glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
         process_imgui_events(imgui_win);

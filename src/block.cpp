@@ -14,10 +14,10 @@ void Block::add_face(uint8_t face)
 {
     assert(
         face == FRONT ||
-        face == BACK ||
-        face == LEFT ||
+        face == BACK  ||
+        face == LEFT  ||
         face == RIGHT ||
-        face == TOP ||
+        face == TOP   ||
         face == BOTTOM
     );
     SET_BIT(this->faces, face);
@@ -28,10 +28,10 @@ void Block::remove_face(uint8_t face)
 {
     assert(
         face == FRONT ||
-        face == BACK ||
-        face == LEFT ||
+        face == BACK  ||
+        face == LEFT  ||
         face == RIGHT ||
-        face == TOP ||
+        face == TOP   ||
         face == BOTTOM
     );
     UNSET_BIT(this->faces, face);

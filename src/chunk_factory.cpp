@@ -32,6 +32,10 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const 
     BlockFactory &block_factory = BlockFactory::get_instance();
     ssize_t chunk_size = GameState::get_instance().chunk_size;
 
+    mat4 m_chunk_trns_idx = {};
+    mat4 m_block_trns = {};
+    mat4 m_location = {};
+
     assert(chunk_size > 1);
 
     struct BlockData
@@ -65,14 +69,10 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const 
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 tmp_data[z][y][x].faces = 0;
-                heights[y][x] = (std::rand() % (14 - 12 + 1)) + 12;
+                heights[y][x] = (std::rand() % (14 - 2 + 1)) + 2;
             }
         }
     }
-
-    mat4 tmp = {};
-    mat4 m_block_trns = {};
-    mat4 m_location = {};
 
     // Determine which faces to render for each block within the chunk
     for (ssize_t z = 0; z < chunk_size; ++z)
@@ -168,16 +168,12 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const 
                     continue;
                 }
 
-                std::memcpy(tmp, lac_ident_mat4, sizeof(tmp));
-                tmp[3]  = m_chunk_trns[3] * chunk_size;
-                tmp[7]  = m_chunk_trns[7] * chunk_size;
-                tmp[11] = m_chunk_trns[11] * chunk_size;
-
-                // Block location = chunk's translation matrix * the block's translation matrix
+                lac_get_translation_mat4(m_chunk_trns_idx, chunk->location[0] * chunk_size, chunk->location[1] * chunk_size, 1);
                 lac_get_translation_mat4(m_block_trns, (float)x, (float)y, (float)z);
-                lac_multiply_mat4(m_location, m_block_trns, tmp);
 
-                // TODO: Don't like :(
+                // Block location = block position * chunk position index
+                lac_multiply_mat4(m_location, m_block_trns, m_chunk_trns_idx);
+
                 chunk->blocks[z][y][x] = block_factory.make_block(
                     tmp_data[z][y][x].type,
                     m_location,
@@ -186,6 +182,9 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const 
             }
         }
     }
+
+    // TODO: Remove
+    std::cout << "Chunk pos: x = " << chunk->location[0] << ", y = " << chunk->location[1] << std::endl;
 
     return chunk;
 }

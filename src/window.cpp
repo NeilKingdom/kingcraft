@@ -116,11 +116,6 @@ GLXFBConfig create_window(
         GLX_ALPHA_SIZE,      8,
         GLX_DEPTH_SIZE,      24,
         GLX_STENCIL_SIZE,    8,
-        /*
-            NOTE: The buffer swap for double buffering is synchronized with your monitor's
-            vertical refresh rate (v-sync). Disabling double buffering effectively
-            unlocks the framerate as the buffer swaps no longer need to align with v-sync.
-        */
         GLX_DOUBLEBUFFER,    true,
         None
     };
@@ -436,8 +431,6 @@ void render_frame(
 
     // Render block data
 
-    texture_atlas.bind();
-
     for (auto &chunk : chunks)
     {
         for (int z = 0; z < chunk_size; ++z)
@@ -461,7 +454,6 @@ void render_frame(
         }
     }
 
-    texture_atlas.unbind();
     shaders.block.unbind();
 
     // Render skybox
@@ -483,9 +475,9 @@ void render_frame(
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
     // Issue draw call
-    skybox.bind();
+    glBindVertexArray(skybox.mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices);
-    skybox.unbind();
+    glBindVertexArray(0);
 
     shaders.skybox.unbind();
     glDepthFunc(GL_LESS);

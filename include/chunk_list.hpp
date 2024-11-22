@@ -7,11 +7,9 @@ struct ChunkComparator
 {
     bool operator()(const std::unique_ptr<Chunk> &a, const std::unique_ptr<Chunk> &b) const
     {
-        if (a->location[0] == b->location[0])
-        {
-            return a->location[1] < b->location[1];
-        }
-        return a->location[0] < b->location[0];
+        // If (a.x == b.x) return (a.y < b.y) else return (a.x < b.x)
+        return (a->location[0] == b->location[0]) ?
+            (a->location[1] < b->location[1]) : (a->location[0] < b->location[0]);
     }
 };
 

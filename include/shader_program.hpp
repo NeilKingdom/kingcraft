@@ -18,5 +18,5 @@ public:
 
 private:
     // General
-    unsigned compile(const unsigned type, const std::string src) const;
+    ID compile(const unsigned type, const std::string src) const;
 };

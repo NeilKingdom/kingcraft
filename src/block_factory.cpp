@@ -100,7 +100,7 @@ std::unique_ptr<Block> BlockFactory::make_block(
     };
 
     // UV coordinates
-    constexpr float uv_pad = 0.005f;
+    constexpr float uv_pad = 0.05f;
     constexpr float uw = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
     constexpr float vh = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
 

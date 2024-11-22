@@ -14,13 +14,9 @@ public:
     Mesh mesh;
 
     // Special member functions
-    SkyBox();
-    SkyBox(const cube_map_textures_t textures, const unsigned min_filter, const unsigned mag_filter);
+    SkyBox() = delete;
+    SkyBox(const cube_map_textures_t textures, const unsigned min_filter, const unsigned mag_filter, const bool make_mipmap = false);
     ~SkyBox();
-
-    // General
-    void bind() const;
-    void unbind() const;
 
 private:
     PngHndl_t *m_png_hndl;

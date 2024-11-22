@@ -16,8 +16,4 @@ public:
     // General
     void bind() const;
     void unbind() const;
-
-private:
-    Pixmap_t  *m_pixmap;
-    PngHndl_t *m_png_hndl;
 };

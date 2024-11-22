@@ -78,7 +78,7 @@ void ShaderProgram::unbind() const
  * @param[in] source The GLSL source code for the shader
  * @returns The id of the compiled GLSL shader or 0 on failure
  */
-unsigned ShaderProgram::compile(const unsigned type, const std::string src) const
+ID ShaderProgram::compile(const unsigned type, const std::string src) const
 {
     assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 
