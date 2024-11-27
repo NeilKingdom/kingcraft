@@ -6,8 +6,9 @@ Block::Block(BlockType type) :
 
 Block::~Block()
 {
-    glDeleteBuffers(1, &mesh.vbo);
-    glDeleteVertexArrays(1, &mesh.vao);
+    // TODO: Problematic!!
+    //glDeleteBuffers(1, &mesh.vbo);
+    //glDeleteVertexArrays(1, &mesh.vao);
 }
 
 void Block::add_face(uint8_t face)

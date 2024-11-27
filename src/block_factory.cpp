@@ -76,7 +76,7 @@ BlockFactory::get_uv_coords(const BlockType type) const
  */
 std::unique_ptr<Block> BlockFactory::make_block(
     const BlockType type,
-    const mat4 m_block_trns,
+    const vec3 location,
     const uint8_t sides
 )
 {
@@ -85,7 +85,7 @@ std::unique_ptr<Block> BlockFactory::make_block(
 
     if (sides == 0 || block->type == BlockType::AIR)
     {
-        return block;
+        return std::make_unique<Block>(Block(BlockType::AIR));
     }
 
     auto vertices = std::vector<float>();
@@ -100,7 +100,7 @@ std::unique_ptr<Block> BlockFactory::make_block(
     };
 
     // UV coordinates
-    constexpr float uv_pad = 0.05f;
+    constexpr float uv_pad = 0.005f;
     constexpr float uw = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
     constexpr float vh = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
 
@@ -122,24 +122,14 @@ std::unique_ptr<Block> BlockFactory::make_block(
      * |/   |/
      * 2----3
      */
-    vec4 v0 = { -0.5f, -0.5f,  0.5f, 1.0f };
-    vec4 v1 = { -0.5f,  0.5f,  0.5f, 1.0f };
-    vec4 v2 = { -0.5f, -0.5f, -0.5f, 1.0f };
-    vec4 v3 = { -0.5f,  0.5f, -0.5f, 1.0f };
-    vec4 v4 = {  0.5f, -0.5f,  0.5f, 1.0f };
-    vec4 v5 = {  0.5f,  0.5f,  0.5f, 1.0f };
-    vec4 v6 = {  0.5f, -0.5f, -0.5f, 1.0f };
-    vec4 v7 = {  0.5f,  0.5f, -0.5f, 1.0f };
-
-    // Translate cube
-    lac_multiply_vec4_mat4(v0, v0, m_block_trns);
-    lac_multiply_vec4_mat4(v1, v1, m_block_trns);
-    lac_multiply_vec4_mat4(v2, v2, m_block_trns);
-    lac_multiply_vec4_mat4(v3, v3, m_block_trns);
-    lac_multiply_vec4_mat4(v4, v4, m_block_trns);
-    lac_multiply_vec4_mat4(v5, v5, m_block_trns);
-    lac_multiply_vec4_mat4(v6, v6, m_block_trns);
-    lac_multiply_vec4_mat4(v7, v7, m_block_trns);
+    vec3 v0 = { -0.5f * location[0], -0.5f * location[1],  0.5f * location[2] };
+    vec3 v1 = { -0.5f * location[0],  0.5f * location[1],  0.5f * location[2] };
+    vec3 v2 = { -0.5f * location[0], -0.5f * location[1], -0.5f * location[2] };
+    vec3 v3 = { -0.5f * location[0],  0.5f * location[1], -0.5f * location[2] };
+    vec3 v4 = {  0.5f * location[0], -0.5f * location[1],  0.5f * location[2] };
+    vec3 v5 = {  0.5f * location[0],  0.5f * location[1],  0.5f * location[2] };
+    vec3 v6 = {  0.5f * location[0], -0.5f * location[1], -0.5f * location[2] };
+    vec3 v7 = {  0.5f * location[0],  0.5f * location[1], -0.5f * location[2] };
 
     const face_t right = {
         v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,

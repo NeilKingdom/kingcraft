@@ -351,11 +351,11 @@ void process_events(KCWindow &win, Camera &camera)
 
     if (IS_BIT_SET(key_mask, KEY_MOVE_FORWARD))
     {
-        lac_add_vec3(v_velocity, v_velocity, v_fwd);
+        lac_subtract_vec3(v_velocity, v_velocity, v_fwd);
     }
     if (IS_BIT_SET(key_mask, KEY_MOVE_BACKWARD))
     {
-        lac_subtract_vec3(v_velocity, v_velocity, v_fwd);
+        lac_add_vec3(v_velocity, v_velocity, v_fwd);
     }
     if (IS_BIT_SET(key_mask, KEY_MOVE_LEFT))
     {

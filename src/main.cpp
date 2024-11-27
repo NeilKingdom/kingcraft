@@ -150,10 +150,9 @@ int main()
     //output_noise_test();
 
     CullingFrustum frustum;
-    vec3 v_cross = {};
 
     ssize_t x = 0, y = 0;
-    ssize_t min_x, min_y, max_x, max_y;
+    ssize_t min_x = 0, min_y = 0, max_x = 0, max_y = 0;
     ssize_t chunk_size = game.chunk_size;
 
     /*** Game loop ***/
@@ -164,7 +163,6 @@ int main()
         game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
         camera.calculate_view_matrix();
-
         frustum = camera.get_frustum_coords(5);
 
         // Top left-most point of the encapsulating grid square
@@ -180,94 +178,57 @@ int main()
         max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
         max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
 
-Jump:
-        bool render_chunk = true;
-
-        // Rasterize chunks within camera's frustum (throttled to one chunk per frame)
-
-        // TODO: Redundant
-        vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
-        vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
-        vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
-
-        vec3 vA_vC, vB_vA, vC_vB;
-        vec3 p_vA, p_vB, p_vC;
-        vec3 v_P = { (float)x, (float)y, 0.0f };
-
-        lac_subtract_vec3(vA_vC, v_A, v_C);
-        lac_subtract_vec3(vB_vA, v_B, v_A);
-        lac_subtract_vec3(vC_vB, v_C, v_B);
-
-        lac_subtract_vec3(p_vA, v_P, v_A);
-        lac_subtract_vec3(p_vB, v_P, v_B);
-        lac_subtract_vec3(p_vC, v_P, v_C);
-
-        lac_calc_cross_prod(v_cross, vA_vC, p_vC);
-        if (v_cross[2] >= 0.0f)
+        for (ssize_t y = min_y; y < max_y; y += chunk_size)
         {
-            render_chunk = false;
-        }
-
-        lac_calc_cross_prod(v_cross, vB_vA, p_vA);
-        if (v_cross[2] >= 0.0f)
-        {
-            render_chunk = false;
-        }
-
-        lac_calc_cross_prod(v_cross, vC_vB, p_vB);
-        if (v_cross[2] >= 0.0f)
-        {
-            render_chunk = false;
-        }
-
-        if (render_chunk)
-        {
-            if (chunks.size() > 20)
+            for (ssize_t x = min_x; x < max_x; x += chunk_size)
             {
-                chunks.erase(chunks.begin());
-            }
-            lac_get_translation_mat4(m_trns, (float)x / chunk_size, (float)y / chunk_size, 0);
-            auto result = chunks.insert(chunk_factory.make_chunk(m_trns, ALL));
-            if (std::get<1>(result) == false)
-            {
-                if (y < max_y)
+                // Rasterize chunks within camera's frustum (throttled to one chunk per frame)
+
+                // TODO: Redundant
+                vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
+                vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
+                vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
+
+                vec3 vA_vC, vB_vA, vC_vB;
+                vec3 p_vA, p_vB, p_vC;
+                vec3 v_P = { (float)x, (float)y, 0.0f };
+                vec3 v_cross = {};
+
+                lac_subtract_vec3(vA_vC, v_A, v_C);
+                lac_subtract_vec3(vB_vA, v_B, v_A);
+                lac_subtract_vec3(vC_vB, v_C, v_B);
+
+                lac_subtract_vec3(p_vA, v_P, v_A);
+                lac_subtract_vec3(p_vB, v_P, v_B);
+                lac_subtract_vec3(p_vC, v_P, v_C);
+
+                lac_calc_cross_prod(v_cross, vA_vC, p_vC);
+                if (v_cross[2] >= 0.0f)
                 {
-                    if (x < max_x)
-                    {
-                        x += chunk_size;
-                    }
-                    else
-                    {
-                        x = min_x;
-                        y += chunk_size;
-                    }
+                    continue;
                 }
-                else
+
+                lac_calc_cross_prod(v_cross, vB_vA, p_vA);
+                if (v_cross[2] >= 0.0f)
                 {
-                    x = min_x;
-                    y = min_y;
+                    continue;
                 }
-                goto Jump;
+
+                lac_calc_cross_prod(v_cross, vC_vB, p_vB);
+                if (v_cross[2] >= 0.0f)
+                {
+                    continue;
+                }
+
+                //if (chunks.size() > 20)
+                //{
+                //    chunks.erase(chunks.end());
+                //}
+                vec3 location = { (float)x / chunk_size, (float)y / chunk_size, 0 };
+                auto result = chunks.insert(chunk_factory.make_chunk(location, ALL));
             }
         }
 
-        if (y < max_y)
-        {
-            if (x < max_x)
-            {
-                x += chunk_size;
-            }
-            else
-            {
-                x = min_x;
-                y += chunk_size;
-            }
-        }
-        else
-        {
-            x = min_x;
-            y = min_y;
-        }
 
         //for (size_t y = 0; y < map.height; ++y)
         //{
@@ -303,7 +264,7 @@ Jump:
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
         //calculate_frame_rate(fps, frames_elapsed, since);
 
-#if 0
+#if DEBUG
         // Switch OpenGL context to ImGui window
         glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
         process_imgui_events(imgui_win);

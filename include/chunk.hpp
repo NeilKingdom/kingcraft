@@ -10,7 +10,7 @@ class ChunkFactory;
 class Chunk
 {
 public:
-    vec2 location;
+    vec3 location;
     std::vector<std::vector<std::vector<std::unique_ptr<Block>>>> blocks;
 
     // Special member functions

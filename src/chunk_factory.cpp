@@ -26,26 +26,20 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const uint8_t faces) const
+std::unique_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
 {
     auto chunk = std::make_unique<Chunk>();
     BlockFactory &block_factory = BlockFactory::get_instance();
     ssize_t chunk_size = GameState::get_instance().chunk_size;
 
-    mat4 m_chunk_trns_idx = {};
-    mat4 m_block_trns = {};
-    mat4 m_location = {};
-
     assert(chunk_size > 1);
+    std::memcpy(chunk->location, location, sizeof(vec3));
 
     struct BlockData
     {
         uint8_t faces;
         BlockType type;
     };
-
-    chunk->location[0] = m_chunk_trns[3];
-    chunk->location[1] = m_chunk_trns[7];
 
     std::vector<std::vector<std::vector<BlockData>>> tmp_data;
     tmp_data.resize(
@@ -69,6 +63,7 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const 
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 tmp_data[z][y][x].faces = 0;
+                tmp_data[z][y][x].type = BlockType::AIR;
                 heights[y][x] = (std::rand() % (14 - 2 + 1)) + 2;
             }
         }
@@ -161,30 +156,14 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const mat4 &m_chunk_trns, const 
             chunk->blocks[z][y].resize(chunk_size);
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
-                // Air block
-                if (tmp_data[z][y][x].type == BlockType::AIR)
-                {
-                    chunk->blocks[z][y][x] = std::make_unique<Block>(Block(BlockType::AIR));
-                    continue;
-                }
-
-                lac_get_translation_mat4(m_chunk_trns_idx, chunk->location[0] * chunk_size, chunk->location[1] * chunk_size, 1);
-                lac_get_translation_mat4(m_block_trns, (float)x, (float)y, (float)z);
-
-                // Block location = block position * chunk position index
-                lac_multiply_mat4(m_location, m_block_trns, m_chunk_trns_idx);
-
                 chunk->blocks[z][y][x] = block_factory.make_block(
                     tmp_data[z][y][x].type,
-                    m_location,
+                    vec3{ x * location[0], y * location[1], z * location[2] },
                     tmp_data[z][y][x].faces
                 );
             }
         }
     }
-
-    // TODO: Remove
-    std::cout << "Chunk pos: x = " << chunk->location[0] << ", y = " << chunk->location[1] << std::endl;
 
     return chunk;
 }

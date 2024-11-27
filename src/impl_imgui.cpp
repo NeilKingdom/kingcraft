@@ -73,7 +73,7 @@ void draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1
         for (int i = 0; i < x_boundary; i += (chunk_size * zoom))
         {
             int player_pos = win_pos.x - (camera.v_eye[1] * zoom) + i;
-            float x_offset = player_pos % x_boundary + win_pos.x;
+            float x_offset = (player_pos % x_boundary) + win_pos.x;
 
             ImVec2 p1 = { x_offset, win_pos.y };
             ImVec2 p2 = { x_offset, win_pos.y + win_size.y };
@@ -85,7 +85,7 @@ void draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1
         for (int i = 0; i < y_boundary; i += (chunk_size * zoom))
         {
             int player_pos = win_pos.y - (camera.v_eye[0] * zoom) + i;
-            float y_offset = player_pos % y_boundary + win_pos.y;
+            float y_offset = (player_pos % y_boundary) + win_pos.y;
 
             ImVec2 p1 = { win_pos.x, y_offset };
             ImVec2 p2 = { win_pos.x + win_size.x, y_offset };
@@ -103,12 +103,12 @@ void draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1
 
         ImVec2 v_eye = { win_pos.x + (win_size.x / 2.0f), win_pos.y + (win_size.y / 2.0f) };
         ImVec2 v_left = {
-            v_eye.x + (frustum.v_left[1] - camera.v_eye[1]) * zoom,
-            v_eye.y + (frustum.v_left[0] - camera.v_eye[0]) * zoom
+            v_eye.x - (frustum.v_left[1] - camera.v_eye[1]) * zoom,
+            v_eye.y - (frustum.v_left[0] - camera.v_eye[0]) * zoom
         };
         ImVec2 v_right = {
-            v_eye.x + (frustum.v_right[1] - camera.v_eye[1]) * zoom,
-            v_eye.y + (frustum.v_right[0] - camera.v_eye[0]) * zoom
+            v_eye.x - (frustum.v_right[1] - camera.v_eye[1]) * zoom,
+            v_eye.y - (frustum.v_right[0] - camera.v_eye[0]) * zoom
         };
 
         // Top left-most point of the encapsulating grid square
