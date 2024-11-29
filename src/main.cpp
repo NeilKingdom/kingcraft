@@ -59,7 +59,7 @@ int main()
 
     mat4 m_trns = {};
     vec2 prev_chunk_location = {};
-    auto chunks = chunk_list_t();
+    auto chunks = ChunkList<40>();
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
@@ -163,7 +163,7 @@ int main()
         game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
         camera.calculate_view_matrix();
-        frustum = camera.get_frustum_coords(5);
+        frustum = camera.get_frustum_coords(3);
 
         // Top left-most point of the encapsulating grid square
         min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
@@ -220,12 +220,9 @@ int main()
                     continue;
                 }
 
-                //if (chunks.size() > 20)
-                //{
-                //    chunks.erase(chunks.end());
-                //}
-                vec3 location = { (float)x / chunk_size, (float)y / chunk_size, 0 };
-                auto result = chunks.insert(chunk_factory.make_chunk(location, ALL));
+                // TODO: Is it correct to switch x and y?
+                vec3 location = { (float)y / chunk_size, (float)x / chunk_size };
+                chunks.push_back(chunk_factory.make_chunk(location, ALL));
             }
         }
 
@@ -258,7 +255,7 @@ int main()
         //}
 
         process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, game, texture_atlas, shaders, chunks, skybox);
+        render_frame(app_win, camera, mvp, game, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();

@@ -26,9 +26,9 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-std::unique_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
+std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
 {
-    auto chunk = std::make_unique<Chunk>();
+    auto chunk = std::make_shared<Chunk>();
     BlockFactory &block_factory = BlockFactory::get_instance();
     ssize_t chunk_size = GameState::get_instance().chunk_size;
 
@@ -158,7 +158,11 @@ std::unique_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
             {
                 chunk->blocks[z][y][x] = block_factory.make_block(
                     tmp_data[z][y][x].type,
-                    vec3{ x * location[0], y * location[1], z * location[2] },
+                    vec3{
+                        ((location[0] + 1) * -chunk_size) + x - 1,
+                        (location[1] * chunk_size) + y,
+                        (location[2] * chunk_size) + z
+                    },
                     tmp_data[z][y][x].faces
                 );
             }

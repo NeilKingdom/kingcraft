@@ -74,18 +74,18 @@ BlockFactory::get_uv_coords(const BlockType type) const
  * @param[in] sides A mask which determines which sides of the cube will be rendered
  * @returns A Block object with the specified attributes
  */
-std::unique_ptr<Block> BlockFactory::make_block(
+std::shared_ptr<Block> BlockFactory::make_block(
     const BlockType type,
     const vec3 location,
     const uint8_t sides
 )
 {
     typedef const std::array<float, 30> face_t;
-    auto block = std::make_unique<Block>(Block(type));
+    auto block = std::make_shared<Block>(Block(type));
 
     if (sides == 0 || block->type == BlockType::AIR)
     {
-        return std::make_unique<Block>(Block(BlockType::AIR));
+        return std::make_shared<Block>(Block(BlockType::AIR));
     }
 
     auto vertices = std::vector<float>();
@@ -122,14 +122,14 @@ std::unique_ptr<Block> BlockFactory::make_block(
      * |/   |/
      * 2----3
      */
-    vec3 v0 = { -0.5f * location[0], -0.5f * location[1],  0.5f * location[2] };
-    vec3 v1 = { -0.5f * location[0],  0.5f * location[1],  0.5f * location[2] };
-    vec3 v2 = { -0.5f * location[0], -0.5f * location[1], -0.5f * location[2] };
-    vec3 v3 = { -0.5f * location[0],  0.5f * location[1], -0.5f * location[2] };
-    vec3 v4 = {  0.5f * location[0], -0.5f * location[1],  0.5f * location[2] };
-    vec3 v5 = {  0.5f * location[0],  0.5f * location[1],  0.5f * location[2] };
-    vec3 v6 = {  0.5f * location[0], -0.5f * location[1], -0.5f * location[2] };
-    vec3 v7 = {  0.5f * location[0],  0.5f * location[1], -0.5f * location[2] };
+    vec3 v0 = { -0.5f + location[0], -0.5f + location[1],  0.5f + location[2] };
+    vec3 v1 = { -0.5f + location[0],  0.5f + location[1],  0.5f + location[2] };
+    vec3 v2 = { -0.5f + location[0], -0.5f + location[1], -0.5f + location[2] };
+    vec3 v3 = { -0.5f + location[0],  0.5f + location[1], -0.5f + location[2] };
+    vec3 v4 = {  0.5f + location[0], -0.5f + location[1],  0.5f + location[2] };
+    vec3 v5 = {  0.5f + location[0],  0.5f + location[1],  0.5f + location[2] };
+    vec3 v6 = {  0.5f + location[0], -0.5f + location[1], -0.5f + location[2] };
+    vec3 v7 = {  0.5f + location[0],  0.5f + location[1], -0.5f + location[2] };
 
     const face_t right = {
         v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,

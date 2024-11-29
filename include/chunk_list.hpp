@@ -1,16 +1,37 @@
 #pragma once
 
-#include <set>
+#include "common.hpp"
 #include "chunk.hpp"
 
-struct ChunkComparator
+template<std::size_t N>
+class ChunkList : public std::vector<std::shared_ptr<Chunk>>
 {
-    bool operator()(const std::unique_ptr<Chunk> &a, const std::unique_ptr<Chunk> &b) const
+public:
+    void push_back(const std::shared_ptr<Chunk> &chunk)
     {
-        // If (a.x == b.x) return (a.y < b.y) else return (a.x < b.x)
-        return (a->location[0] == b->location[0]) ?
-            (a->location[1] < b->location[1]) : (a->location[0] < b->location[0]);
+        // Check if already contains chunk
+        for (auto i = this->begin(); i != this->end(); ++i)
+        {
+            if (*chunk.get() == *i->get())
+            {
+                return;
+            }
+        }
+
+        // Remove oldest element and shift remaining elements left
+        if (this->size() > N)
+        {
+            this->erase(this->begin());
+            for (int i = 0; i < this->size() - 1; ++i)
+            {
+                this->data()[i] = std::move(this->data()[i + 1]);
+            }
+            this->pop_back();
+        }
+
+
+        std::cout << "x = " << chunk->location[0] << ", y = " << chunk->location[1] << std::endl;
+
+        std::vector<std::shared_ptr<Chunk>>::push_back(chunk);
     }
 };
-
-typedef std::set<std::unique_ptr<Chunk>, ChunkComparator> chunk_list_t;

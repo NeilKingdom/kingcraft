@@ -17,7 +17,7 @@ public:
     // General
     static BlockFactory &get_instance();
     void init();
-    std::unique_ptr<Block> make_block(const BlockType type, const vec3 location, const uint8_t sides);
+    std::shared_ptr<Block> make_block(const BlockType type, const vec3 location, const uint8_t sides);
 
 private:
     // Special member functions

@@ -395,9 +395,8 @@ void render_frame(
     Camera &camera,
     Mvp &mvp,
     const GameState &game,
-    Texture &texture_atlas,
     KCShaders &shaders,
-    const chunk_list_t &chunks,
+    const ChunkList<40> &chunks,
     SkyBox &skybox
 )
 {
