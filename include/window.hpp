@@ -32,13 +32,13 @@ enum KeyLabel : uint64_t
 
 static uint64_t key_mask = 0;
 static auto key_binds = std::map<KeySym, KeyLabel>{
-    { XK_w,             KeyLabel::KEY_MOVE_FORWARD },
+    { XK_w,             KeyLabel::KEY_MOVE_FORWARD  },
     { XK_s,             KeyLabel::KEY_MOVE_BACKWARD },
-    { XK_a,             KeyLabel::KEY_MOVE_LEFT },
-    { XK_d,             KeyLabel::KEY_MOVE_RIGHT },
-    { XK_space,         KeyLabel::KEY_MOVE_UP },
-    { XK_BackSpace,     KeyLabel::KEY_MOVE_DOWN },
-    { XK_q,             KeyLabel::KEY_EXIT_GAME }
+    { XK_a,             KeyLabel::KEY_MOVE_LEFT     },
+    { XK_d,             KeyLabel::KEY_MOVE_RIGHT    },
+    { XK_space,         KeyLabel::KEY_MOVE_UP       },
+    { XK_BackSpace,     KeyLabel::KEY_MOVE_DOWN     },
+    { XK_q,             KeyLabel::KEY_EXIT_GAME     }
 };
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(
@@ -70,4 +70,4 @@ void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono:
 GLXFBConfig     create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
 GLXContext      create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);
 void            process_events(KCWindow &win, Camera &camera);
-void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const GameState &game, KCShaders &shaders, const ChunkList<40> &chunks, SkyBox &skybox);
+void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const GameState &game, KCShaders &shaders, const ChunkList<KC::CHUNK_CAP> &chunks, SkyBox &skybox);

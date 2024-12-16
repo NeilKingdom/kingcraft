@@ -19,7 +19,7 @@
 static void cleanup(
     GLXContext glx,
     KCWindow &app_win,
-    const std::optional<KCWindow> &imgui_win
+    const std::optional<KCWindow> &imgui_win = std::nullopt
 )
 {
     // ImGui
@@ -59,7 +59,7 @@ int main()
 
     mat4 m_trns = {};
     vec2 prev_chunk_location = {};
-    auto chunks = ChunkList<40>();
+    auto chunks = ChunkList<KC::CHUNK_CAP>();
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
@@ -133,15 +133,15 @@ int main()
 
     // Create skybox
 
-    //auto skybox_tex_paths = cube_map_textures_t{
-    //    "res/textures/skybox_right.png",
-    //    "res/textures/skybox_left.png",
-    //    "res/textures/skybox_front.png",
-    //    "res/textures/skybox_back.png",
-    //    "res/textures/skybox_top.png",
-    //    "res/textures/skybox_bottom.png"
-    //};
-    auto skybox_tex_paths = cube_map_textures_t();
+    auto skybox_tex_paths = cube_map_textures_t{
+        "res/textures/skybox_right.png",
+        "res/textures/skybox_left.png",
+        "res/textures/skybox_front.png",
+        "res/textures/skybox_back.png",
+        "res/textures/skybox_top.png",
+        "res/textures/skybox_bottom.png"
+    };
+    //auto skybox_tex_paths = cube_map_textures_t();
     std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
@@ -150,10 +150,72 @@ int main()
     //output_noise_test();
 
     CullingFrustum frustum;
-
-    ssize_t x = 0, y = 0;
-    ssize_t min_x = 0, min_y = 0, max_x = 0, max_y = 0;
     ssize_t chunk_size = game.chunk_size;
+    ssize_t x, y;
+    ssize_t min_x, min_y, max_x, max_y;
+    vec2 look_dir_last = {};
+    vec2 chunk_pos_last = {};
+
+    //camera.v_look_dir[0] = -1.0f;
+    //camera.v_look_dir[1] =  0.0f;
+    //camera.v_look_dir[2] =  0.0f;
+
+    //frustum = camera.get_frustum_coords(4);
+
+    //min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+    //min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+    //max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+    //max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+
+    //min_x -= (min_x % chunk_size) + chunk_size;
+    //min_y -= (min_y % chunk_size) + chunk_size;
+    //max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
+    //max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
+
+    //for (y = max_y; y > min_y; y -= chunk_size)
+    //{
+    //    for (x = max_x; x > min_x; x -= chunk_size)
+    //    {
+    //        // TODO: Redundant
+    //        vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
+    //        vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
+    //        vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
+
+    //        vec3 vA_vC, vB_vA, vC_vB;
+    //        vec3 p_vA, p_vB, p_vC;
+    //        vec3 v_P = { (float)x, (float)y, 0.0f };
+    //        vec3 v_cross = {};
+
+    //        lac_subtract_vec3(vA_vC, v_A, v_C);
+    //        lac_subtract_vec3(vB_vA, v_B, v_A);
+    //        lac_subtract_vec3(vC_vB, v_C, v_B);
+
+    //        lac_subtract_vec3(p_vA, v_P, v_A);
+    //        lac_subtract_vec3(p_vB, v_P, v_B);
+    //        lac_subtract_vec3(p_vC, v_P, v_C);
+
+    //        lac_calc_cross_prod(v_cross, vA_vC, p_vC);
+    //        if (v_cross[2] < 0.0f)
+    //        {
+    //            continue;
+    //        }
+
+    //        lac_calc_cross_prod(v_cross, vB_vA, p_vA);
+    //        if (v_cross[2] < 0.0f)
+    //        {
+    //            continue;
+    //        }
+
+    //        lac_calc_cross_prod(v_cross, vC_vB, p_vB);
+    //        if (v_cross[2] < 0.0f)
+    //        {
+    //            continue;
+    //        }
+
+    //        vec3 location = { (float)x / chunk_size, (float)y / chunk_size, 0.0f };
+    //        chunks.push_back(chunk_factory.make_chunk(location, ALL));
+    //    }
+    //}
 
     /*** Game loop ***/
 
@@ -163,96 +225,89 @@ int main()
         game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
 
         camera.calculate_view_matrix();
-        frustum = camera.get_frustum_coords(3);
 
-        // Top left-most point of the encapsulating grid square
-        min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-        min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-
-        // Bottom right-most point of the encapsulating grid square
-        max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-        max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-
-        min_x -= (min_x % chunk_size);
-        min_y -= (min_y % chunk_size);
-        max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
-        max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
-
-        for (ssize_t y = min_y; y < max_y; y += chunk_size)
+        if (std::fabsf(look_dir_last[0] - camera.v_look_dir[0]) > 0.25f
+            || std::fabsf(look_dir_last[1] - camera.v_look_dir[1]) > 0.25f
+            || chunk_pos_last[0] != (camera.v_eye[0] / chunk_size)
+            || chunk_pos_last[1] != (camera.v_eye[1] / chunk_size))
         {
-            for (ssize_t x = min_x; x < max_x; x += chunk_size)
-            {
-                // Rasterize chunks within camera's frustum (throttled to one chunk per frame)
+            frustum = camera.get_frustum_coords(4);
 
-                // TODO: Redundant
-                vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
-                vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
-                vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
+            min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+            min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+            max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+            max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
 
-                vec3 vA_vC, vB_vA, vC_vB;
-                vec3 p_vA, p_vB, p_vC;
-                vec3 v_P = { (float)x, (float)y, 0.0f };
-                vec3 v_cross = {};
+            min_x -= (min_x % chunk_size) + chunk_size;
+            min_y -= (min_y % chunk_size) + chunk_size;
+            max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
+            max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
 
-                lac_subtract_vec3(vA_vC, v_A, v_C);
-                lac_subtract_vec3(vB_vA, v_B, v_A);
-                lac_subtract_vec3(vC_vB, v_C, v_B);
+            x = max_x;
+            y = max_y;
 
-                lac_subtract_vec3(p_vA, v_P, v_A);
-                lac_subtract_vec3(p_vB, v_P, v_B);
-                lac_subtract_vec3(p_vC, v_P, v_C);
-
-                lac_calc_cross_prod(v_cross, vA_vC, p_vC);
-                if (v_cross[2] >= 0.0f)
-                {
-                    continue;
-                }
-
-                lac_calc_cross_prod(v_cross, vB_vA, p_vA);
-                if (v_cross[2] >= 0.0f)
-                {
-                    continue;
-                }
-
-                lac_calc_cross_prod(v_cross, vC_vB, p_vB);
-                if (v_cross[2] >= 0.0f)
-                {
-                    continue;
-                }
-
-                // TODO: Is it correct to switch x and y?
-                vec3 location = { (float)y / chunk_size, (float)x / chunk_size };
-                chunks.push_back(chunk_factory.make_chunk(location, ALL));
-            }
+            look_dir_last[0] = camera.v_look_dir[0];
+            look_dir_last[1] = camera.v_look_dir[1];
+            chunk_pos_last[0] = camera.v_eye[0] / chunk_size;
+            chunk_pos_last[1] = camera.v_eye[1] / chunk_size;
         }
 
+        bool add_chunk = true;
 
-        //for (size_t y = 0; y < map.height; ++y)
-        //{
-        //    for (size_t x = 0; x < map.width; ++x)
-        //    {
-        //        if (x > 0 && map.occupied[(y * map.width) + x - 1] == true)
-        //        {
-        //            map.faces[(y * map.width) + x - 1] &= ~RIGHT;
-        //            map.faces[(y * map.width) + x] &= ~LEFT;
-        //        }
-        //        if (x < (map.width - 1) && map.occupied[(y * map.width) + x + 1] == true)
-        //        {
-        //            map.faces[(y * map.width) + x + 1] &= ~LEFT;
-        //            map.faces[(y * map.width) + x] &= ~RIGHT;
-        //        }
-        //        if (y > 0 && map.occupied[((y - 1) * map.width) + x] == true)
-        //        {
-        //            map.faces[((y - 1) * map.width) + x] &= ~FRONT;
-        //            map.faces[(y * map.width) + x] &= ~BACK;
-        //        }
-        //        if (y < (map.height - 1) && map.occupied[((y + 1) * map.width) + x] == true)
-        //        {
-        //            map.faces[((y + 1) * map.width) + x] &= ~BACK;
-        //            map.faces[(y * map.width) + x] &= ~FRONT;
-        //        }
-        //    }
-        //}
+        // TODO: Redundant
+        vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
+        vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
+        vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
+
+        vec3 vA_vC, vB_vA, vC_vB;
+        vec3 p_vA, p_vB, p_vC;
+        vec3 v_P = { (float)x, (float)y, 0.0f };
+        vec3 v_cross = {};
+
+        lac_subtract_vec3(vA_vC, v_A, v_C);
+        lac_subtract_vec3(vB_vA, v_B, v_A);
+        lac_subtract_vec3(vC_vB, v_C, v_B);
+
+        lac_subtract_vec3(p_vA, v_P, v_A);
+        lac_subtract_vec3(p_vB, v_P, v_B);
+        lac_subtract_vec3(p_vC, v_P, v_C);
+
+        lac_calc_cross_prod(v_cross, vA_vC, p_vC);
+        if (v_cross[2] < 0.0f)
+        {
+            add_chunk = false;
+        }
+
+        lac_calc_cross_prod(v_cross, vB_vA, p_vA);
+        if (v_cross[2] < 0.0f)
+        {
+            add_chunk = false;
+        }
+
+        lac_calc_cross_prod(v_cross, vC_vB, p_vB);
+        if (v_cross[2] < 0.0f)
+        {
+            add_chunk = false;
+        }
+
+        if (add_chunk)
+        {
+            vec3 location = { (float)x / chunk_size, (float)y / chunk_size, 0.0f };
+            chunks.insert(chunk_factory.make_chunk(location, ALL));
+        }
+
+        if (y > min_y)
+        {
+            if (x > min_x)
+            {
+                x -= chunk_size;
+            }
+            else
+            {
+                x = max_x;
+                y -= chunk_size;
+            }
+        }
 
         process_events(app_win, camera);
         render_frame(app_win, camera, mvp, game, shaders, chunks, skybox);
@@ -261,7 +316,7 @@ int main()
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
         //calculate_frame_rate(fps, frames_elapsed, since);
 
-#if DEBUG
+#if 0
         // Switch OpenGL context to ImGui window
         glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
         process_imgui_events(imgui_win);
@@ -273,7 +328,7 @@ int main()
 #ifdef DEBUG
     cleanup(glx, app_win, imgui_win);
 #else
-    cleanup(glx, app_win, std::nullopt);
+    cleanup(glx, app_win);
 #endif
 
     return EXIT_SUCCESS;

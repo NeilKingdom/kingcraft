@@ -10,15 +10,15 @@ class ChunkFactory;
 class Chunk
 {
 public:
-    vec3 location = {};
+    vec3 location;
+    uint8_t faces;
     std::vector<std::vector<std::vector<std::shared_ptr<Block>>>> blocks;
 
     // Special member functions
     Chunk() = default;
+    Chunk(const Chunk &chunk) = delete;
+    Chunk& operator=(const Chunk &chunk) = delete;
     ~Chunk() = default;
-
-    Chunk(const Chunk&) = delete;
-    Chunk& operator=(const Chunk&) = delete;
 
     // TODO: General
     //void add_block(const BlockType type, const uint8_t x, const uint8_t y, const uint8_t z);

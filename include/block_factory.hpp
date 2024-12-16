@@ -10,13 +10,12 @@ class BlockFactory
 {
 public:
     // Special member functions
-    BlockFactory(const BlockFactory&) = delete;
-    BlockFactory &operator=(const BlockFactory&) = delete;
+    BlockFactory(const BlockFactory &factory) = delete;
+    BlockFactory &operator=(const BlockFactory &factory) = delete;
     ~BlockFactory() = default;
 
     // General
     static BlockFactory &get_instance();
-    void init();
     std::shared_ptr<Block> make_block(const BlockType type, const vec3 location, const uint8_t sides);
 
 private:

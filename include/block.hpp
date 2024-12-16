@@ -16,9 +16,9 @@ enum class BlockType
 class Block
 {
 public:
-    BlockType type;   // Block type
-    Mesh      mesh;   // Contains the vertex attribute object of the block mesh
-    uint8_t   faces;  // Current block faces
+    BlockType type;  // Block type
+    Mesh      mesh;  // Contains the vertex attribute object of the block mesh
+    uint8_t   faces; // Current block faces
 
     // Special member functions
     Block() = delete;

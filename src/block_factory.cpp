@@ -225,7 +225,7 @@ std::shared_ptr<Block> BlockFactory::make_block(
 
     glBindVertexArray(block->mesh.vao);
     glBindBuffer(GL_ARRAY_BUFFER, block->mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
     // Position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);

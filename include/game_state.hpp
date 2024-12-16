@@ -6,21 +6,21 @@
 class GameState
 {
 public:
-    float fov = 89.0f;
+    float fov    = 89.0f;
     float aspect = 16.0f / 9.0f;
-    float znear = 1.0f;
-    float zfar = 1000.0f;
+    float znear  = 1.0f;
+    float zfar   = 1000.0f;
 
     size_t chunk_size = 16;
 
-    unsigned long seed = 12345L; // Temporarily hard-coded
+    unsigned long seed = 12345L; // TODO: Temporarily hard-coded
     bool is_running = true;
 
     Player player = Player();
 
     // Special member functions
-    GameState(const GameState&) = delete;
-    GameState &operator=(const GameState&) = delete;
+    GameState(const GameState &game) = delete;
+    GameState &operator=(const GameState &game) = delete;
     ~GameState() = default;
 
     // General

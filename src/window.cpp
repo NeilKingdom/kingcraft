@@ -257,9 +257,9 @@ GLXContext create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config)
     else
     {
         int glx_attribs[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB,   3,
-            GLX_CONTEXT_MINOR_VERSION_ARB,   3,
-            GLX_CONTEXT_PROFILE_MASK_ARB,    GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+            GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
             None
         };
         glx = glx_create_context_attribs_arb(win.dpy, fb_config, 0, true, glx_attribs);
@@ -396,7 +396,7 @@ void render_frame(
     Mvp &mvp,
     const GameState &game,
     KCShaders &shaders,
-    const ChunkList<40> &chunks,
+    const ChunkList<KC::CHUNK_CAP> &chunks,
     SkyBox &skybox
 )
 {
@@ -405,6 +405,8 @@ void render_frame(
 
     glClearColor(1.0f, 1.0, 1.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Render block data
 
     shaders.block.bind();
 
@@ -420,34 +422,32 @@ void render_frame(
     // Projection matrix (translate to projection space)
     lac_get_projection_mat4(
         mvp.m_proj,
-        GameState::get_instance().aspect,
-        GameState::get_instance().fov,
-        GameState::get_instance().znear,
-        GameState::get_instance().zfar
+        game.aspect,
+        game.fov,
+        game.znear,
+        game.zfar
     );
     u_proj = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
-    // Render block data
-
-    for (auto &chunk : chunks)
+    for (auto chunk : chunks)
     {
-        for (int z = 0; z < chunk_size; ++z)
+        for (ssize_t z = 0; z < chunk_size; ++z)
         {
-            for (int y = 0; y < chunk_size; ++y)
+            for (ssize_t y = 0; y < chunk_size; ++y)
             {
-                for (int x = 0; x < chunk_size; ++x)
+                for (ssize_t x = 0; x < chunk_size; ++x)
                 {
-                    if (chunk->blocks[z][y][x]->type == BlockType::AIR
-                        || chunk->blocks[z][y][x]->faces == 0)
+                    auto block = chunk->blocks[z][y][x];
+
+                    if (block->type == BlockType::AIR || block->faces == 0)
                     {
                         continue;
                     }
 
                     // Issue draw call
-                    glBindVertexArray(chunk->blocks[z][y][x]->mesh.vao);
-                    glDrawArrays(GL_TRIANGLES, 0, chunk->blocks[z][y][x]->mesh.vertices);
-                    glBindVertexArray(0);
+                    glBindVertexArray(block->mesh.vao);
+                    glDrawArrays(GL_TRIANGLES, 0, block->mesh.vertices);
                 }
             }
         }
@@ -476,7 +476,6 @@ void render_frame(
     // Issue draw call
     glBindVertexArray(skybox.mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices);
-    glBindVertexArray(0);
 
     shaders.skybox.unbind();
     glDepthFunc(GL_LESS);

@@ -1,14 +1,19 @@
 #include "block.hpp"
 
 Block::Block(BlockType type) :
-    type(type), faces(0)
+    type(type), faces(0), mesh{}
 {}
 
 Block::~Block()
 {
-    // TODO: Problematic!!
-    //glDeleteBuffers(1, &mesh.vbo);
-    //glDeleteVertexArrays(1, &mesh.vao);
+    if (glIsBuffer(mesh.vbo))
+    {
+        glDeleteBuffers(1, &mesh.vbo);
+    }
+    if (glIsVertexArray(mesh.vao))
+    {
+        glDeleteVertexArrays(1, &mesh.vao);
+    }
 }
 
 void Block::add_face(uint8_t face)

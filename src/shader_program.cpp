@@ -82,14 +82,15 @@ ID ShaderProgram::compile(const unsigned type, const std::string src) const
 {
     assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 
-    int res;
+    int status;
     ID id = glCreateShader(type);
+
     const char *tmp_src = src.c_str();
     glShaderSource(id, 1, &tmp_src, NULL);
     glCompileShader(id);
 
-    glGetShaderiv(id, GL_COMPILE_STATUS, &res);
-    if (res == GL_FALSE)
+    glGetShaderiv(id, GL_COMPILE_STATUS, &status);
+    if (status == GL_FALSE)
     {
         int length;
         char *message = nullptr;

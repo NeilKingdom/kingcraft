@@ -128,15 +128,15 @@ CullingFrustum Camera::get_frustum_coords(uint8_t distance)
     const float w_half = std::tanf(lac_deg_to_rad(game.fov / 2.0f)) * zfar;
 
     vec2 tmp = {};
-    vec2 v_A = { v_eye[0], v_eye[1] };
+    vec2 v_A = { -v_eye[0], v_eye[1] };
 
-    vec2 v_LD = { v_look_dir[0], v_look_dir[1] };
+    vec2 v_LD = { v_look_dir[0], -v_look_dir[1] };
     // TODO: Why does this need normalizing if we're doing it in calculate_view_matrix?
     lac_normalize_vec2(v_LD, v_LD);
     lac_multiply_vec2(v_LD, v_LD, zfar);
     lac_add_vec2(v_LD, v_LD, v_A);
 
-    lac_subtract_vec4(tmp, v_A, v_LD);
+    lac_subtract_vec2(tmp, v_A, v_LD);
 
     vec2 v_B = { -tmp[1], tmp[0] };
     lac_normalize_vec2(v_B, v_B);

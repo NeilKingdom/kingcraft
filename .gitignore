@@ -7,3 +7,5 @@ gmon.out
 profile_output.txt
 valgrind.txt
 test
+analysis.txt
+kingcraft.trace

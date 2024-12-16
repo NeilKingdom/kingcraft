@@ -2,7 +2,7 @@ CC = g++
 PROFILE ?= DEBUG
 
 CCFLAGS_DEBUG = -DDEBUG -O0 -ggdb -fno-builtin -pg
-CCFLAGS_RELEASE = -O2
+CCFLAGS_RELEASE = -Ofast
 
 SRC_DIR = src
 OBJ_DIR = obj
