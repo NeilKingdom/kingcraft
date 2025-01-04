@@ -9,6 +9,34 @@
 
 #include "main.hpp"
 
+bool coord_in_frustum(CullingFrustum &frustum, const float x, const float y)
+{
+    vec2 a = { frustum.v_eye[0], frustum.v_eye[1] };
+    vec2 b = { frustum.v_left[0], frustum.v_left[1] };
+    vec2 c = { frustum.v_right[0], frustum.v_right[1] };
+    vec2 p = { x, y };
+
+    float areaABC = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    float areaPAB = (a[0] - p[0]) * (b[1] - p[1]) - (a[1] - p[1]) * (b[0] - p[0]);
+    float areaPBC = (b[0] - p[0]) * (c[1] - p[1]) - (b[1] - p[1]) * (c[0] - p[0]);
+    float areaPCA = (c[0] - p[0]) * (a[1] - p[1]) - (c[1] - p[1]) * (a[0] - p[0]);
+
+    bool has_neg = (areaPAB < 0) || (areaPBC < 0) || (areaPCA < 0);
+    bool has_pos = (areaPAB > 0) || (areaPBC > 0) || (areaPCA > 0);
+
+    return !(has_neg && has_pos);
+}
+
+bool positions_sort(const CullingFrustum &frustum, const std::array<float, 2> &a, const std::array<float, 2> &b)
+{
+    float dx_a = a[0] - frustum.v_eye[0];
+    float dy_a = a[1] - frustum.v_eye[1];
+    float dx_b = b[0] - frustum.v_eye[0];
+    float dy_b = b[1] - frustum.v_eye[1];
+
+    return (dx_a * dx_a + dy_a * dy_a) < (dx_b * dx_b + dy_b * dy_b);
+}
+
 /**
  * @brief Cleanup all of the application's resources.
  * @since 02-03-2024
@@ -23,26 +51,24 @@ static void cleanup(
 )
 {
     // ImGui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplX11_Shutdown();
-
     if (imgui_win != std::nullopt)
     {
-        // OpenGL context
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplX11_Shutdown();
         ImGui::DestroyContext();
 
         // X11
-        // TODO: Put cursor back to default
         XDestroyWindow(imgui_win.value().dpy, imgui_win.value().win);
         XFreeColormap(imgui_win.value().dpy, imgui_win.value().cmap);
         XCloseDisplay(imgui_win.value().dpy);
     }
 
-    // OpenGL context
+    // OpenGL
     glXMakeCurrent(app_win.dpy, None, NULL);
     glXDestroyContext(app_win.dpy, glx);
 
     // X11
+    // TODO: Put cursor back to default
     XFreeCursor(app_win.dpy, app_win.cur.cursor);
     XFreePixmap(app_win.dpy, app_win.cur.cpmap);
 
@@ -57,9 +83,10 @@ int main()
 
     /*** Variable declarations ***/
 
-    mat4 m_trns = {};
-    vec2 prev_chunk_location = {};
-    auto chunks = ChunkList<KC::CHUNK_CAP>();
+    int fps;
+    int frames_elapsed = 0;
+    time_point<steady_clock> since = steady_clock::now();
+    nanoseconds::rep frame_duration = 0L;
 
     Camera camera = Camera();
     Mvp mvp = Mvp(camera);
@@ -68,10 +95,12 @@ int main()
     BlockFactory &block_factory = BlockFactory::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
-    int fps;
-    int frames_elapsed = 0;
-    time_point<steady_clock> since = steady_clock::now();
-    nanoseconds::rep frame_duration = 0L;
+    CullingFrustum frustum;
+    ssize_t chunk_size = game.chunk_size;
+    ssize_t min_x, min_y, max_x, max_y;
+    auto chunks = std::set<Chunk>();
+    std::vector<std::array<float, 2>> chunk_pos_list;
+    std::vector<std::array<float, 2>>::iterator chunk_pos_iter = chunk_pos_list.end();
 
     /*** Window and OpenGL context initialization ***/
 
@@ -126,98 +155,39 @@ int main()
     ShaderProgram skybox_shader = ShaderProgram("res/shader/skybox.vs", "res/shader/skybox.fs");
     KCShaders shaders = { block_shader, skybox_shader };
 
-    // Create texture atlas
+    /*** Create texture atlas ***/
 
     const std::filesystem::path tex_atlas_path("res/textures/texture_atlas.png");
     Texture texture_atlas = Texture(tex_atlas_path, GL_NEAREST, GL_NEAREST);
 
-    // Create skybox
+    /*** Create skybox ***/
 
-    auto skybox_tex_paths = cube_map_textures_t{
-        "res/textures/skybox_right.png",
-        "res/textures/skybox_left.png",
-        "res/textures/skybox_front.png",
-        "res/textures/skybox_back.png",
-        "res/textures/skybox_top.png",
-        "res/textures/skybox_bottom.png"
-    };
-    //auto skybox_tex_paths = cube_map_textures_t();
+    //auto skybox_tex_paths = cube_map_textures_t{
+    //    "res/textures/skybox_right.png",
+    //    "res/textures/skybox_left.png",
+    //    "res/textures/skybox_front.png",
+    //    "res/textures/skybox_back.png",
+    //    "res/textures/skybox_top.png",
+    //    "res/textures/skybox_bottom.png"
+    //};
+    auto skybox_tex_paths = cube_map_textures_t{};
     std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
-    // Seed the RNG generator
+    /*** Seed the RNG generator ***/
+
     srandom(game.seed);
     //output_noise_test();
 
-    CullingFrustum frustum;
-    ssize_t chunk_size = game.chunk_size;
-    ssize_t x, y;
-    ssize_t min_x, min_y, max_x, max_y;
-    vec2 look_dir_last = {};
-    vec2 chunk_pos_last = {};
-
-    //camera.v_look_dir[0] = -1.0f;
-    //camera.v_look_dir[1] =  0.0f;
-    //camera.v_look_dir[2] =  0.0f;
-
-    //frustum = camera.get_frustum_coords(4);
-
-    //min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-    //min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-    //max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-    //max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-
-    //min_x -= (min_x % chunk_size) + chunk_size;
-    //min_y -= (min_y % chunk_size) + chunk_size;
-    //max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
-    //max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
-
-    //for (y = max_y; y > min_y; y -= chunk_size)
-    //{
-    //    for (x = max_x; x > min_x; x -= chunk_size)
-    //    {
-    //        // TODO: Redundant
-    //        vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
-    //        vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
-    //        vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
-
-    //        vec3 vA_vC, vB_vA, vC_vB;
-    //        vec3 p_vA, p_vB, p_vC;
-    //        vec3 v_P = { (float)x, (float)y, 0.0f };
-    //        vec3 v_cross = {};
-
-    //        lac_subtract_vec3(vA_vC, v_A, v_C);
-    //        lac_subtract_vec3(vB_vA, v_B, v_A);
-    //        lac_subtract_vec3(vC_vB, v_C, v_B);
-
-    //        lac_subtract_vec3(p_vA, v_P, v_A);
-    //        lac_subtract_vec3(p_vB, v_P, v_B);
-    //        lac_subtract_vec3(p_vC, v_P, v_C);
-
-    //        lac_calc_cross_prod(v_cross, vA_vC, p_vC);
-    //        if (v_cross[2] < 0.0f)
-    //        {
-    //            continue;
-    //        }
-
-    //        lac_calc_cross_prod(v_cross, vB_vA, p_vA);
-    //        if (v_cross[2] < 0.0f)
-    //        {
-    //            continue;
-    //        }
-
-    //        lac_calc_cross_prod(v_cross, vC_vB, p_vB);
-    //        if (v_cross[2] < 0.0f)
-    //        {
-    //            continue;
-    //        }
-
-    //        vec3 location = { (float)x / chunk_size, (float)y / chunk_size, 0.0f };
-    //        chunks.push_back(chunk_factory.make_chunk(location, ALL));
-    //    }
-    //}
-
     /*** Game loop ***/
+
+    // Steps:
+    // 1. Calculate the view matrix for the current frame based on the mouse cursor deltas
+    // 2. Calculate the points which make up the camera's frustum based on an arbitrary render distance 'd'
+    // 3. Create a bounding box around the frustum and loop through it. Determine which points lie within the frustum and add them to the list
+    // 4. If the chunks list is populated, discard chunks which don't exist in the positions list
+    // 5. For any chunks which do not exist in the chunks list, but do exist in the positions list, generate them once per frame
+    // 6. Once all chunks have been generated in the positions list, repeat the process
 
     while (game.is_running)
     {
@@ -226,95 +196,100 @@ int main()
 
         camera.calculate_view_matrix();
 
-        if (std::fabsf(look_dir_last[0] - camera.v_look_dir[0]) > 0.25f
-            || std::fabsf(look_dir_last[1] - camera.v_look_dir[1]) > 0.25f
-            || chunk_pos_last[0] != (camera.v_eye[0] / chunk_size)
-            || chunk_pos_last[1] != (camera.v_eye[1] / chunk_size))
+        // Recalculate chunk positions list once all chunks have been rendered
+        if (chunk_pos_iter >= chunk_pos_list.end())
         {
-            frustum = camera.get_frustum_coords(4);
+            chunk_pos_list.clear();
+            frustum = camera.get_frustum_coords(6);
 
             min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
             min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
             max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
             max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
 
-            min_x -= (min_x % chunk_size) + chunk_size;
-            min_y -= (min_y % chunk_size) + chunk_size;
-            max_x = (max_x + chunk_size) - ((max_x + chunk_size) % chunk_size);
-            max_y = (max_y + chunk_size) - ((max_y + chunk_size) % chunk_size);
-
-            x = max_x;
-            y = max_y;
-
-            look_dir_last[0] = camera.v_look_dir[0];
-            look_dir_last[1] = camera.v_look_dir[1];
-            chunk_pos_last[0] = camera.v_eye[0] / chunk_size;
-            chunk_pos_last[1] = camera.v_eye[1] / chunk_size;
-        }
-
-        bool add_chunk = true;
-
-        // TODO: Redundant
-        vec3 v_A = { frustum.v_eye[0], frustum.v_eye[1], 0.0f };
-        vec3 v_B = { frustum.v_left[0], frustum.v_left[1], 0.0f };
-        vec3 v_C = { frustum.v_right[0], frustum.v_right[1], 0.0f };
-
-        vec3 vA_vC, vB_vA, vC_vB;
-        vec3 p_vA, p_vB, p_vC;
-        vec3 v_P = { (float)x, (float)y, 0.0f };
-        vec3 v_cross = {};
-
-        lac_subtract_vec3(vA_vC, v_A, v_C);
-        lac_subtract_vec3(vB_vA, v_B, v_A);
-        lac_subtract_vec3(vC_vB, v_C, v_B);
-
-        lac_subtract_vec3(p_vA, v_P, v_A);
-        lac_subtract_vec3(p_vB, v_P, v_B);
-        lac_subtract_vec3(p_vC, v_P, v_C);
-
-        lac_calc_cross_prod(v_cross, vA_vC, p_vC);
-        if (v_cross[2] < 0.0f)
-        {
-            add_chunk = false;
-        }
-
-        lac_calc_cross_prod(v_cross, vB_vA, p_vA);
-        if (v_cross[2] < 0.0f)
-        {
-            add_chunk = false;
-        }
-
-        lac_calc_cross_prod(v_cross, vC_vB, p_vB);
-        if (v_cross[2] < 0.0f)
-        {
-            add_chunk = false;
-        }
-
-        if (add_chunk)
-        {
-            vec3 location = { (float)x / chunk_size, (float)y / chunk_size, 0.0f };
-            chunks.insert(chunk_factory.make_chunk(location, ALL));
-        }
-
-        if (y > min_y)
-        {
-            if (x > min_x)
+            // Add chunk positions if they belong within the frustum
+            for (ssize_t y = min_y; y < max_y; ++y)
             {
-                x -= chunk_size;
+                for (ssize_t x = min_x; x < max_x; ++x)
+                {
+                    if (coord_in_frustum(frustum, x, y))
+                    {
+                        chunk_pos_list.push_back(std::array<float, 2>{ (float)x, (float)y });
+                    }
+                }
             }
-            else
+
+            // Sort chunk positions by distance relative to player (optional)
+            std::sort(
+                chunk_pos_list.begin(),
+                chunk_pos_list.end(),
+                [&](const std::array<float, 2> &a, const std::array<float, 2> &b) {
+                    return positions_sort(frustum, a, b);
+                }
+            );
+
+            // Remove chunks which are no longer visible from the chunks list
+            // Remove positions which are visible but already exist in the chunks list from the positions list
+            for (auto it = chunks.begin(); it != chunks.end();)
             {
-                x = max_x;
-                y -= chunk_size;
+                auto find = std::find(
+                    chunk_pos_list.begin(),
+                    chunk_pos_list.end(),
+                    std::array<float, 2>{ it->location[0], it->location[1] }
+                );
+
+                if (find == chunk_pos_list.end())
+                {
+                    it = chunks.erase(it);
+                }
+                else
+                {
+                    chunk_pos_list.erase(find);
+                    ++it;
+                }
+            }
+
+            chunk_pos_iter = chunk_pos_list.begin();
+        }
+
+        // Determine which faces to render
+        uint8_t faces = ALL;
+        std::array<float, 2> pos = { (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] };
+
+        for (auto it = chunk_pos_list.begin(); it != chunk_pos_list.end(); ++it)
+        {
+            if (it == chunk_pos_iter)
+            {
+                continue;
+            }
+
+            if ((*it)[0] == pos[0] - 1 && (*it)[1] == pos[1])
+            {
+                UNSET_BIT(faces, BACK);
+            }
+            if ((*it)[0] == pos[0] + 1 && (*it)[1] == pos[1])
+            {
+                UNSET_BIT(faces, FRONT);
+            }
+            if ((*it)[1] == pos[1] - 1 && (*it)[0] == pos[0])
+            {
+                UNSET_BIT(faces, LEFT);
+            }
+            if ((*it)[1] == pos[1] + 1 && (*it)[0] == pos[0])
+            {
+                UNSET_BIT(faces, RIGHT);
             }
         }
+
+        chunks.insert(chunk_factory.make_chunk(vec3{ pos[0], pos[1], 0.0f }, faces));
+        chunk_pos_iter++;
 
         process_events(app_win, camera);
         render_frame(app_win, camera, mvp, game, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
-        //calculate_frame_rate(fps, frames_elapsed, since);
+        calculate_frame_rate(fps, frames_elapsed, since);
 
 #if 0
         // Switch OpenGL context to ImGui window

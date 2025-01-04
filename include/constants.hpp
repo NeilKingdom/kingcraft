@@ -10,5 +10,5 @@ namespace KC
     static constexpr float      PLAYER_BASE_SPEED = 0.5f;               // Normalized speed
     static constexpr float      PLAYER_HEIGHT = 2.0f;                   // Height (in blocks)
 
-    static constexpr unsigned   CHUNK_CAP = 20;                         // Maximum number of on-screen chunks
+    static constexpr unsigned   CHUNK_CAP = 40;                         // Maximum number of on-screen chunks
 };

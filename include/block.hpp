@@ -16,14 +16,14 @@ enum class BlockType
 class Block
 {
 public:
-    BlockType type;  // Block type
-    Mesh      mesh;  // Contains the vertex attribute object of the block mesh
-    uint8_t   faces; // Current block faces
+    BlockType type;
+    uint8_t faces;
+    std::vector<float> vertices;
 
     // Special member functions
-    Block() = delete;
+    Block();
     Block(BlockType type);
-    ~Block();
+    ~Block() = default;
 
     // General purpose
     void add_face(uint8_t face);

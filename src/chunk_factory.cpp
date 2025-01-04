@@ -26,14 +26,14 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
+Chunk ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
 {
-    auto chunk = std::make_shared<Chunk>();
+    auto chunk = Chunk();
     BlockFactory &block_factory = BlockFactory::get_instance();
     ssize_t chunk_size = GameState::get_instance().chunk_size;
     assert(chunk_size > 1);
 
-    std::memcpy(chunk->location, location, sizeof(vec3));
+    std::memcpy(chunk.location, location, sizeof(vec3));
 
     struct BlockData
     {
@@ -63,7 +63,8 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 tmp_data[z][y][x].faces = 0;
-                heights[y][x] = (std::rand() % (14 - 2 + 1)) + 2;
+                //heights[y][x] = (std::rand() % (14 - 2 + 1)) + 2;
+                heights[y][x] = 15;
             }
         }
     }
@@ -89,67 +90,67 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
                 if (x == 0 && IS_BIT_SET(faces, FRONT))
                 {
                     tmp_data[z][y][x].faces |= FRONT;
-                    SET_BIT(chunk->faces, FRONT);
+                    SET_BIT(chunk.faces, FRONT);
                 }
                 else if (x > 0 && z > heights[y][x - 1])
                 {
                     tmp_data[z][y][x].faces |= FRONT;
-                    SET_BIT(chunk->faces, FRONT);
+                    SET_BIT(chunk.faces, FRONT);
                 }
 
                 // Back
                 if (x == (chunk_size - 1) && IS_BIT_SET(faces, BACK))
                 {
                     tmp_data[z][y][x].faces |= BACK;
-                    SET_BIT(chunk->faces, BACK);
+                    SET_BIT(chunk.faces, BACK);
                 }
                 else if (x < (chunk_size - 1) && z > heights[y][x + 1])
                 {
                     tmp_data[z][y][x].faces |= BACK;
-                    SET_BIT(chunk->faces, BACK);
+                    SET_BIT(chunk.faces, BACK);
                 }
 
                 // Left
                 if (y == 0 && IS_BIT_SET(faces, LEFT))
                 {
                     tmp_data[z][y][x].faces |= LEFT;
-                    SET_BIT(chunk->faces, LEFT);
+                    SET_BIT(chunk.faces, LEFT);
                 }
                 else if (y > 0 && z > heights[y - 1][x])
                 {
                     tmp_data[z][y][x].faces |= LEFT;
-                    SET_BIT(chunk->faces, LEFT);
+                    SET_BIT(chunk.faces, LEFT);
                 }
 
                 // Right
                 if (y == (chunk_size - 1) && IS_BIT_SET(faces, RIGHT))
                 {
                     tmp_data[z][y][x].faces |= RIGHT;
-                    SET_BIT(chunk->faces, RIGHT);
+                    SET_BIT(chunk.faces, RIGHT);
                 }
                 else if (y < (chunk_size - 1) && z > heights[y + 1][x])
                 {
                     tmp_data[z][y][x].faces |= RIGHT;
-                    SET_BIT(chunk->faces, RIGHT);
+                    SET_BIT(chunk.faces, RIGHT);
                 }
 
                 // Top
                 if (z == (chunk_size - 1) && IS_BIT_SET(faces, TOP))
                 {
                     tmp_data[z][y][x].faces |= TOP;
-                    SET_BIT(chunk->faces, TOP);
+                    SET_BIT(chunk.faces, TOP);
                 }
                 else if (z == heights[y][x])
                 {
                     tmp_data[z][y][x].faces |= TOP;
-                    SET_BIT(chunk->faces, TOP);
+                    SET_BIT(chunk.faces, TOP);
                 }
 
                 // Bottom
                 if (z == 0 && IS_BIT_SET(faces, BOTTOM))
                 {
                     tmp_data[z][y][x].faces |= BOTTOM;
-                    SET_BIT(chunk->faces, BOTTOM);
+                    SET_BIT(chunk.faces, BOTTOM);
                 }
             }
         }
@@ -157,16 +158,16 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
 
     // Create the actual Block objects for the chunk
 
-    chunk->blocks.resize(chunk_size);
+    chunk.blocks.resize(chunk_size);
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
-        chunk->blocks[z].resize(chunk_size);
+        chunk.blocks[z].resize(chunk_size);
         for (ssize_t y = 0; y < chunk_size; ++y)
         {
-            chunk->blocks[z][y].resize(chunk_size);
+            chunk.blocks[z][y].resize(chunk_size);
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
-                chunk->blocks[z][y][x] = block_factory.make_block(
+                chunk.blocks[z][y][x] = block_factory.make_block(
                     tmp_data[z][y][x].type,
                     vec3{
                         -(location[0] * chunk_size) + x,
@@ -179,5 +180,6 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
         }
     }
 
+    chunk.flatten_block_data();
     return chunk;
 }

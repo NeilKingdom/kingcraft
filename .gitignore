@@ -2,10 +2,4 @@ obj
 kingcraft
 compile_flags.txt
 TODO.md
-noise.ppm
-gmon.out
-profile_output.txt
-valgrind.txt
 test
-analysis.txt
-kingcraft.trace

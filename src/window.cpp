@@ -396,7 +396,7 @@ void render_frame(
     Mvp &mvp,
     const GameState &game,
     KCShaders &shaders,
-    const ChunkList<KC::CHUNK_CAP> &chunks,
+    const std::set<Chunk> &chunks,
     SkyBox &skybox
 )
 {
@@ -432,25 +432,8 @@ void render_frame(
 
     for (auto chunk : chunks)
     {
-        for (ssize_t z = 0; z < chunk_size; ++z)
-        {
-            for (ssize_t y = 0; y < chunk_size; ++y)
-            {
-                for (ssize_t x = 0; x < chunk_size; ++x)
-                {
-                    auto block = chunk->blocks[z][y][x];
-
-                    if (block->type == BlockType::AIR || block->faces == 0)
-                    {
-                        continue;
-                    }
-
-                    // Issue draw call
-                    glBindVertexArray(block->mesh.vao);
-                    glDrawArrays(GL_TRIANGLES, 0, block->mesh.vertices);
-                }
-            }
-        }
+        glBindVertexArray(chunk.mesh.vao);
+        glDrawArrays(GL_TRIANGLES, 0, chunk.mesh.vertices.size());
     }
 
     shaders.block.unbind();
@@ -475,7 +458,7 @@ void render_frame(
 
     // Issue draw call
     glBindVertexArray(skybox.mesh.vao);
-    glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices);
+    glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices.size());
 
     shaders.skybox.unbind();
     glDepthFunc(GL_LESS);

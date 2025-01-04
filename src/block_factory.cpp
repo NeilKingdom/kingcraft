@@ -74,28 +74,27 @@ BlockFactory::get_uv_coords(const BlockType type) const
  * @param[in] sides A mask which determines which sides of the cube will be rendered
  * @returns A Block object with the specified attributes
  */
-std::shared_ptr<Block> BlockFactory::make_block(
+Block BlockFactory::make_block(
     const BlockType type,
     const vec3 location,
     const uint8_t sides
 )
 {
     typedef const std::array<float, 30> face_t;
-    auto block = std::make_shared<Block>(Block(type));
+    auto block = Block(type);
 
-    if (sides == 0 || block->type == BlockType::AIR)
+    if (sides == 0 || block.type == BlockType::AIR)
     {
-        return std::make_shared<Block>(Block(BlockType::AIR));
+        return Block(BlockType::AIR);
     }
 
-    auto vertices = std::vector<float>();
-    vertices.reserve(sizeof(face_t) / sizeof(float) * KC::CUBE_FACES);
+    block.vertices.reserve(sizeof(face_t) / sizeof(float) * KC::CUBE_FACES);
 
     const auto add_face = [&](face_t f)
     {
         for (auto i = f.begin(); i != f.end(); ++i)
         {
-            vertices.emplace_back(*i);
+            block.vertices.emplace_back(*i);
         }
     };
 
@@ -188,58 +187,35 @@ std::shared_ptr<Block> BlockFactory::make_block(
     if (IS_BIT_SET(sides, RIGHT))
     {
         add_face(right);
-        SET_BIT(block->faces, RIGHT);
+        SET_BIT(block.faces, RIGHT);
     }
     if (IS_BIT_SET(sides, LEFT))
     {
         add_face(left);
-        SET_BIT(block->faces, LEFT);
+        SET_BIT(block.faces, LEFT);
     }
     if (IS_BIT_SET(sides, BACK))
     {
         add_face(back);
-        SET_BIT(block->faces, BACK);
+        SET_BIT(block.faces, BACK);
     }
     if (IS_BIT_SET(sides, FRONT))
     {
         add_face(front);
-        SET_BIT(block->faces, FRONT);
+        SET_BIT(block.faces, FRONT);
     }
     if (IS_BIT_SET(sides, BOTTOM))
     {
         add_face(bottom);
-        SET_BIT(block->faces, BOTTOM);
+        SET_BIT(block.faces, BOTTOM);
     }
     if (IS_BIT_SET(sides, TOP))
     {
         add_face(top);
-        SET_BIT(block->faces, TOP);
+        SET_BIT(block.faces, TOP);
     }
 
-    vertices.shrink_to_fit();
-    block->mesh.vertices = vertices.size();
-
-    // Create vertex attribute array and vertex buffer object
-    glGenVertexArrays(1, &block->mesh.vao);
-    glGenBuffers(1, &block->mesh.vbo);
-
-    glBindVertexArray(block->mesh.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, block->mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // TODO: Color attribute
-
-    // Texture attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Unbind VAO and VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    block.vertices.shrink_to_fit();
 
     return block;
 }

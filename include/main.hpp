@@ -9,9 +9,7 @@
 #include "shader_program.hpp"
 #include "block_factory.hpp"
 #include "chunk_factory.hpp"
-
 #include "noise_generator.hpp"
-#include "chunk_list.hpp"
 
 static inline void GLAPIENTRY debug_callback(
    GLenum source,

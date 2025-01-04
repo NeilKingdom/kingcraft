@@ -112,7 +112,7 @@ SkyBox::SkyBox(
         v1[0], v1[1], v1[2]
     };
 
-    mesh.vertices = vertices.size();
+    mesh.vertices.assign(vertices.begin(), vertices.end());
 
     glGenVertexArrays(1, &mesh.vao);
     glGenBuffers(1, &mesh.vbo);
@@ -120,7 +120,7 @@ SkyBox::SkyBox(
     glBindVertexArray(mesh.vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mesh.vertices, vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 

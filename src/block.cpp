@@ -1,20 +1,10 @@
 #include "block.hpp"
 
-Block::Block(BlockType type) :
-    type(type), faces(0), mesh{}
+Block::Block() : type(BlockType::AIR)
 {}
 
-Block::~Block()
-{
-    if (glIsBuffer(mesh.vbo))
-    {
-        glDeleteBuffers(1, &mesh.vbo);
-    }
-    if (glIsVertexArray(mesh.vao))
-    {
-        glDeleteVertexArrays(1, &mesh.vao);
-    }
-}
+Block::Block(BlockType type) : type(type)
+{}
 
 void Block::add_face(uint8_t face)
 {
@@ -45,8 +35,4 @@ void Block::remove_face(uint8_t face)
 }
 
 void Block::modify_face()
-{
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
+{}

@@ -119,21 +119,21 @@ void Camera::calculate_view_matrix()
  *            \|/
  *        v_eye / v_A
  */
-CullingFrustum Camera::get_frustum_coords(uint8_t distance)
+CullingFrustum Camera::get_frustum_coords(uint8_t chunk_distance)
 {
     GameState &game = GameState::get_instance();
     ssize_t chunk_size = game.chunk_size;
 
-    const float zfar = chunk_size * distance;
-    const float w_half = std::tanf(lac_deg_to_rad(game.fov / 2.0f)) * zfar;
+    const float fov = game.fov + 30;
+    const float w_half = std::tanf(lac_deg_to_rad(fov / 2.0f)) * chunk_distance;
 
     vec2 tmp = {};
-    vec2 v_A = { -v_eye[0], v_eye[1] };
+    vec2 v_A = { -v_eye[0] / chunk_size, v_eye[1] / chunk_size };
 
     vec2 v_LD = { v_look_dir[0], -v_look_dir[1] };
     // TODO: Why does this need normalizing if we're doing it in calculate_view_matrix?
     lac_normalize_vec2(v_LD, v_LD);
-    lac_multiply_vec2(v_LD, v_LD, zfar);
+    lac_multiply_vec2(v_LD, v_LD, chunk_distance);
     lac_add_vec2(v_LD, v_LD, v_A);
 
     lac_subtract_vec2(tmp, v_A, v_LD);
@@ -147,6 +147,19 @@ CullingFrustum Camera::get_frustum_coords(uint8_t distance)
     lac_normalize_vec2(v_C, v_C);
     lac_multiply_vec2(v_C, v_C, w_half);
     lac_add_vec2(v_C, v_C, v_LD);
+
+    const float scalar = 2.0f;
+    vec2 v_LD_tmp = { v_look_dir[0], -v_look_dir[1] };
+    lac_normalize_vec2(v_LD_tmp, v_LD_tmp);
+
+    v_A[0] -= v_LD_tmp[0] * scalar;
+    v_A[1] -= v_LD_tmp[1] * scalar;
+
+    v_B[0] -= v_LD_tmp[0] * scalar;
+    v_B[1] -= v_LD_tmp[1] * scalar;
+
+    v_C[0] -= v_LD_tmp[0] * scalar;
+    v_C[1] -= v_LD_tmp[1] * scalar;
 
     return CullingFrustum{
         std::array<float, 2>{ v_A[0], v_A[1] },
