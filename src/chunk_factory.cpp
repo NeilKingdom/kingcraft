@@ -56,6 +56,8 @@ Chunk ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
         std::vector<uint8_t>(chunk_size)
     );
 
+    const float scale = 0.05f;
+
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
         for (ssize_t y = 0; y < chunk_size; ++y)
@@ -63,8 +65,12 @@ Chunk ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 tmp_data[z][y][x].faces = 0;
-                //heights[y][x] = (std::rand() % (14 - 2 + 1)) + 2;
-                heights[y][x] = 15;
+                heights[y][x] = octave_perlin(
+                    -location[0] * chunk_size + x,
+                    location[1] * chunk_size + y,
+                    2, scale, 0, 15
+                );
+                //heights[y][x] = 15;
             }
         }
     }

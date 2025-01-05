@@ -4,6 +4,7 @@
 #include "block_factory.hpp"
 #include "game_state.hpp"
 #include "chunk.hpp"
+#include "noise_generator.hpp"
 
 class ChunkFactory
 {

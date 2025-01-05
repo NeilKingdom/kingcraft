@@ -9,6 +9,8 @@
 
 #include "main.hpp"
 
+std::vector<int> permutations_table;
+
 bool coord_in_frustum(CullingFrustum &frustum, const float x, const float y)
 {
     vec2 a = { frustum.v_eye[0], frustum.v_eye[1] };
@@ -178,6 +180,7 @@ int main()
 
     srandom(game.seed);
     //output_noise_test();
+    init_permutations();
 
     /*** Game loop ***/
 
