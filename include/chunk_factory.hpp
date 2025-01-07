@@ -15,7 +15,7 @@ public:
 
     // General
     static ChunkFactory &get_instance();
-    Chunk make_chunk(const vec3 location, const uint8_t sides) const;
+    std::shared_ptr<Chunk> make_chunk(const vec3 location, const uint8_t sides) const;
 
 private:
     // Special member functions

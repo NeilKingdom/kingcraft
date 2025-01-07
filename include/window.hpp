@@ -68,4 +68,4 @@ void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono:
 GLXFBConfig     create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
 GLXContext      create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);
 void            process_events(KCWindow &win, Camera &camera);
-void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const GameState &game, KCShaders &shaders, const std::set<Chunk> &chunks, SkyBox &skybox);
+void            render_frame(const KCWindow &win, Camera &camera, Mvp &mvp, const GameState &game, KCShaders &shaders, const std::set<std::shared_ptr<Chunk>> &chunks, SkyBox &skybox);

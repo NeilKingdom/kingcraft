@@ -81,11 +81,6 @@ int main()
 {
     using namespace std::chrono;
 
-    /*** Seed the RNG generator ***/
-
-    // TODO: Seeding after PerlinNoise is created
-    srandom(12345L);
-
     /*** Variable declarations ***/
 
     int fps;
@@ -103,7 +98,7 @@ int main()
     CullingFrustum frustum;
     ssize_t chunk_size = game.chunk_size;
     ssize_t min_x, min_y, max_x, max_y;
-    auto chunks = std::set<Chunk>();
+    auto chunks = std::set<std::shared_ptr<Chunk>>();
     std::vector<std::array<float, 2>> chunk_pos_list;
     std::vector<std::array<float, 2>>::iterator chunk_pos_iter = chunk_pos_list.end();
 
@@ -179,6 +174,10 @@ int main()
     std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
+    /*** Seed the RNG generator ***/
+
+    srandom(game.seed);
+
     /*** Game loop ***/
 
     // Steps:
@@ -200,7 +199,7 @@ int main()
         if (chunk_pos_iter >= chunk_pos_list.end())
         {
             chunk_pos_list.clear();
-            frustum = camera.get_frustum_coords(6);
+            frustum = camera.get_frustum_coords(10);
 
             min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
             min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
@@ -235,7 +234,7 @@ int main()
                 auto find = std::find(
                     chunk_pos_list.begin(),
                     chunk_pos_list.end(),
-                    std::array<float, 2>{ it->location[0], it->location[1] }
+                    std::array<float, 2>{ it->get()->location[0], it->get()->location[1] }
                 );
 
                 if (find == chunk_pos_list.end())
@@ -253,35 +252,35 @@ int main()
         }
 
         // Determine which faces to render
-        uint8_t faces = ALL;
+        uint8_t faces = TOP;
         std::array<float, 2> pos = { (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] };
 
-        UNSET_BIT(faces, BOTTOM);
+        //UNSET_BIT(faces, BOTTOM);
 
-        for (auto it = chunk_pos_list.begin(); it != chunk_pos_list.end(); ++it)
-        {
-            if (it == chunk_pos_iter)
-            {
-                continue;
-            }
+        //for (auto it = chunk_pos_list.begin(); it != chunk_pos_list.end(); ++it)
+        //{
+        //    if (it == chunk_pos_iter)
+        //    {
+        //        continue;
+        //    }
 
-            if ((*it)[0] == pos[0] - 1 && (*it)[1] == pos[1])
-            {
-                UNSET_BIT(faces, BACK);
-            }
-            if ((*it)[0] == pos[0] + 1 && (*it)[1] == pos[1])
-            {
-                UNSET_BIT(faces, FRONT);
-            }
-            if ((*it)[1] == pos[1] - 1 && (*it)[0] == pos[0])
-            {
-                UNSET_BIT(faces, LEFT);
-            }
-            if ((*it)[1] == pos[1] + 1 && (*it)[0] == pos[0])
-            {
-                UNSET_BIT(faces, RIGHT);
-            }
-        }
+        //    if ((*it)[0] == pos[0] - 1 && (*it)[1] == pos[1])
+        //    {
+        //        UNSET_BIT(faces, BACK);
+        //    }
+        //    if ((*it)[0] == pos[0] + 1 && (*it)[1] == pos[1])
+        //    {
+        //        UNSET_BIT(faces, FRONT);
+        //    }
+        //    if ((*it)[1] == pos[1] - 1 && (*it)[0] == pos[0])
+        //    {
+        //        UNSET_BIT(faces, LEFT);
+        //    }
+        //    if ((*it)[1] == pos[1] + 1 && (*it)[0] == pos[0])
+        //    {
+        //        UNSET_BIT(faces, RIGHT);
+        //    }
+        //}
 
         chunks.insert(chunk_factory.make_chunk(vec3{ pos[0], pos[1], 0.0f }, faces));
         chunk_pos_iter++;

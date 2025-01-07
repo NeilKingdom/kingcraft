@@ -116,7 +116,7 @@ GLXFBConfig create_window(
         GLX_ALPHA_SIZE,      8,
         GLX_DEPTH_SIZE,      24,
         GLX_STENCIL_SIZE,    8,
-        GLX_DOUBLEBUFFER,    true,
+        GLX_DOUBLEBUFFER,    false,
         None
     };
 
@@ -396,7 +396,7 @@ void render_frame(
     Mvp &mvp,
     const GameState &game,
     KCShaders &shaders,
-    const std::set<Chunk> &chunks,
+    const std::set<std::shared_ptr<Chunk>> &chunks,
     SkyBox &skybox
 )
 {
@@ -432,8 +432,8 @@ void render_frame(
 
     for (auto chunk : chunks)
     {
-        glBindVertexArray(chunk.mesh.vao);
-        glDrawArrays(GL_TRIANGLES, 0, chunk.mesh.vertices.size());
+        glBindVertexArray(chunk->mesh.vao);
+        glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
     }
 
     shaders.block.unbind();
@@ -464,5 +464,6 @@ void render_frame(
     glDepthFunc(GL_LESS);
 
     // Blit
-    glXSwapBuffers(win.dpy, win.win);
+    //glXSwapBuffers(win.dpy, win.win);
+    glFlush();
 }

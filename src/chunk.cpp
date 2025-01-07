@@ -2,14 +2,14 @@
 
 Chunk::~Chunk()
 {
-//    if (glIsBuffer(mesh.vbo))
-//    {
-//        glDeleteBuffers(1, &mesh.vbo);
-//    }
-//    if (glIsVertexArray(mesh.vao))
-//    {
-//        glDeleteVertexArrays(1, &mesh.vao);
-//    }
+    if (glIsBuffer(mesh.vbo))
+    {
+        glDeleteBuffers(1, &mesh.vbo);
+    }
+    if (glIsVertexArray(mesh.vao))
+    {
+        glDeleteVertexArrays(1, &mesh.vao);
+    }
 }
 
 bool Chunk::operator==(const Chunk &chunk) const
