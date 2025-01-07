@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "player.hpp"
+#include "perlin_noise.hpp"
 
 class GameState
 {
@@ -13,10 +14,11 @@ public:
 
     size_t chunk_size = 16;
 
-    unsigned long seed = 54321L; // TODO: Temporarily hard-coded
+    unsigned long seed = 12345L; // TODO: Temporarily hard-coded
     bool is_running = true;
 
     Player player = Player();
+    PerlinNoise pn = PerlinNoise();
 
     // Special member functions
     GameState(const GameState &game) = delete;

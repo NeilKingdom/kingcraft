@@ -9,8 +9,6 @@
 
 #include "main.hpp"
 
-std::vector<int> permutations_table;
-
 bool coord_in_frustum(CullingFrustum &frustum, const float x, const float y)
 {
     vec2 a = { frustum.v_eye[0], frustum.v_eye[1] };
@@ -82,6 +80,11 @@ static void cleanup(
 int main()
 {
     using namespace std::chrono;
+
+    /*** Seed the RNG generator ***/
+
+    // TODO: Seeding after PerlinNoise is created
+    srandom(12345L);
 
     /*** Variable declarations ***/
 
@@ -176,12 +179,6 @@ int main()
     std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
-    /*** Seed the RNG generator ***/
-
-    srandom(game.seed);
-    //output_noise_test();
-    init_permutations();
-
     /*** Game loop ***/
 
     // Steps:
@@ -258,6 +255,8 @@ int main()
         // Determine which faces to render
         uint8_t faces = ALL;
         std::array<float, 2> pos = { (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] };
+
+        UNSET_BIT(faces, BOTTOM);
 
         for (auto it = chunk_pos_list.begin(); it != chunk_pos_list.end(); ++it)
         {

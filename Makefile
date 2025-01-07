@@ -10,9 +10,9 @@ INC_DIR = include
 GUI_DIR = res/vendor/imgui
 
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
-GUI_SRCS := $(wildcard $(GUI_DIR)/*.cpp)
 DEPS := $(wildcard $(INC_DIR)/*.hpp) $(wildcard $(GUI_DIR)/*.hpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
+GUI_SRCS := $(wildcard $(GUI_DIR)/*.cpp)
 GUI_OBJS := $(patsubst $(GUI_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(GUI_SRCS))
 
 CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I$(GUI_DIR) -std=c++20 -Wall -Wextra -Wformat #-Werror

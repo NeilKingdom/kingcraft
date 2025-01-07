@@ -30,7 +30,8 @@ Chunk ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
 {
     auto chunk = Chunk();
     BlockFactory &block_factory = BlockFactory::get_instance();
-    ssize_t chunk_size = GameState::get_instance().chunk_size;
+    GameState &game = GameState::get_instance();
+    ssize_t chunk_size = game.chunk_size;
     assert(chunk_size > 1);
 
     std::memcpy(chunk.location, location, sizeof(vec3));
@@ -51,10 +52,7 @@ Chunk ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
     );
 
     std::vector<std::vector<uint8_t>> heights;
-    heights.resize(
-        chunk_size,
-        std::vector<uint8_t>(chunk_size)
-    );
+    heights.resize(chunk_size, std::vector<uint8_t>(chunk_size));
 
     const float scale = 0.05f;
 
@@ -65,12 +63,11 @@ Chunk ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
                 tmp_data[z][y][x].faces = 0;
-                heights[y][x] = octave_perlin(
+                heights[y][x] = game.pn.octave_perlin(
                     -location[0] * chunk_size + x,
                     location[1] * chunk_size + y,
-                    2, scale, 0, 15
+                    0.8f, 2, scale, 0, 15
                 );
-                //heights[y][x] = 15;
             }
         }
     }
