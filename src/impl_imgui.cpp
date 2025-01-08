@@ -10,47 +10,7 @@
 
 extern IMGUI_IMPL_API int ImGui_ImplX11_EventHandler(XEvent &event, XEvent *next_event);
 
-/**
- * @brief Initializes the ImGui window with an X11 backend.
- * @since 07-05-2024
- * @param[in] win Reference to the application's window
- */
-void init_imgui(const KCWindow &win)
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    //ImGuiIO &io = ImGui::GetIO();
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-
-    ImGui::StyleColorsDark();
-
-    // Initialize ImGui's backend for X11 and OpenGL
-    ImGui_ImplOpenGL3_Init();
-    ImGui_ImplX11_Init(win.dpy, (void*)win.win);
-}
-
-/**
- * @brief Processes any pending X11 events for the ImGui window.
- * @since 07-05-2024
- * @param[in] win Reference to the application's window
- */
-void process_imgui_events(KCWindow &win)
-{
-    while (XPending(win.dpy) > 0)
-    {
-        XNextEvent(win.dpy, &win.xev);
-        ImGui_ImplX11_EventHandler(win.xev, nullptr);
-
-        // TODO: Expose events
-        switch (win.xev.type)
-        {
-            break;
-        }
-    }
-}
-
-void draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1.0f)
+static void _draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1.0f)
 {
     bool show_map = false;
     ssize_t chunk_size = game.chunk_size;
@@ -184,6 +144,46 @@ void draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1
 }
 
 /**
+ * @brief Initializes the ImGui window with an X11 backend.
+ * @since 07-05-2024
+ * @param[in] win Reference to the application's window
+ */
+void init_imgui(const KCWindow &win)
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    //ImGuiIO &io = ImGui::GetIO();
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+    ImGui::StyleColorsDark();
+
+    // Initialize ImGui's backend for X11 and OpenGL
+    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplX11_Init(win.dpy, (void*)win.win);
+}
+
+/**
+ * @brief Processes any pending X11 events for the ImGui window.
+ * @since 07-05-2024
+ * @param[in] win Reference to the application's window
+ */
+void process_imgui_events(KCWindow &win)
+{
+    while (XPending(win.dpy) > 0)
+    {
+        XNextEvent(win.dpy, &win.xev);
+        ImGui_ImplX11_EventHandler(win.xev, nullptr);
+
+        // TODO: Expose events
+        switch (win.xev.type)
+        {
+            break;
+        }
+    }
+}
+
+/**
  * @brief Renders the ImGui window to the screen.
  * @since 07-05-2024
  * @param[in] win Reference to the application's window
@@ -205,7 +205,7 @@ void render_imgui_frame(KCWindow &win, Camera &camera)
     ImGui::SliderFloat("Camera Y Pos", &camera.v_eye[1], camera.v_eye[1] - 1.0f, camera.v_eye[1] + 1.0f);
     ImGui::SliderFloat("Camera Z Pos", &camera.v_eye[2], camera.v_eye[2] - 1.0f, camera.v_eye[2] + 1.0f);
     ImGui::Checkbox("Game Running", &game.is_running);
-    draw_minimap(win, camera, game, 1.5f);
+    _draw_minimap(win, camera, game, 1.5f);
     ImGui::End();
 
     // Render frame

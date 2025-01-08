@@ -9,7 +9,7 @@ public:
     PerlinNoise();
     ~PerlinNoise() = default;
 
-    // General member functions
+    // General
     float perlin(const float x, const float y, const float z);
     float octave_perlin(const float x, const float y, const float z, const uint8_t octaves, const float scale, const unsigned lo, const unsigned hi);
 

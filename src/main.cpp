@@ -9,7 +9,15 @@
 
 #include "main.hpp"
 
-bool coord_in_frustum(CullingFrustum &frustum, const float x, const float y)
+/**
+ * @brief Checks if a point rests within the bounds of the camera's viewing frustum.
+ * @since 01-03-2025
+ * @param[in] frustum The camera's viewing frustum
+ * @param[in] x The x component of the point being checked
+ * @param[in] y The y component of the point being checked
+ * @returns True if the point lies within the viewing frustum, otherwise returns false
+ */
+static bool is_point_inside_frustum(const CullingFrustum &frustum, const float x, const float y)
 {
     vec2 a = { frustum.v_eye[0], frustum.v_eye[1] };
     vec2 b = { frustum.v_left[0], frustum.v_left[1] };
@@ -27,30 +35,44 @@ bool coord_in_frustum(CullingFrustum &frustum, const float x, const float y)
     return !(has_neg && has_pos);
 }
 
-bool positions_sort(const CullingFrustum &frustum, const std::array<float, 2> &a, const std::array<float, 2> &b)
+/**
+ * @brief Sorting function intended for use when sorting the chunk positions list.
+ * @since 01-03-2025
+ * @param[in] frustum The camera's viewing frustum
+ * @param[in] chunk_left Left chunk position
+ * @param[in] chunk_right Right chunk position
+ * @returns True if the distance between __chunk_left__ and the camera is less than chunk_right,
+ *     otherwise returns false
+ */
+static bool sort_chunk_positions(
+    const CullingFrustum &frustum,
+    const std::array<float, 2> &chunk_left,
+    const std::array<float, 2> &chunk_right
+)
 {
-    float dx_a = a[0] - frustum.v_eye[0];
-    float dy_a = a[1] - frustum.v_eye[1];
-    float dx_b = b[0] - frustum.v_eye[0];
-    float dy_b = b[1] - frustum.v_eye[1];
+    float dx_l = chunk_left[0]  - frustum.v_eye[0];
+    float dy_l = chunk_left[1]  - frustum.v_eye[1];
+    float dx_r = chunk_right[0] - frustum.v_eye[0];
+    float dy_r = chunk_right[1] - frustum.v_eye[1];
 
-    return (dx_a * dx_a + dy_a * dy_a) < (dx_b * dx_b + dy_b * dy_b);
+    return ((dx_l * dx_l) + (dy_l * dy_l)) < ((dx_r * dx_r) + (dy_r * dy_r));
 }
 
 /**
  * @brief Cleanup all of the application's resources.
  * @since 02-03-2024
  * @param[in] glx An instance of the OpenGL context object
- * @param[in] app_win An instance of KCWindow containing X11-related resources
+ * @param[in] kc_win An instance of KCWindow containing X11-related resources
  * @param[in] imgui_win An optional instance of KCWindow containing ImGui-related resources
  */
 static void cleanup(
     GLXContext glx,
-    KCWindow &app_win,
+    KCWindow &kc_win,
     const std::optional<KCWindow> &imgui_win = std::nullopt
 )
 {
-    // ImGui
+    /*** ImGui ***/
+
     if (imgui_win != std::nullopt)
     {
         ImGui_ImplOpenGL3_Shutdown();
@@ -58,23 +80,30 @@ static void cleanup(
         ImGui::DestroyContext();
 
         // X11
+
         XDestroyWindow(imgui_win.value().dpy, imgui_win.value().win);
         XFreeColormap(imgui_win.value().dpy, imgui_win.value().cmap);
         XCloseDisplay(imgui_win.value().dpy);
     }
 
-    // OpenGL
-    glXMakeCurrent(app_win.dpy, None, NULL);
-    glXDestroyContext(app_win.dpy, glx);
+    /*** OpenGL ***/
+
+    glXMakeCurrent(kc_win.dpy, None, NULL);
+    glXDestroyContext(kc_win.dpy, glx);
 
     // X11
-    // TODO: Put cursor back to default
-    XFreeCursor(app_win.dpy, app_win.cur.cursor);
-    XFreePixmap(app_win.dpy, app_win.cur.cpmap);
 
-    XDestroyWindow(app_win.dpy, app_win.win);
-    XFreeColormap(app_win.dpy, app_win.cmap);
-    XCloseDisplay(app_win.dpy);
+    // Restore normal cursor and free the custom one
+    XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
+    XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
+
+    Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
+    XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
+    XFreeCursor(kc_win.dpy, default_cursor);
+
+    XDestroyWindow(kc_win.dpy, kc_win.win);
+    XFreeColormap(kc_win.dpy, kc_win.cmap);
+    XCloseDisplay(kc_win.dpy);
 }
 
 int main()
@@ -92,24 +121,21 @@ int main()
     Mvp mvp = Mvp(camera);
 
     GameState &game = GameState::get_instance();
-    BlockFactory &block_factory = BlockFactory::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
     CullingFrustum frustum;
-    ssize_t chunk_size = game.chunk_size;
-    ssize_t min_x, min_y, max_x, max_y;
     auto chunks = std::set<std::shared_ptr<Chunk>>();
     std::vector<std::array<float, 2>> chunk_pos_list;
     std::vector<std::array<float, 2>>::iterator chunk_pos_iter = chunk_pos_list.end();
 
     /*** Window and OpenGL context initialization ***/
 
-    KCWindow app_win;
+    KCWindow kc_win;
     KCWindow imgui_win;
 
-    GLXFBConfig fb_config = create_window(app_win, "KingCraft", 1920, 1080);
-    GLXContext glx = create_opengl_context(app_win, fb_config);
-    glXMakeCurrent(app_win.dpy, app_win.win, glx);
+    GLXFBConfig fb_config = create_window(kc_win, "KingCraft", 1920, 1080);
+    GLXContext glx = create_opengl_context(kc_win, fb_config);
+    glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
 
 #ifdef DEBUG
     (void)create_window(imgui_win, "ImGui", 400, 400);
@@ -151,7 +177,7 @@ int main()
 
     /*** Create shader program(s) ***/
 
-    ShaderProgram block_shader = ShaderProgram("res/shader/block.vs", "res/shader/block.fs");
+    ShaderProgram block_shader  = ShaderProgram("res/shader/block.vs", "res/shader/block.fs");
     ShaderProgram skybox_shader = ShaderProgram("res/shader/skybox.vs", "res/shader/skybox.fs");
     KCShaders shaders = { block_shader, skybox_shader };
 
@@ -199,31 +225,31 @@ int main()
         if (chunk_pos_iter >= chunk_pos_list.end())
         {
             chunk_pos_list.clear();
-            frustum = camera.get_frustum_coords(10);
+            frustum = camera.get_frustum_coords(game.render_distance);
 
-            min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-            min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-            max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-            max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+            ssize_t min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+            ssize_t min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+            ssize_t max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+            ssize_t max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
 
             // Add chunk positions if they belong within the frustum
             for (ssize_t y = min_y; y < max_y; ++y)
             {
                 for (ssize_t x = min_x; x < max_x; ++x)
                 {
-                    if (coord_in_frustum(frustum, x, y))
+                    if (is_point_inside_frustum(frustum, x, y))
                     {
                         chunk_pos_list.push_back(std::array<float, 2>{ (float)x, (float)y });
                     }
                 }
             }
 
-            // Sort chunk positions by distance relative to player (optional)
+            // Sort chunk positions by distance relative to player
             std::sort(
                 chunk_pos_list.begin(),
                 chunk_pos_list.end(),
                 [&](const std::array<float, 2> &a, const std::array<float, 2> &b) {
-                    return positions_sort(frustum, a, b);
+                    return sort_chunk_positions(frustum, a, b);
                 }
             );
 
@@ -285,8 +311,8 @@ int main()
         chunks.insert(chunk_factory.make_chunk(vec3{ pos[0], pos[1], 0.0f }, faces));
         chunk_pos_iter++;
 
-        process_events(app_win, camera);
-        render_frame(app_win, camera, mvp, game, shaders, chunks, skybox);
+        process_events(kc_win, camera);
+        render_frame(camera, mvp, shaders, chunks, skybox);
 
         auto frame_end = steady_clock::now();
         frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
@@ -297,14 +323,14 @@ int main()
         glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
         process_imgui_events(imgui_win);
         render_imgui_frame(imgui_win, camera);
-        glXMakeCurrent(app_win.dpy, app_win.win, glx);
+        glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
 #endif
     }
 
 #ifdef DEBUG
-    cleanup(glx, app_win, imgui_win);
+    cleanup(glx, kc_win, imgui_win);
 #else
-    cleanup(glx, app_win);
+    cleanup(glx, kc_win);
 #endif
 
     return EXIT_SUCCESS;

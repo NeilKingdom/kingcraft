@@ -17,15 +17,13 @@ public:
 
     // Special member functions
     Chunk() = default;
-    //Chunk(const Chunk &chunk) = delete;
-    //Chunk& operator=(const Chunk &chunk) = delete;
     ~Chunk();
 
     // TODO: General
     //void add_block(const BlockType type, const uint8_t x, const uint8_t y, const uint8_t z);
     //void remove_block(const uint8_t x, const uint8_t y, const uint8_t z);
 
-    // Operator overload
+    // Operator overloads
     bool operator==(const Chunk &chunk) const;
     bool operator<(const Chunk &chunk) const;
 

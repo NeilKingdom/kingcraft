@@ -31,6 +31,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysymdef.h>
 #include <X11/Xcursor/Xcursor.h>
+#include <X11/cursorfont.h>
 
 // OpenGL
 #include <GL/glew.h> // NOTE: Must be placed before other OpenGL headers

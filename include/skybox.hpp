@@ -17,7 +17,4 @@ public:
     SkyBox() = delete;
     SkyBox(const cube_map_textures_t textures, const unsigned min_filter, const unsigned mag_filter, const bool make_mipmap = false);
     ~SkyBox();
-
-private:
-    PngHndl_t *m_png_hndl;
 };

@@ -1,5 +1,5 @@
 CC = g++
-PROFILE ?= RELEASE
+PROFILE ?= DEBUG
 
 CCFLAGS_DEBUG = -DDEBUG -O0 -ggdb -fno-builtin
 CCFLAGS_RELEASE = -Ofast

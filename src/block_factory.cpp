@@ -70,8 +70,8 @@ BlockFactory::get_uv_coords(const BlockType type) const
  * @brief Creates a single block based on a set of given parameters.
  * @since 16-10-2024
  * @param[in] type The block type of the block being created e.g. dirt, grass, etc.
- * @param[in] m_block_trns A 4x4 matrix which determines the location of the block relative to the parent chunk
- * @param[in] sides A mask which determines which sides of the cube will be rendered
+ * @param[in] location A vec3 which determines the location of the block relative to the parent chunk
+ * @param[in] sides A mask which determines which sides of the block will be rendered
  * @returns A Block object with the specified attributes
  */
 Block BlockFactory::make_block(
@@ -216,6 +216,5 @@ Block BlockFactory::make_block(
     }
 
     block.vertices.shrink_to_fit();
-
     return block;
 }

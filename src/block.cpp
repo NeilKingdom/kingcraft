@@ -16,7 +16,7 @@ void Block::add_face(uint8_t face)
         face == TOP   ||
         face == BOTTOM
     );
-    SET_BIT(this->faces, face);
+    SET_BIT(faces, face);
     modify_face();
 }
 
@@ -30,9 +30,10 @@ void Block::remove_face(uint8_t face)
         face == TOP   ||
         face == BOTTOM
     );
-    UNSET_BIT(this->faces, face);
+    UNSET_BIT(faces, face);
     modify_face();
 }
 
 void Block::modify_face()
-{}
+{
+}

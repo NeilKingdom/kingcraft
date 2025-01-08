@@ -77,9 +77,9 @@ void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_poin
 }
 
 /**
- * @brief Creates a new game window.
+ * @brief Creates a new window.
  * @since 02-03-2024
- * @param[in,out] x_objs An instance of XObjects containing X11-related data
+ * @param[in,out] win An instance of KCWindow containing X11-related data
  * @param[in] win_name The name of the new window
  * @param[in] win_width The width of the new window
  * @param[in] win_height The height of the new window
@@ -183,6 +183,7 @@ GLXFBConfig create_window(
         &color, &color, 0, 0
     );
     XDefineCursor(win.dpy, XDefaultRootWindow(win.dpy), win.cur.cursor);
+    XFreeCursor(win.dpy, win.cur.cursor);
 
     /*** Set the XWindow attributes i.e. colormap and event mask ***/
 
@@ -346,7 +347,7 @@ void process_events(KCWindow &win, Camera &camera)
     vec3 v_right = {};
     vec3 v_fwd = { camera.v_look_dir[0], camera.v_look_dir[1], camera.v_look_dir[2] };
 
-    lac_calc_cross_prod(v_right, camera.v_up, v_fwd);
+    lac_calc_cross_prod(v_right, KC::v_up, v_fwd);
     lac_normalize_vec3(v_right, v_right);
 
     if (IS_BIT_SET(key_mask, KEY_MOVE_FORWARD))
@@ -367,11 +368,11 @@ void process_events(KCWindow &win, Camera &camera)
     }
     if (IS_BIT_SET(key_mask, KEY_MOVE_DOWN))
     {
-        lac_subtract_vec3(v_velocity, v_velocity, camera.v_up);
+        lac_subtract_vec3(v_velocity, v_velocity, KC::v_up);
     }
     if (IS_BIT_SET(key_mask, KEY_MOVE_UP))
     {
-        lac_add_vec3(v_velocity, v_velocity, camera.v_up);
+        lac_add_vec3(v_velocity, v_velocity, KC::v_up);
     }
 
     lac_calc_magnitude_vec4(&magnitude, v_velocity);
@@ -387,19 +388,18 @@ void process_events(KCWindow &win, Camera &camera)
  * @brief Renders the current game frame.
  * @param[in,out] win An instance of KCWindow containing window-related data
  * @param[in,out] camera The currently active camera used for calculating perspective
- * @param[in,out] mvp The model-view-projection matrix
+ * @param[in,out] mvp The Model View Projection matrix
  * @param[in] shader Shader being used for the current draw call
  */
 void render_frame(
-    const KCWindow &win,
     Camera &camera,
     Mvp &mvp,
-    const GameState &game,
     KCShaders &shaders,
-    const std::set<std::shared_ptr<Chunk>> &chunks,
+    std::set<std::shared_ptr<Chunk>> &chunks,
     SkyBox &skybox
 )
 {
+    GameState &game = GameState::get_instance();
     ssize_t chunk_size = game.chunk_size;
     unsigned u_model, u_view, u_proj;
 
@@ -464,6 +464,5 @@ void render_frame(
     glDepthFunc(GL_LESS);
 
     // Blit
-    //glXSwapBuffers(win.dpy, win.win);
     glFlush();
 }

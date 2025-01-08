@@ -10,6 +10,14 @@ PerlinNoise::PerlinNoise()
 	permutations_table.insert(permutations_table.end(), permutations_table.begin(), permutations_table.end());
 }
 
+/**
+ * @brief Samples height at the specified location and returns the normalized value between -1 and 1.
+ * @since 02-01-2025
+ * @param x[in] The x component of the sampled coordinate
+ * @param y[in] The y component of the sampled coordinate
+ * @param z[in] The z component of the sampled coordinate
+ * @returns A normalized value between -1 and 1 representing the sampled point
+ */
 float PerlinNoise::perlin(const float x, const float y, const float z)
 {
     float _x = x;
@@ -21,7 +29,7 @@ float PerlinNoise::perlin(const float x, const float y, const float z)
 	int Y = (int)std::floorf(_y) & 255;
 	int Z = (int)std::floorf(_z) & 255;
 
-	// Find relative x, y,z of point in cube
+	// Find relative x, y, z of point in cube
 	_x -= std::floorf(_x);
 	_y -= std::floorf(_y);
 	_z -= std::floorf(_z);
@@ -66,6 +74,18 @@ float PerlinNoise::perlin(const float x, const float y, const float z)
     return noise;
 }
 
+/**
+ * @brief Combines multiple layered instances of perlin noise at various frequencies and amplitudes.
+ * @since 02-01-2025
+ * @param[in] x The x component of the sampled coordinate
+ * @param[in] y The y component of the sampled coordinate
+ * @param[in] z The z component of the sampled coordinate
+ * @param[in] octaves The number of layers (octaves) that will be combined
+ * @param[in] scale Scaling factor for noise
+ * @param[in] lo The minimum value that can be returned
+ * @param[in] hi The maximum value that can be returned
+ * @returns A value between __lo__ and __hi__ for the sampled point
+ */
 float PerlinNoise::octave_perlin(
     const float x,
     const float y,
@@ -94,7 +114,16 @@ float PerlinNoise::octave_perlin(
     return noise;
 }
 
-inline float PerlinNoise::gradient(const int hash, const float x, const float y, const float z)
+/**
+ * @brief Calculate the gradient vector for a given grid point.
+ * @since 02-01-2025
+ * @param[in] hash
+ * @param[in] x [TODO:parameter]
+ * @param[in] y [TODO:parameter]
+ * @param[in] z [TODO:parameter]
+ * @return [TODO:return]
+ */
+float PerlinNoise::gradient(const int hash, const float x, const float y, const float z)
 {
 	int h = hash & 0x0F;
 	// Convert lower 4 bits of hash into 12 gradient directions
@@ -103,12 +132,26 @@ inline float PerlinNoise::gradient(const int hash, const float x, const float y,
 	return (((h & 1) == 0) ? u : -u) + (((h & 2) == 0) ? v : -v);
 }
 
+/**
+ * @brief Linearly interpolates between two points __a__ and __b__ at the normalized distance __t__.
+ * @since 02-01-2025
+ * @param[in] t The normalized distance to be interpolated between __a__ and __b__
+ * @param[in] a The starting value used for the interpolation
+ * @param[in] b The ending value used for the interpolation
+ * @returns The value that corresponds to the interpolated distance __t__ which lies between values __a__ and __b__
+ */
 inline float PerlinNoise::lerp(const float t, const float a, const float b)
 {
     return (b - a) * t + a;
 }
 
-float PerlinNoise::fade(const float t)
+/**
+ * @brief Provides a smooth step transition given __t__, which represents the normalized distance between two points.
+ * @since 02-01-2025
+ * @param[in] t A normalized value between 0 and 1 representing the distance between two points
+ * @returns A value between 0 and 1 which represents the smoothed value of t
+ */
+inline float PerlinNoise::fade(const float t)
 {
     return t * t * t * (t * (t * 6 - 15) + 10);
 }

@@ -26,7 +26,7 @@ void Chunk::flatten_block_data()
 {
     GameState &game = GameState::get_instance();
     ssize_t chunk_size = game.chunk_size;
-    auto &aggregate = mesh.vertices;
+    auto &chunk_mesh = mesh.vertices;
 
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
@@ -37,7 +37,7 @@ void Chunk::flatten_block_data()
                 Block block = blocks[z][y][x];
                 if (block.type != BlockType::AIR && block.faces != 0)
                 {
-                    aggregate.insert(aggregate.begin(), block.vertices.begin(), block.vertices.end());
+                    chunk_mesh.insert(chunk_mesh.begin(), block.vertices.begin(), block.vertices.end());
                 }
              }
         }
@@ -45,7 +45,7 @@ void Chunk::flatten_block_data()
 
     glGenBuffers(1, &mesh.vbo);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, aggregate.size() * sizeof(float), aggregate.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, chunk_mesh.size() * sizeof(float), chunk_mesh.data(), GL_STATIC_DRAW);
 
     glGenVertexArrays(1, &mesh.vao);
     glBindVertexArray(mesh.vao);
