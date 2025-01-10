@@ -13,7 +13,7 @@ public:
     float zfar   = 1000.0f;
 
     size_t chunk_size = 16;
-    size_t render_distance = 10;
+    size_t render_distance = 8;
 
     unsigned long seed = 12345UL;
     bool is_running = true;

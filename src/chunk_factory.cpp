@@ -64,63 +64,66 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
             heights[y + 1][x + 1] = game.pn.octave_perlin(
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
-                 0.8f, 1, scale, 0, 15
+                 0.8f, 5, scale, 0, (chunk_size - 1)
             );
         }
     }
 
-    for (ssize_t y = 1; y < chunk_size + 1; ++y)
+    for (ssize_t z = 0; z < chunk_size; ++z)
     {
-        for (ssize_t x = 1; x < chunk_size + 1; ++x)
+        for (ssize_t y = 1; y < chunk_size + 1; ++y)
         {
-            ssize_t z = heights[y][x];
-            tmp_data[z][y - 1][x - 1].faces = 0;
-
-            // Determine block types
-            for (ssize_t i = 0; i < chunk_size; ++i)
+            for (ssize_t x = 1; x < chunk_size + 1; ++x)
             {
+                tmp_data[z][y - 1][x - 1].faces = 0;
+
+                // Determine block types
                 // TODO: Add other block types at different z values
-                if (i > z)
+                if (z > heights[y][x])
                 {
-                    tmp_data[i][y - 1][x - 1].type = BlockType::AIR;
+                    tmp_data[z][y - 1][x - 1].type = BlockType::AIR;
+                    continue;
                 }
                 else
                 {
-                    tmp_data[i][y - 1][x - 1].type = BlockType::GRASS;
+                    tmp_data[z][y - 1][x - 1].type = BlockType::GRASS;
                 }
-            }
 
-            // Bottom
-            tmp_data[0][y - 1][x - 1].faces |= BOTTOM;
+                // Bottom
+                if (z == 0)
+                {
+                    tmp_data[z][y - 1][x - 1].faces |= BOTTOM;
+                }
 
-            // Top
-            if (z == heights[y][x])
-            {
-                tmp_data[z][y - 1][x - 1].faces |= TOP;
-            }
+                // Top
+                if (z == heights[y][x])
+                {
+                    tmp_data[z][y - 1][x - 1].faces |= TOP;
+                }
 
-            // Front
-            if (z > heights[y][x - 1])
-            {
-                tmp_data[z][y - 1][x - 1].faces |= FRONT;
-            }
+                // Front
+                if (z > heights[y][x - 1])
+                {
+                    tmp_data[z][y - 1][x - 1].faces |= FRONT;
+                }
 
-            // Back
-            if (z > heights[y][x + 1])
-            {
-                tmp_data[z][y - 1][x - 1].faces |= BACK;
-            }
+                // Back
+                if (z > heights[y][x + 1])
+                {
+                    tmp_data[z][y - 1][x - 1].faces |= BACK;
+                }
 
-            // Left
-            if (z > heights[y - 1][x])
-            {
-                tmp_data[z][y - 1][x - 1].faces |= LEFT;
-            }
+                // Left
+                if (z > heights[y - 1][x])
+                {
+                    tmp_data[z][y - 1][x - 1].faces |= LEFT;
+                }
 
-            // Right
-            if (z > heights[y + 1][x])
-            {
-                tmp_data[z][y - 1][x - 1].faces |= RIGHT;
+                // Right
+                if (z > heights[y + 1][x])
+                {
+                    tmp_data[z][y - 1][x - 1].faces |= RIGHT;
+                }
             }
         }
     }
