@@ -278,37 +278,7 @@ int main()
         }
 
         // Determine which faces to render
-        uint8_t faces = TOP;
-        std::array<float, 2> pos = { (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] };
-
-        //UNSET_BIT(faces, BOTTOM);
-
-        //for (auto it = chunk_pos_list.begin(); it != chunk_pos_list.end(); ++it)
-        //{
-        //    if (it == chunk_pos_iter)
-        //    {
-        //        continue;
-        //    }
-
-        //    if ((*it)[0] == pos[0] - 1 && (*it)[1] == pos[1])
-        //    {
-        //        UNSET_BIT(faces, BACK);
-        //    }
-        //    if ((*it)[0] == pos[0] + 1 && (*it)[1] == pos[1])
-        //    {
-        //        UNSET_BIT(faces, FRONT);
-        //    }
-        //    if ((*it)[1] == pos[1] - 1 && (*it)[0] == pos[0])
-        //    {
-        //        UNSET_BIT(faces, LEFT);
-        //    }
-        //    if ((*it)[1] == pos[1] + 1 && (*it)[0] == pos[0])
-        //    {
-        //        UNSET_BIT(faces, RIGHT);
-        //    }
-        //}
-
-        chunks.insert(chunk_factory.make_chunk(vec3{ pos[0], pos[1], 0.0f }, faces));
+        chunks.insert(chunk_factory.make_chunk(vec3{ (*chunk_pos_iter)[0], (*chunk_pos_iter)[1], 0.0f }, ALL));
         chunk_pos_iter++;
 
         process_events(kc_win, camera);

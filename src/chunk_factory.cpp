@@ -35,6 +35,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
     assert(chunk_size > 1);
 
     std::memcpy(chunk->location, location, sizeof(vec3));
+    chunk->faces = faces;
 
     struct BlockData
     {
@@ -52,109 +53,74 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
     );
 
     std::vector<std::vector<uint8_t>> heights;
-    heights.resize(chunk_size, std::vector<uint8_t>(chunk_size));
+    heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
 
     const float scale = 0.05f;
 
-    for (ssize_t z = 0; z < chunk_size; ++z)
+    for (ssize_t y = -1; y < chunk_size + 1; ++y)
     {
-        for (ssize_t y = 0; y < chunk_size; ++y)
+        for (ssize_t x = -1; x < chunk_size + 1; ++x)
         {
-            for (ssize_t x = 0; x < chunk_size; ++x)
-            {
-                tmp_data[z][y][x].faces = 0;
-                heights[y][x] = game.pn.octave_perlin(
-                    -location[0] * chunk_size + x,
-                    location[1] * chunk_size + y,
-                    0.8f, 1, scale, 0, 15
-                );
-            }
+            heights[y + 1][x + 1] = game.pn.octave_perlin(
+                -location[0] * chunk_size + x,
+                 location[1] * chunk_size + y,
+                 0.8f, 1, scale, 0, 15
+            );
         }
     }
 
-    // Determine which faces to render for each block within the chunk
-    for (ssize_t z = 0; z < chunk_size; ++z)
+    for (ssize_t y = 1; y < chunk_size + 1; ++y)
     {
-        for (ssize_t y = 0; y < chunk_size; ++y)
+        for (ssize_t x = 1; x < chunk_size + 1; ++x)
         {
-            for (ssize_t x = 0; x < chunk_size; ++x)
+            ssize_t z = heights[y][x];
+            tmp_data[z][y - 1][x - 1].faces = 0;
+
+            // Determine block types
+            for (ssize_t i = 0; i < chunk_size; ++i)
             {
-                // Air block
-                if (z > heights[y][x])
+                // TODO: Add other block types at different z values
+                if (i > z)
                 {
-                    tmp_data[z][y][x].type = BlockType::AIR;
-                    continue;
+                    tmp_data[i][y - 1][x - 1].type = BlockType::AIR;
                 }
+                else
+                {
+                    tmp_data[i][y - 1][x - 1].type = BlockType::GRASS;
+                }
+            }
 
-                // TODO: Determine block type based off z-value
-                tmp_data[z][y][x].type = BlockType::GRASS;
+            // Bottom
+            tmp_data[0][y - 1][x - 1].faces |= BOTTOM;
 
-                // Front
-                if (x == 0 && IS_BIT_SET(faces, FRONT))
-                {
-                    tmp_data[z][y][x].faces |= FRONT;
-                    SET_BIT(chunk->faces, FRONT);
-                }
-                else if (x > 0 && z > heights[y][x - 1])
-                {
-                    tmp_data[z][y][x].faces |= FRONT;
-                    SET_BIT(chunk->faces, FRONT);
-                }
+            // Top
+            if (z == heights[y][x])
+            {
+                tmp_data[z][y - 1][x - 1].faces |= TOP;
+            }
 
-                // Back
-                if (x == (chunk_size - 1) && IS_BIT_SET(faces, BACK))
-                {
-                    tmp_data[z][y][x].faces |= BACK;
-                    SET_BIT(chunk->faces, BACK);
-                }
-                else if (x < (chunk_size - 1) && z > heights[y][x + 1])
-                {
-                    tmp_data[z][y][x].faces |= BACK;
-                    SET_BIT(chunk->faces, BACK);
-                }
+            // Front
+            if (z > heights[y][x - 1])
+            {
+                tmp_data[z][y - 1][x - 1].faces |= FRONT;
+            }
 
-                // Left
-                if (y == 0 && IS_BIT_SET(faces, LEFT))
-                {
-                    tmp_data[z][y][x].faces |= LEFT;
-                    SET_BIT(chunk->faces, LEFT);
-                }
-                else if (y > 0 && z > heights[y - 1][x])
-                {
-                    tmp_data[z][y][x].faces |= LEFT;
-                    SET_BIT(chunk->faces, LEFT);
-                }
+            // Back
+            if (z > heights[y][x + 1])
+            {
+                tmp_data[z][y - 1][x - 1].faces |= BACK;
+            }
 
-                // Right
-                if (y == (chunk_size - 1) && IS_BIT_SET(faces, RIGHT))
-                {
-                    tmp_data[z][y][x].faces |= RIGHT;
-                    SET_BIT(chunk->faces, RIGHT);
-                }
-                else if (y < (chunk_size - 1) && z > heights[y + 1][x])
-                {
-                    tmp_data[z][y][x].faces |= RIGHT;
-                    SET_BIT(chunk->faces, RIGHT);
-                }
+            // Left
+            if (z > heights[y - 1][x])
+            {
+                tmp_data[z][y - 1][x - 1].faces |= LEFT;
+            }
 
-                // Top
-                if (z == (chunk_size - 1) && IS_BIT_SET(faces, TOP))
-                {
-                    tmp_data[z][y][x].faces |= TOP;
-                    SET_BIT(chunk->faces, TOP);
-                }
-                else if (z == heights[y][x])
-                {
-                    tmp_data[z][y][x].faces |= TOP;
-                    SET_BIT(chunk->faces, TOP);
-                }
-
-                // Bottom
-                if (z == 0 && IS_BIT_SET(faces, BOTTOM))
-                {
-                    tmp_data[z][y][x].faces |= BOTTOM;
-                    SET_BIT(chunk->faces, BOTTOM);
-                }
+            // Right
+            if (z > heights[y + 1][x])
+            {
+                tmp_data[z][y - 1][x - 1].faces |= RIGHT;
             }
         }
     }
