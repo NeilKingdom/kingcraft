@@ -10,55 +10,6 @@
 #include "main.hpp"
 
 /**
- * @brief Checks if a point rests within the bounds of the camera's viewing frustum.
- * @since 01-03-2025
- * @param[in] frustum The camera's viewing frustum
- * @param[in] x The x component of the point being checked
- * @param[in] y The y component of the point being checked
- * @returns True if the point lies within the viewing frustum, otherwise returns false
- */
-static bool is_point_inside_frustum(const CullingFrustum &frustum, const float x, const float y)
-{
-    vec2 a = { frustum.v_eye[0], frustum.v_eye[1] };
-    vec2 b = { frustum.v_left[0], frustum.v_left[1] };
-    vec2 c = { frustum.v_right[0], frustum.v_right[1] };
-    vec2 p = { x, y };
-
-    float areaABC = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-    float areaPAB = (a[0] - p[0]) * (b[1] - p[1]) - (a[1] - p[1]) * (b[0] - p[0]);
-    float areaPBC = (b[0] - p[0]) * (c[1] - p[1]) - (b[1] - p[1]) * (c[0] - p[0]);
-    float areaPCA = (c[0] - p[0]) * (a[1] - p[1]) - (c[1] - p[1]) * (a[0] - p[0]);
-
-    bool has_neg = (areaPAB < 0) || (areaPBC < 0) || (areaPCA < 0);
-    bool has_pos = (areaPAB > 0) || (areaPBC > 0) || (areaPCA > 0);
-
-    return !(has_neg && has_pos);
-}
-
-/**
- * @brief Sorting function intended for use when sorting the chunk positions list.
- * @since 01-03-2025
- * @param[in] frustum The camera's viewing frustum
- * @param[in] chunk_left Left chunk position
- * @param[in] chunk_right Right chunk position
- * @returns True if the distance between __chunk_left__ and the camera is less than chunk_right,
- *     otherwise returns false
- */
-static bool sort_chunk_positions(
-    const CullingFrustum &frustum,
-    const std::array<float, 2> &chunk_left,
-    const std::array<float, 2> &chunk_right
-)
-{
-    float dx_l = chunk_left[0]  - frustum.v_eye[0];
-    float dy_l = chunk_left[1]  - frustum.v_eye[1];
-    float dx_r = chunk_right[0] - frustum.v_eye[0];
-    float dy_r = chunk_right[1] - frustum.v_eye[1];
-
-    return ((dx_l * dx_l) + (dy_l * dy_l)) < ((dx_r * dx_r) + (dy_r * dy_r));
-}
-
-/**
  * @brief Cleanup all of the application's resources.
  * @since 02-03-2024
  * @param[in] glx An instance of the OpenGL context object
@@ -124,7 +75,7 @@ int main()
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
     CullingFrustum frustum;
-    auto chunks = std::set<std::shared_ptr<Chunk>>();
+    auto chunks = std::set<ChunkColumn>();
     std::vector<std::array<float, 2>> chunk_pos_list;
     std::vector<std::array<float, 2>>::iterator chunk_pos_iter = chunk_pos_list.end();
 
@@ -237,7 +188,7 @@ int main()
             {
                 for (ssize_t x = min_x; x < max_x; ++x)
                 {
-                    if (is_point_inside_frustum(frustum, x, y))
+                    if (frustum.is_point_within(vec2{ (float)x, (float)y }))
                     {
                         chunk_pos_list.push_back(std::array<float, 2>{ (float)x, (float)y });
                     }
@@ -249,7 +200,12 @@ int main()
                 chunk_pos_list.begin(),
                 chunk_pos_list.end(),
                 [&](const std::array<float, 2> &a, const std::array<float, 2> &b) {
-                    return sort_chunk_positions(frustum, a, b);
+                    float dx_a = a[0] - frustum.v_eye[0];
+                    float dy_a = a[1] - frustum.v_eye[1];
+                    float dx_b = b[0] - frustum.v_eye[0];
+                    float dy_b = b[1] - frustum.v_eye[1];
+
+                    return ((dx_a * dx_a) + (dy_a * dy_a)) < ((dx_b * dx_b) + (dy_b * dy_b));
                 }
             );
 
@@ -260,7 +216,7 @@ int main()
                 auto find = std::find(
                     chunk_pos_list.begin(),
                     chunk_pos_list.end(),
-                    std::array<float, 2>{ it->get()->location[0], it->get()->location[1] }
+                    std::array<float, 2>{ it->location[0], it->location[1] }
                 );
 
                 if (find == chunk_pos_list.end())
@@ -278,7 +234,7 @@ int main()
         }
 
         // Determine which faces to render
-        chunks.insert(chunk_factory.make_chunk(vec3{ (*chunk_pos_iter)[0], (*chunk_pos_iter)[1], 0.0f }, ALL));
+        chunks.insert(make_chunk_column(vec2{ (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] }));
         chunk_pos_iter++;
 
         process_events(kc_win, camera);

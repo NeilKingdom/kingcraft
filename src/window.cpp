@@ -395,7 +395,7 @@ void render_frame(
     Camera &camera,
     Mvp &mvp,
     KCShaders &shaders,
-    std::set<std::shared_ptr<Chunk>> &chunks,
+    std::set<ChunkColumn> &chunk_cols,
     SkyBox &skybox
 )
 {
@@ -411,7 +411,7 @@ void render_frame(
     shaders.block.bind();
 
     // Model matrix (translate to world space)
-    lac_get_translation_mat4(mvp.m_model, 0.0f, 0.0f, (float)(-chunk_size - game.player.height));
+    lac_get_translation_mat4(mvp.m_model, 0.0f, 0.0f, (float)(-(int)KC::CHUNK_Z_LIMIT - game.player.height));
     u_model = glGetUniformLocation(shaders.block.id, "model");
     glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
 
@@ -430,10 +430,13 @@ void render_frame(
     u_proj = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
-    for (auto chunk : chunks)
+    for (auto col : chunk_cols)
     {
-        glBindVertexArray(chunk->mesh.vao);
-        glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
+        for (auto chunk : col.chunk_col)
+        {
+            glBindVertexArray(chunk->mesh.vao);
+            glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
+        }
     }
 
     shaders.block.unbind();

@@ -6,7 +6,7 @@
  * @brief Provides functions for interacting with an ImGui debug window.
  */
 
-#include "impl_imgui.hpp"
+#include "settings.hpp"
 
 extern IMGUI_IMPL_API int ImGui_ImplX11_EventHandler(XEvent &event, XEvent *next_event);
 

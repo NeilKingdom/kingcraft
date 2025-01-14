@@ -24,8 +24,6 @@ public:
     //void remove_block(const uint8_t x, const uint8_t y, const uint8_t z);
 
     // Operator overloads
-    bool operator==(const Chunk &chunk) const;
-    bool operator<(const Chunk &chunk) const;
 
 private:
     friend ChunkFactory;

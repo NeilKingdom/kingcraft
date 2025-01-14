@@ -12,16 +12,6 @@ Chunk::~Chunk()
     }
 }
 
-bool Chunk::operator==(const Chunk &chunk) const
-{
-    return location[0] == chunk.location[0] && location[1] == chunk.location[1];
-}
-
-bool Chunk::operator<(const Chunk &chunk) const
-{
-    return (location[1] < chunk.location[1]) ? true : (location[0] < chunk.location[0]) ? true : false;
-}
-
 void Chunk::flatten_block_data()
 {
     GameState &game = GameState::get_instance();

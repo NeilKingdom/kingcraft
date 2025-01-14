@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include "transforms.h"
 
 namespace KC
@@ -15,4 +16,6 @@ namespace KC
     static constexpr float    CAMERA_ROTATION_SPEED = 0.5f;           // Normalized rotation speed
     static constexpr float    PLAYER_BASE_SPEED = 0.5f;               // Normalized speed
     static constexpr float    PLAYER_HEIGHT = 2.0f;                   // Height (in blocks)
+
+    static constexpr unsigned CHUNK_Z_LIMIT = 64;
 };
