@@ -24,11 +24,4 @@ public:
     Block();
     Block(BlockType type);
     ~Block() = default;
-
-    // General purpose
-    void add_face(uint8_t face);
-    void remove_face(uint8_t face);
-
-private:
-    void modify_face();
 };

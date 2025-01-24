@@ -237,6 +237,12 @@ int main()
         chunks.insert(make_chunk_column(vec2{ (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] }));
         chunk_pos_iter++;
 
+        vec3 chunk_location = {
+            std::floorf(camera.v_eye[0] / (ssize_t)game.chunk_size),
+            std::floorf(camera.v_eye[1] / (ssize_t)game.chunk_size),
+            std::floorf(camera.v_eye[2] / (ssize_t)game.chunk_size)
+        };
+
         process_events(kc_win, camera);
         render_frame(camera, mvp, shaders, chunks, skybox);
 

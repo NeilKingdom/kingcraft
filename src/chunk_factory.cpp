@@ -62,7 +62,8 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
             heights[y + 1][x + 1] = game.pn.octave_perlin(
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
-                 0.8f, 3, 0.05f, 0, (KC::CHUNK_Z_LIMIT - 1)
+                 0.8f,
+                 0.05f, 0, (KC::CHUNK_Z_LIMIT - 1)
             );
         }
     }
@@ -233,6 +234,5 @@ std::shared_ptr<Chunk> ChunkFactory::make_solid_chunk(const vec3 location, const
         }
     }
 
-    chunk->flatten_block_data();
     return chunk;
 }

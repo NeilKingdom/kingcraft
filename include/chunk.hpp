@@ -19,11 +19,12 @@ public:
     Chunk() = default;
     ~Chunk();
 
-    // TODO: General
-    //void add_block(const BlockType type, const uint8_t x, const uint8_t y, const uint8_t z);
-    //void remove_block(const uint8_t x, const uint8_t y, const uint8_t z);
+    // General
+    void add_block(const BlockType type, const vec3 location);
+    void remove_block(const vec3 location);
 
     // Operator overloads
+    bool operator==(const Chunk &chunk) const;
 
 private:
     friend ChunkFactory;

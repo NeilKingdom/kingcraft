@@ -12,6 +12,39 @@ Chunk::~Chunk()
     }
 }
 
+bool Chunk::operator==(const Chunk &chunk) const
+{
+    return this->location[0] == chunk.location[0]
+        && this->location[1] == chunk.location[1]
+        && this->location[2] == chunk.location[2];
+}
+
+void Chunk::add_block(const BlockType type, const vec3 location)
+{
+
+}
+
+void Chunk::remove_block(const vec3 location)
+{
+    blocks[location[2]][location[1]][location[0]].type = BlockType::AIR;
+    // TODO: Regenerate neighboring blocks
+    mesh.vertices.clear();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    if (glIsBuffer(mesh.vbo))
+    {
+        glDeleteBuffers(1, &mesh.vbo);
+    }
+    if (glIsVertexArray(mesh.vao))
+    {
+        glDeleteVertexArrays(1, &mesh.vao);
+    }
+
+    flatten_block_data();
+}
+
 void Chunk::flatten_block_data()
 {
     GameState &game = GameState::get_instance();

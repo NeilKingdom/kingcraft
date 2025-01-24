@@ -3,6 +3,8 @@
 #include "common.hpp"
 #include "constants.hpp"
 #include "game_state.hpp"
+#include "chunk_column.hpp"
+#include "block.hpp"
 
 struct CullingFrustum
 {
@@ -42,6 +44,7 @@ public:
 
     // General
     void update_rotation_from_pointer(const KCWindow &win);
+    std::optional<Block> cast_ray(const std::set<ChunkColumn> &chunks, const unsigned n_iters) const;
     void calculate_view_matrix();
     CullingFrustum get_frustum_coords(size_t render_distance);
 

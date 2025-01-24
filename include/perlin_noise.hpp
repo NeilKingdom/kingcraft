@@ -6,12 +6,12 @@ class PerlinNoise
 {
 public:
     // Special member functions
-    PerlinNoise();
+    PerlinNoise(const uint8_t octaves = 3);
     ~PerlinNoise() = default;
 
     // General
     float perlin(const float x, const float y, const float z);
-    float octave_perlin(const float x, const float y, const float z, const uint8_t octaves, const float scale, const unsigned lo, const unsigned hi);
+    float octave_perlin(const float x, const float y, const float z, const float scale, const unsigned lo, const unsigned hi);
 
 private:
     // General member functions
@@ -19,5 +19,6 @@ private:
     static inline float lerp(const float t, const float a, const float b);
     static inline float fade(const float t);
 
-    std::vector<int> permutations_table;
+    uint8_t m_octaves;
+    std::vector<int> m_permutations_table;
 };

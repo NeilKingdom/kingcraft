@@ -73,6 +73,59 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     );
 }
 
+std::optional<Block> Camera::cast_ray(const std::set<ChunkColumn> &chunk_cols, const unsigned n_iters) const
+{
+    GameState &game = GameState::get_instance();
+    ssize_t chunk_size = game.chunk_size;
+
+    vec3 v_ray = { v_look_dir[0], v_look_dir[1], v_look_dir[2] };
+
+    vec3 chunk_location = {
+        std::floorf(v_eye[0] / chunk_size),
+        std::floorf(v_eye[1] / chunk_size),
+        std::floorf(v_eye[2] / chunk_size)
+    };
+
+    for (unsigned i = 0; i < n_iters; ++i)
+    {
+        // March ray
+        lac_normalize_vec3(v_ray, v_ray);
+        for (unsigned j = 0; j < n_iters; ++j)
+        {
+            lac_add_vec3(v_ray, v_ray, v_ray);
+            v_ray[0] = std::floorf(v_ray[0]);
+            v_ray[1] = std::floorf(v_ray[1]);
+            v_ray[2] = std::floorf(v_ray[2]);
+        }
+
+        // Check for block
+        Chunk needle = Chunk();
+        std::memcpy(needle.location, chunk_location, sizeof(vec3));
+
+        for (auto col : chunk_cols)
+        {
+            for (auto chunk : col.chunk_col)
+            {
+                if (*chunk.get() == needle)
+                {
+                    Block &block = chunk.get()->blocks[v_ray[0]][v_ray[1]][v_ray[2]];
+                    if (block.type != BlockType::AIR)
+                    {
+                        std::cout << "Looking at "
+                            << "x: " << v_ray[0] << ", "
+                            << "y: " << v_ray[1] << ", "
+                            << "z: " << v_ray[2]
+                            << std::endl;
+                        return block;
+                    }
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 /**
  * @brief Calculates the view matrix based on the look direction of the camera.
  * @since 02-03-2024
