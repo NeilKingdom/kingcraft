@@ -1,6 +1,5 @@
 #include "player.hpp"
 
 Player::Player() :
-    speed(KC::PLAYER_BASE_SPEED),
-    height(KC::PLAYER_HEIGHT)
+    curr_speed(KC::PLAYER_SPEED_FACTOR)
 {}

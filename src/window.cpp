@@ -64,9 +64,10 @@ void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_poin
 {
     auto curr_time = steady_clock::now();
     auto time_elapsed = duration_cast<nanoseconds>(curr_time - since).count();
+    constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
     ++frames_elapsed;
 
-    if (time_elapsed > KC::SEC_AS_NANO)
+    if (time_elapsed > second_as_nano)
     {
         since = curr_time;
         fps = frames_elapsed;
@@ -379,7 +380,7 @@ void process_events(KCWindow &win, Camera &camera)
     if (magnitude > 0.0f)
     {
         lac_normalize_vec3(v_velocity, v_velocity);
-        lac_multiply_vec3(v_velocity, v_velocity, KC::PLAYER_BASE_SPEED);
+        lac_multiply_vec3(v_velocity, v_velocity, KC::PLAYER_SPEED_FACTOR);
         lac_add_vec3(camera.v_eye, camera.v_eye, v_velocity);
     }
 }
@@ -410,7 +411,7 @@ void render_frame(
     shaders.block.bind();
 
     // Model matrix (translate to world space)
-    lac_get_translation_mat4(mvp.m_model, 0.0f, 0.0f, (float)(-(int)KC::CHUNK_Z_LIMIT - game.player.height));
+    lac_get_translation_mat4(mvp.m_model, 0.0f, 0.0f, 0.0f - ((float)KC::SEA_LEVEL + (float)KC::PLAYER_HEIGHT));
     u_model = glGetUniformLocation(shaders.block.id, "model");
     glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
 
