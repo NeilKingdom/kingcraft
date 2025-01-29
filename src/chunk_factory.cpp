@@ -63,7 +63,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
                  0.8f,
-                 0.05f, 0, (KC::CHUNK_Z_LIMIT - 1)
+                 0.05f, KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
         }
     }
@@ -166,7 +166,7 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
     ssize_t chunk_size = game.chunk_size;
     ssize_t height, height_lo, height_hi;
 
-    height_lo = KC::CHUNK_Z_LIMIT;
+    height_lo = KC::MAX_BLOCK_HEIGHT;
     height_hi = 0;
 
     std::vector<std::vector<uint8_t>> heights;
@@ -180,7 +180,7 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
                  0.8f,
-                 0.05f, 0, (KC::CHUNK_Z_LIMIT - 1)
+                 0.05f, KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
 
             if (height < height_lo)

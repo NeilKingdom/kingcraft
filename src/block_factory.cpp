@@ -38,7 +38,7 @@ BlockFactory::get_uv_coords(const BlockType type) const
             ty_offset = 0.0f;
             tx_offset = 2.0f;
 
-            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::ATLAS_TEX_SIZE;
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
             uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset;
             break;
         case BlockType::GRASS:
@@ -46,17 +46,17 @@ BlockFactory::get_uv_coords(const BlockType type) const
 
             // Top
             tx_offset = 0.0f;
-            uv_top[0] = tx_offset / (float)KC::ATLAS_TEX_SIZE;
+            uv_top[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
             uv_top[1] = ty_offset;
 
             // Sides
             tx_offset = 1.0f;
-            uv_sides[0] = tx_offset / (float)KC::ATLAS_TEX_SIZE;
+            uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
             uv_sides[1] = ty_offset;
 
             // Bottom
             tx_offset = 2.0f;
-            uv_bottom[0] = tx_offset / (float)KC::ATLAS_TEX_SIZE;
+            uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
             uv_bottom[1] = ty_offset;
             break;
         default:
@@ -100,8 +100,8 @@ Block BlockFactory::make_block(
 
     // UV coordinates
     constexpr float uv_pad = 0.005f;
-    constexpr float uw = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
-    constexpr float vh = (1.0f / KC::ATLAS_TEX_SIZE) - uv_pad;
+    constexpr float uw = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
+    constexpr float vh = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
 
     auto uv = get_uv_coords(type).value_or(
         std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
