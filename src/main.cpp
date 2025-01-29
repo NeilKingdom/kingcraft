@@ -67,17 +67,18 @@ int main()
     int frames_elapsed = 0;
     time_point<steady_clock> since = steady_clock::now();
     nanoseconds::rep frame_duration = 0L;
+    constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
 
     Camera camera = Camera();
+    CullingFrustum frustum;
     Mvp mvp = Mvp(camera);
 
     GameState &game = GameState::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
-    CullingFrustum frustum;
-    auto chunks = std::set<ChunkColumn>();
-    std::vector<std::array<float, 2>> chunk_pos_list;
-    std::vector<std::array<float, 2>>::iterator chunk_pos_iter = chunk_pos_list.end();
+    auto chunks = std::vector<std::shared_ptr<Chunk>>{};
+    auto chunk_col_coords = std::vector<std::array<float, 2>>{};
+    auto chunk_col_coords_iter = chunk_col_coords.end();
 
     /*** Window and OpenGL context initialization ***/
 
@@ -168,14 +169,14 @@ int main()
     while (game.is_running)
     {
         auto frame_start = steady_clock::now();
-        game.player.speed = KC::PLAYER_BASE_SPEED * (frame_duration / (float)KC::SEC_AS_NANO);
+        game.player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
 
         camera.calculate_view_matrix();
 
-        // Recalculate chunk positions list once all chunks have been rendered
-        if (chunk_pos_iter >= chunk_pos_list.end())
+        // Re-calculate chunk positions list once all chunks have been rendered
+        if (chunk_col_coords_iter >= chunk_col_coords.end())
         {
-            chunk_pos_list.clear();
+            chunk_col_coords.clear();
             frustum = camera.get_frustum_coords(game.render_distance);
 
             ssize_t min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
@@ -190,15 +191,15 @@ int main()
                 {
                     if (frustum.is_point_within(vec2{ (float)x, (float)y }))
                     {
-                        chunk_pos_list.push_back(std::array<float, 2>{ (float)x, (float)y });
+                        chunk_col_coords.push_back(std::array<float, 2>{ (float)x, (float)y });
                     }
                 }
             }
 
             // Sort chunk positions by distance relative to player
             std::sort(
-                chunk_pos_list.begin(),
-                chunk_pos_list.end(),
+                chunk_col_coords.begin(),
+                chunk_col_coords.end(),
                 [&](const std::array<float, 2> &a, const std::array<float, 2> &b) {
                     float dx_a = a[0] - frustum.v_eye[0];
                     float dy_a = a[1] - frustum.v_eye[1];
@@ -209,39 +210,38 @@ int main()
                 }
             );
 
-            // Remove chunks which are no longer visible from the chunks list
-            // Remove positions which are visible but already exist in the chunks list from the positions list
-            for (auto it = chunks.begin(); it != chunks.end();)
-            {
-                auto find = std::find(
-                    chunk_pos_list.begin(),
-                    chunk_pos_list.end(),
-                    std::array<float, 2>{ it->location[0], it->location[1] }
-                );
+            // Remove chunk columns which are no longer visible in the camera's frustum
 
-                if (find == chunk_pos_list.end())
-                {
-                    it = chunks.erase(it);
-                }
-                else
-                {
-                    chunk_pos_list.erase(find);
-                    ++it;
-                }
+            chunks.erase(
+                std::remove_if(chunks.begin(), chunks.end(), [&](std::shared_ptr<Chunk> &chunk) {
+                    auto chunk_pos = std::array<float, 2>{ chunk->location[0], chunk->location[1] };
+                    return std::find(chunk_col_coords.begin(), chunk_col_coords.end(), chunk_pos) == chunk_col_coords.end();
+                }),
+                chunks.end()
+            );
+
+            // Remove positions which are visible in the camera's frustum, but who's chunk columns have already been generated
+
+            std::vector<std::array<float, 2>> to_remove;
+            for (auto &chunk : chunks)
+            {
+                auto chunk_pos = std::array<float, 2>{ chunk->location[0], chunk->location[1] };
+                to_remove.push_back(chunk_pos);
             }
 
-            chunk_pos_iter = chunk_pos_list.begin();
+            chunk_col_coords.erase(
+                std::remove_if(chunk_col_coords.begin(), chunk_col_coords.end(), [&](const std::array<float, 2> &pos) {
+                    return std::find(to_remove.begin(), to_remove.end(), pos) != to_remove.end();
+                }),
+                chunk_col_coords.end()
+            );
+
+            chunk_col_coords_iter = chunk_col_coords.begin();
         }
 
-        // Determine which faces to render
-        chunks.insert(make_chunk_column(vec2{ (*chunk_pos_iter)[0], (*chunk_pos_iter)[1] }));
-        chunk_pos_iter++;
-
-        vec3 chunk_location = {
-            std::floorf(camera.v_eye[0] / (ssize_t)game.chunk_size),
-            std::floorf(camera.v_eye[1] / (ssize_t)game.chunk_size),
-            std::floorf(camera.v_eye[2] / (ssize_t)game.chunk_size)
-        };
+        auto chunk_col = chunk_factory.make_chunk_column(vec2{ (*chunk_col_coords_iter)[0], (*chunk_col_coords_iter)[1] });
+        chunks.insert(chunks.end(), chunk_col.begin(), chunk_col.end());
+        chunk_col_coords_iter++;
 
         process_events(kc_win, camera);
         render_frame(camera, mvp, shaders, chunks, skybox);
@@ -251,11 +251,14 @@ int main()
         calculate_frame_rate(fps, frames_elapsed, since);
 
 #if 0
-        // Switch OpenGL context to ImGui window
-        glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
-        process_imgui_events(imgui_win);
-        render_imgui_frame(imgui_win, camera);
-        glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
+        // Render once per 5 frames
+        if (frames_elapsed % 5 == 0)
+        {
+            glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
+            process_imgui_events(imgui_win);
+            render_imgui_frame(imgui_win, camera);
+            glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
+        }
 #endif
     }
 
@@ -267,3 +270,4 @@ int main()
 
     return EXIT_SUCCESS;
 }
+

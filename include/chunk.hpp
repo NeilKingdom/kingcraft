@@ -28,6 +28,5 @@ public:
 
 private:
     friend ChunkFactory;
-
-    void flatten_block_data();
+    void squash_block_meshes();
 };

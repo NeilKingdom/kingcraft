@@ -395,12 +395,11 @@ void render_frame(
     Camera &camera,
     Mvp &mvp,
     KCShaders &shaders,
-    std::set<ChunkColumn> &chunk_cols,
+    std::vector<std::shared_ptr<Chunk>> &chunks,
     SkyBox &skybox
 )
 {
     GameState &game = GameState::get_instance();
-    ssize_t chunk_size = game.chunk_size;
     unsigned u_model, u_view, u_proj;
 
     glClearColor(1.0f, 1.0, 1.0f, 1.0);
@@ -430,13 +429,10 @@ void render_frame(
     u_proj = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
-    for (auto col : chunk_cols)
+    for (auto chunk : chunks)
     {
-        for (auto chunk : col.chunk_col)
-        {
-            glBindVertexArray(chunk->mesh.vao);
-            glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
-        }
+        glBindVertexArray(chunk->mesh.vao);
+        glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
     }
 
     shaders.block.unbind();

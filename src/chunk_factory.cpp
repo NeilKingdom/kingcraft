@@ -152,87 +152,54 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
         }
     }
 
-    chunk->flatten_block_data();
+    chunk->squash_block_meshes();
     return chunk;
 }
 
-/**
- * @brief Creates a solid Chunk object given a set of input parameters.
- * This function differs from make_chunk() since the chunk that is generated skips sampling the height map.
- * As a result, you get a solid chunk of blocks. This function is much more optimized than make_chunk().
- * @since 11-01-2025
- * @param[in] location A vec3 which determines the offset of the chunk relative to the world origin
- * @param[in] faces A bitmask representing the faces of the chunk to be rendered
- * @returns The constructed Chunk object
- */
-std::shared_ptr<Chunk> ChunkFactory::make_solid_chunk(const vec3 location, const uint8_t faces) const
+std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 location) const
 {
-    auto chunk = std::make_shared<Chunk>(Chunk());
-    BlockFactory &block_factory = BlockFactory::get_instance();
     GameState &game = GameState::get_instance();
+    ChunkFactory &chunk_factory = ChunkFactory::get_instance();
+
+    auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
+
     ssize_t chunk_size = game.chunk_size;
-    assert(chunk_size > 1);
+    ssize_t height, height_lo, height_hi;
 
-    std::memcpy(chunk->location, location, sizeof(vec3));
-    chunk->faces = faces;
+    height_lo = KC::CHUNK_Z_LIMIT;
+    height_hi = 0;
 
-    struct BlockData
+    std::vector<std::vector<uint8_t>> heights;
+    heights.resize(chunk_size, std::vector<uint8_t>(chunk_size));
+
+    for (ssize_t y = 0; y < chunk_size; ++y)
     {
-        uint8_t faces;
-        BlockType type;
-    };
-
-    // Create the actual Block objects for the chunk
-
-    chunk->blocks.resize(chunk_size);
-    for (ssize_t z = 0; z < chunk_size; ++z)
-    {
-        chunk->blocks[z].resize(chunk_size);
-        for (ssize_t y = 0; y < chunk_size; ++y)
+        for (ssize_t x = 0; x < chunk_size; ++x)
         {
-            chunk->blocks[z][y].resize(chunk_size);
-            for (ssize_t x = 0; x < chunk_size; ++x)
+            height = heights[y][x] = game.pn.octave_perlin(
+                -location[0] * chunk_size + x,
+                 location[1] * chunk_size + y,
+                 0.8f,
+                 0.05f, 0, (KC::CHUNK_Z_LIMIT - 1)
+            );
+
+            if (height < height_lo)
             {
-                BlockData data{};
+                height_lo = height;
+            }
 
-                // TODO: Determine block types
-                if (x == 0 && IS_BIT_SET(faces, FRONT))
-                {
-                    data.faces |= FRONT;
-                }
-                if (x == (chunk_size - 1) && IS_BIT_SET(faces, BACK))
-                {
-                    data.faces |= BACK;
-                }
-                if (y == 0 && IS_BIT_SET(faces, LEFT))
-                {
-                    data.faces |= LEFT;
-                }
-                if (y == (chunk_size - 1) && IS_BIT_SET(faces, RIGHT))
-                {
-                    data.faces |= RIGHT;
-                }
-                if (z == 0 && IS_BIT_SET(faces, BOTTOM))
-                {
-                    data.faces |= BOTTOM;
-                }
-                if (z == (chunk_size - 1) && IS_BIT_SET(faces, TOP))
-                {
-                    data.faces |= TOP;
-                }
-
-                chunk->blocks[z][y][x] = block_factory.make_block(
-                    BlockType::DIRT,
-                    vec3{
-                        -(location[0] * chunk_size) + x,
-                         (location[1] * chunk_size) + y,
-                         (location[2] * chunk_size) + z
-                    },
-                    data.faces
-                );
+            if (height > height_hi)
+            {
+                height_hi = height;
             }
         }
     }
 
-    return chunk;
+    for (int i = 0; i < (height_hi / chunk_size) + 1; ++i)
+    {
+        vec3 tmp_location = { location[0], location[1], (float)i };
+        chunk_col.push_back(chunk_factory.make_chunk(tmp_location, ALL));
+    }
+
+    return chunk_col;
 }

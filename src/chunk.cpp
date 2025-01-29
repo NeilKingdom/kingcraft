@@ -42,10 +42,10 @@ void Chunk::remove_block(const vec3 location)
         glDeleteVertexArrays(1, &mesh.vao);
     }
 
-    flatten_block_data();
+    squash_block_meshes();
 }
 
-void Chunk::flatten_block_data()
+void Chunk::squash_block_meshes()
 {
     GameState &game = GameState::get_instance();
     ssize_t chunk_size = game.chunk_size;

@@ -7,9 +7,7 @@
 #include "settings.hpp"
 #include "game_state.hpp"
 #include "shader_program.hpp"
-#include "block_factory.hpp"
 #include "chunk_factory.hpp"
-#include "chunk_column.hpp"
 
 static inline void GLAPIENTRY debug_callback(
    GLenum source,

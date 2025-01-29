@@ -5,17 +5,21 @@
 
 namespace KC
 {
+    // KC coordinate system directional unit vectors
     static constexpr vec3 v_fwd   = { 1.0f, 0.0f, 0.0f };
     static constexpr vec3 v_right = { 0.0f, 1.0f, 0.0f };
     static constexpr vec3 v_up    = { 0.0f, 0.0f, 1.0f };
 
-    static constexpr long     SEC_AS_NANO = 1000L * 1000L * 1000L;
+    // General constants
     static constexpr unsigned CUBE_FACES = 6;
-    static constexpr unsigned ATLAS_TEX_SIZE = 16;                    // Number of texture columns in the atlas
+    static constexpr unsigned TEX_ATLAS_NCOLS = 16;
 
-    static constexpr float    CAMERA_ROTATION_SPEED = 0.5f;           // Normalized rotation speed
-    static constexpr float    PLAYER_BASE_SPEED = 0.5f;               // Normalized speed
-    static constexpr float    PLAYER_HEIGHT = 2.0f;                   // Height (in blocks)
+    // Normalized scaling factors
+    static constexpr float CAMERA_SPEED_FACTOR = 0.5f;
+    static constexpr float PLAYER_SPEED_FACTOR = 0.5f;
 
-    static constexpr unsigned CHUNK_Z_LIMIT = 64;
+    // Measurements (1 block => 1 unit of measurement)
+    static constexpr unsigned PLAYER_HEIGHT = 2;
+    static constexpr unsigned MAX_BLOCK_HEIGHT = UINT8_MAX;
+    static constexpr unsigned SEA_LEVEL = (unsigned)(MAX_BLOCK_HEIGHT / 2);
 };

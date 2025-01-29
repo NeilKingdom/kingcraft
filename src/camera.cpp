@@ -62,8 +62,8 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     norm_dy  = (center_y - (float)win_off_y) / (float)win.xwa.height;
 
     // Convert from pixel space to degrees
-    camera_yaw += norm_dx * 180.0f * KC::CAMERA_ROTATION_SPEED;
-    camera_pitch += norm_dy * 180.0f * KC::CAMERA_ROTATION_SPEED;
+    camera_yaw += norm_dx * 180.0f * KC::CAMERA_SPEED_FACTOR;
+    camera_pitch += norm_dy * 180.0f * KC::CAMERA_SPEED_FACTOR;
     camera_pitch = std::clamp(camera_pitch, -89.0f, 89.0f);
 
     // Warp back to center of screen
@@ -73,7 +73,10 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     );
 }
 
-std::optional<Block> Camera::cast_ray(const std::set<ChunkColumn> &chunk_cols, const unsigned n_iters) const
+std::optional<Block> Camera::cast_ray(
+    const std::vector<std::shared_ptr<Chunk>> &chunks,
+    const unsigned n_iters
+) const
 {
     GameState &game = GameState::get_instance();
     ssize_t chunk_size = game.chunk_size;
@@ -102,22 +105,19 @@ std::optional<Block> Camera::cast_ray(const std::set<ChunkColumn> &chunk_cols, c
         Chunk needle = Chunk();
         std::memcpy(needle.location, chunk_location, sizeof(vec3));
 
-        for (auto col : chunk_cols)
+        for (auto chunk : chunks)
         {
-            for (auto chunk : col.chunk_col)
+            if (*chunk.get() == needle)
             {
-                if (*chunk.get() == needle)
+                Block &block = chunk.get()->blocks[v_ray[0]][v_ray[1]][v_ray[2]];
+                if (block.type != BlockType::AIR)
                 {
-                    Block &block = chunk.get()->blocks[v_ray[0]][v_ray[1]][v_ray[2]];
-                    if (block.type != BlockType::AIR)
-                    {
-                        std::cout << "Looking at "
-                            << "x: " << v_ray[0] << ", "
-                            << "y: " << v_ray[1] << ", "
-                            << "z: " << v_ray[2]
-                            << std::endl;
-                        return block;
-                    }
+                    std::cout << "Looking at "
+                        << "x: " << v_ray[0] << ", "
+                        << "y: " << v_ray[1] << ", "
+                        << "z: " << v_ray[2]
+                        << std::endl;
+                    return block;
                 }
             }
         }

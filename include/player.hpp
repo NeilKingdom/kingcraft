@@ -3,11 +3,19 @@
 #include "common.hpp"
 #include "constants.hpp"
 
+enum class MovementMode
+{
+    WALKING,
+    RUNNING,
+    FLYING,
+    SWIMMING
+};
+
 class Player
 {
 public:
-    float speed;
-    float height;
+    float curr_speed;
+    MovementMode curr_move_mode = MovementMode::WALKING;
 
     // Special member functions
     Player();

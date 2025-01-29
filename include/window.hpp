@@ -8,7 +8,6 @@
 #include "chunk.hpp"
 #include "skybox.hpp"
 #include "chunk_factory.hpp"
-#include "chunk_column.hpp"
 
 struct KCShaders
 {
@@ -69,4 +68,4 @@ void            calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono:
 GLXFBConfig     create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
 GLXContext      create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);
 void            process_events(KCWindow &win, Camera &camera);
-void            render_frame(Camera &camera, Mvp &mvp, KCShaders &shaders, std::set<ChunkColumn> &chunk_cols, SkyBox &skybox);
+void            render_frame(Camera &camera, Mvp &mvp, KCShaders &shaders, std::vector<std::shared_ptr<Chunk>> &chunks, SkyBox &skybox);
