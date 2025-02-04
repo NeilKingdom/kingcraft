@@ -75,6 +75,7 @@ int main()
 
     GameState &game = GameState::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
+    BlockFactory &block_factory = BlockFactory::get_instance();
 
     auto chunks = std::vector<std::shared_ptr<Chunk>>{};
     auto chunk_col_coords = std::vector<std::array<float, 2>>{};
@@ -185,16 +186,18 @@ int main()
             ssize_t max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
 
             // Add chunk positions if they belong within the frustum
+            chunk_col_coords.reserve((std::fabs(max_x - min_x) * std::fabs(max_y - min_y)));
             for (ssize_t y = min_y; y < max_y; ++y)
             {
                 for (ssize_t x = min_x; x < max_x; ++x)
                 {
                     if (frustum.is_point_within(vec2{ (float)x, (float)y }))
                     {
-                        chunk_col_coords.push_back(std::array<float, 2>{ (float)x, (float)y });
+                        chunk_col_coords.emplace_back(std::array<float, 2>{ (float)x, (float)y });
                     }
                 }
             }
+            chunk_col_coords.shrink_to_fit();
 
             // Sort chunk positions by distance relative to player
             std::sort(
@@ -239,8 +242,11 @@ int main()
             chunk_col_coords_iter = chunk_col_coords.begin();
         }
 
-        auto chunk_col = chunk_factory.make_chunk_column(vec2{ (*chunk_col_coords_iter)[0], (*chunk_col_coords_iter)[1] });
-        chunks.insert(chunks.end(), chunk_col.begin(), chunk_col.end());
+        if (!chunk_col_coords.empty())
+        {
+            auto chunk_col = chunk_factory.make_chunk_column(vec2{ (*chunk_col_coords_iter)[0], (*chunk_col_coords_iter)[1] });
+            chunks.insert(chunks.end(), chunk_col.begin(), chunk_col.end());
+        }
         chunk_col_coords_iter++;
 
         process_events(kc_win, camera);

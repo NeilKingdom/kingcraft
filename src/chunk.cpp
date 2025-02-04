@@ -60,7 +60,30 @@ void Chunk::squash_block_meshes()
                 Block block = blocks[z][y][x];
                 if (block.type != BlockType::AIR && block.faces != 0)
                 {
-                    chunk_mesh.insert(chunk_mesh.begin(), block.vertices.begin(), block.vertices.end());
+                    if (IS_BIT_SET(block.faces, BOTTOM))
+                    {
+                        chunk_mesh.insert(chunk_mesh.end(), block.bottom_face.begin(), block.bottom_face.end());
+                    }
+                    if (IS_BIT_SET(block.faces, TOP))
+                    {
+                        chunk_mesh.insert(chunk_mesh.end(), block.top_face.begin(), block.top_face.end());
+                    }
+                    if (IS_BIT_SET(block.faces, RIGHT))
+                    {
+                        chunk_mesh.insert(chunk_mesh.end(), block.right_face.begin(), block.right_face.end());
+                    }
+                    if (IS_BIT_SET(block.faces, LEFT))
+                    {
+                        chunk_mesh.insert(chunk_mesh.end(), block.left_face.begin(), block.left_face.end());
+                    }
+                    if (IS_BIT_SET(block.faces, FRONT))
+                    {
+                        chunk_mesh.insert(chunk_mesh.end(), block.front_face.begin(), block.front_face.end());
+                    }
+                    if (IS_BIT_SET(block.faces, BACK))
+                    {
+                        chunk_mesh.insert(chunk_mesh.end(), block.back_face.begin(), block.back_face.end());
+                    }
                 }
              }
         }

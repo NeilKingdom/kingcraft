@@ -43,23 +43,23 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
         BlockType type;
     };
 
-    std::vector<std::vector<std::vector<BlockData>>> tmp_data;
-    tmp_data.resize(
+    std::vector<std::vector<std::vector<BlockData>>> block_data;
+    block_data.resize(
         chunk_size,
         std::vector<std::vector<BlockData>>(
             chunk_size,
-            std::vector<BlockData>(chunk_size)
+            std::vector<BlockData>(chunk_size, BlockData{})
         )
     );
 
-    std::vector<std::vector<uint8_t>> heights;
-    heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
+    std::vector<std::vector<uint8_t>> block_heights;
+    block_heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
 
     for (ssize_t y = -1; y < chunk_size + 1; ++y)
     {
         for (ssize_t x = -1; x < chunk_size + 1; ++x)
         {
-            heights[y + 1][x + 1] = game.pn.octave_perlin(
+            block_heights[y + 1][x + 1] = game.pn.octave_perlin(
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
                  0.8f,
@@ -68,85 +68,72 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
         }
     }
 
-    for (ssize_t z = (location[2] * chunk_size); z < (location[2] * chunk_size) + chunk_size; ++z)
+    chunk->blocks.resize(chunk_size);
+    for (ssize_t _z = (location[2] * chunk_size), z = 0; _z < (location[2] * chunk_size) + chunk_size; ++_z, z = _z - (location[2] * chunk_size))
     {
-        for (ssize_t y = 1; y < chunk_size + 1; ++y)
+        chunk->blocks[z].resize(chunk_size);
+        for (ssize_t _y = 1, y = 0; _y < chunk_size + 1; ++_y, y = _y - 1)
         {
-            for (ssize_t x = 1; x < chunk_size + 1; ++x)
+            chunk->blocks[z][y].resize(chunk_size);
+            for (ssize_t _x = 1, x = 0; _x < chunk_size + 1; ++_x, x = _x - 1)
             {
-                ssize_t z_idx = z - (location[2] * chunk_size);
-                tmp_data[z_idx][y - 1][x - 1].faces = 0;
-
                 // Determine block types
                 // TODO: Add other block types at different z values
-                if (z > heights[y][x])
+                if (_z > block_heights[_y][_x])
                 {
-                    tmp_data[z_idx][y - 1][x - 1].type = BlockType::AIR;
+                    block_data[z][y][x].type = BlockType::AIR;
                     continue;
                 }
                 else
                 {
-                    tmp_data[z_idx][y - 1][x - 1].type = BlockType::GRASS;
+                    block_data[z][y][x].type = BlockType::GRASS;
                 }
 
                 // Bottom
-                if (z == 0)
+                if (_z == 0)
                 {
-                    tmp_data[z_idx][y - 1][x - 1].faces |= BOTTOM;
+                    block_data[z][y][x].faces |= BOTTOM;
                 }
 
                 // Top
-                if (z == heights[y][x])
+                if (_z == block_heights[_y][_x])
                 {
-                    tmp_data[z_idx][y - 1][x - 1].faces |= TOP;
+                    block_data[z][y][x].faces |= TOP;
                 }
 
                 // Front
-                if (z > heights[y][x - 1])
+                if (_z > block_heights[_y][_x - 1])
                 {
-                    tmp_data[z_idx][y - 1][x - 1].faces |= FRONT;
+                    block_data[z][y][x].faces |= FRONT;
                 }
 
                 // Back
-                if (z > heights[y][x + 1])
+                if (_z > block_heights[_y][_x + 1])
                 {
-                    tmp_data[z_idx][y - 1][x - 1].faces |= BACK;
+                    block_data[z][y][x].faces |= BACK;
                 }
 
                 // Left
-                if (z > heights[y - 1][x])
+                if (_z > block_heights[_y - 1][_x])
                 {
-                    tmp_data[z_idx][y - 1][x - 1].faces |= LEFT;
+                    block_data[z][y][x].faces |= LEFT;
                 }
 
                 // Right
-                if (z > heights[y + 1][x])
+                if (_z > block_heights[_y + 1][_x])
                 {
-                    tmp_data[z_idx][y - 1][x - 1].faces |= RIGHT;
+                    block_data[z][y][x].faces |= RIGHT;
                 }
-            }
-        }
-    }
 
-    // Create the actual Block objects for the chunk
-
-    chunk->blocks.resize(chunk_size);
-    for (ssize_t z = 0; z < chunk_size; ++z)
-    {
-        chunk->blocks[z].resize(chunk_size);
-        for (ssize_t y = 0; y < chunk_size; ++y)
-        {
-            chunk->blocks[z][y].resize(chunk_size);
-            for (ssize_t x = 0; x < chunk_size; ++x)
-            {
+                // Construct block
                 chunk->blocks[z][y][x] = block_factory.make_block(
-                    tmp_data[z][y][x].type,
+                    block_data[z][y][x].type,
                     vec3{
                         -(location[0] * chunk_size) + x,
                          (location[1] * chunk_size) + y,
                          (location[2] * chunk_size) + z
                     },
-                    tmp_data[z][y][x].faces
+                    block_data[z][y][x].faces
                 );
             }
         }
@@ -160,14 +147,12 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
 {
     GameState &game = GameState::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
-
     auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
 
     ssize_t chunk_size = game.chunk_size;
-    ssize_t height, height_lo, height_hi;
-
-    height_lo = KC::MAX_BLOCK_HEIGHT;
-    height_hi = 0;
+    ssize_t height_lo = KC::MAX_BLOCK_HEIGHT;
+    ssize_t height_hi = 0;
+    ssize_t height;
 
     std::vector<std::vector<uint8_t>> heights;
     heights.resize(chunk_size, std::vector<uint8_t>(chunk_size));
@@ -195,10 +180,10 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
         }
     }
 
-    for (int i = 0; i < (height_hi / chunk_size) + 1; ++i)
+    for (int i = std::max(0, (int)(height_lo / chunk_size) - 1); i < (height_hi / chunk_size) + 1; ++i)
     {
         vec3 tmp_location = { location[0], location[1], (float)i };
-        chunk_col.push_back(chunk_factory.make_chunk(tmp_location, ALL));
+        chunk_col.push_back(make_chunk(tmp_location, ALL));
     }
 
     return chunk_col;
