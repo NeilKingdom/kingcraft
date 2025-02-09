@@ -74,11 +74,10 @@ int main()
     Mvp mvp = Mvp(camera);
 
     GameState &game = GameState::get_instance();
-    ChunkFactory &chunk_factory = ChunkFactory::get_instance();
-    BlockFactory &block_factory = BlockFactory::get_instance();
+    ChunkManager chunk_mgr;
 
-    auto chunks = std::vector<std::shared_ptr<Chunk>>{};
-    auto chunk_col_coords = std::vector<std::array<float, 2>>{};
+    auto &chunks = chunk_mgr.chunks;
+    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
     auto chunk_col_coords_iter = chunk_col_coords.end();
 
     /*** Window and OpenGL context initialization ***/
@@ -141,7 +140,7 @@ int main()
 
     /*** Create skybox ***/
 
-    //auto skybox_tex_paths = cube_map_textures_t{
+    //auto skybox_tex_paths = std::array<std::filesystem::path, 6>{
     //    "res/textures/skybox_right.png",
     //    "res/textures/skybox_left.png",
     //    "res/textures/skybox_front.png",
@@ -149,22 +148,24 @@ int main()
     //    "res/textures/skybox_top.png",
     //    "res/textures/skybox_bottom.png"
     //};
-    auto skybox_tex_paths = cube_map_textures_t{};
+    auto skybox_tex_paths = std::array<std::filesystem::path, 6>{};
     std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
     SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
 
-    /*** Seed the RNG generator ***/
+    /*** Other setup ***/
 
     srandom(game.seed);
+    BlockFactory::populate_uv_cache();
 
     /*** Game loop ***/
 
     // Steps:
     // 1. Calculate the view matrix for the current frame based on the mouse cursor deltas
-    // 2. Calculate the points which make up the camera's frustum based on an arbitrary render distance 'd'
-    // 3. Create a bounding box around the frustum and loop through it. Determine which points lie within the frustum and add them to the list
+    // 2. Calculate the points which make up the camera's frustum based on the render distance
+    // 3. Determine which points lie within the frustum and add them to the list
     // 4. If the chunks list is populated, discard chunks which don't exist in the positions list
-    // 5. For any chunks which do not exist in the chunks list, but do exist in the positions list, generate them once per frame
+    // 5. For any chunks which do not exist in the chunks list, but do exist in the positions list,
+    //    generate the appropriate chunk column once per frame
     // 6. Once all chunks have been generated in the positions list, repeat the process
 
     while (game.is_running)
@@ -244,7 +245,7 @@ int main()
 
         if (!chunk_col_coords.empty())
         {
-            auto chunk_col = chunk_factory.make_chunk_column(vec2{ (*chunk_col_coords_iter)[0], (*chunk_col_coords_iter)[1] });
+            auto chunk_col = ChunkFactory::make_chunk_column(vec2{ (*chunk_col_coords_iter)[0], (*chunk_col_coords_iter)[1] });
             chunks.insert(chunks.end(), chunk_col.begin(), chunk_col.end());
         }
         chunk_col_coords_iter++;
@@ -257,7 +258,7 @@ int main()
         calculate_frame_rate(fps, frames_elapsed, since);
 
 #if 0
-        // Render once per 5 frames
+        // Update once per 5 frames
         if (frames_elapsed % 5 == 0)
         {
             glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);

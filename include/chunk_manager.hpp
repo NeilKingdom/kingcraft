@@ -11,15 +11,13 @@ public:
     std::vector<std::array<float, 2>> chunk_col_coords;     // List of chunk column (x, y) coordinates that are visible within the camera's frustum
 
     // Special member functions
-    ChunkManager(const ChunkManager &chunk_mgr) = delete;
-    ChunkManager &operator=(const ChunkManager &chunk_mgr) = delete;
+    ChunkManager();
     ~ChunkManager() = default;
 
     // General
-    static ChunkManager &get_instance();
-    std::optional<std::shared_ptr<Chunk>> get_chunk_at_location(const vec3 location) const;
+    std::optional<std::shared_ptr<Chunk>> get_chunk_at_location_ci(const vec3 location) const;
+    std::optional<std::shared_ptr<Chunk>> get_chunk_at_location_bi(const vec3 location) const;
 
-private:
-    // Special member functions
-    ChunkManager() = default;
+    static void add_block(std::shared_ptr<Chunk> &chunk, const BlockType type, const vec3 location);
+    static void remove_block(std::shared_ptr<Chunk> &chunk, const vec3 location);
 };

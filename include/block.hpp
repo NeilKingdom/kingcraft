@@ -8,6 +8,8 @@ enum class BlockType
     AIR,
     DIRT,
     GRASS,
+    WOOD,
+    LEAVES,
     STONE,
     SAND,
     WATER
@@ -18,6 +20,7 @@ class Block
 public:
     BlockType type;
     uint8_t faces;
+
     std::array<float, 6 * 5> top_face;
     std::array<float, 6 * 5> bottom_face;
     std::array<float, 6 * 5> right_face;

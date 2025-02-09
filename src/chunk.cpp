@@ -19,19 +19,13 @@ bool Chunk::operator==(const Chunk &chunk) const
         && this->location[2] == chunk.location[2];
 }
 
-void Chunk::add_block(const BlockType type, const vec3 location)
+void Chunk::squash_block_meshes()
 {
+    GameState &game = GameState::get_instance();
+    ssize_t chunk_size = game.chunk_size;
+    auto &chunk_mesh = mesh.vertices;
 
-}
-
-void Chunk::remove_block(const vec3 location)
-{
-    blocks[location[2]][location[1]][location[0]].type = BlockType::AIR;
-    // TODO: Regenerate neighboring blocks
-    mesh.vertices.clear();
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    chunk_mesh.clear();
 
     if (glIsBuffer(mesh.vbo))
     {
@@ -42,22 +36,13 @@ void Chunk::remove_block(const vec3 location)
         glDeleteVertexArrays(1, &mesh.vao);
     }
 
-    squash_block_meshes();
-}
-
-void Chunk::squash_block_meshes()
-{
-    GameState &game = GameState::get_instance();
-    ssize_t chunk_size = game.chunk_size;
-    auto &chunk_mesh = mesh.vertices;
-
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
         for (ssize_t y = 0; y < chunk_size; ++y)
         {
             for (ssize_t x = 0; x < chunk_size; ++x)
              {
-                Block block = blocks[z][y][x];
+                Block &block = blocks[z][y][x];
                 if (block.type != BlockType::AIR && block.faces != 0)
                 {
                     if (IS_BIT_SET(block.faces, BOTTOM))
@@ -88,6 +73,7 @@ void Chunk::squash_block_meshes()
              }
         }
     }
+    chunk_mesh.shrink_to_fit();
 
     glGenBuffers(1, &mesh.vbo);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);

@@ -2,10 +2,8 @@
 
 #include "common.hpp"
 #include "block.hpp"
+#include "block_factory.hpp"
 #include "game_state.hpp"
-
-// Forward declaration
-class ChunkFactory;
 
 class Chunk
 {
@@ -20,13 +18,8 @@ public:
     ~Chunk();
 
     // General
-    void add_block(const BlockType type, const vec3 location);
-    void remove_block(const vec3 location);
+    void squash_block_meshes();
 
     // Operator overloads
     bool operator==(const Chunk &chunk) const;
-
-private:
-    friend ChunkFactory;
-    void squash_block_meshes();
 };

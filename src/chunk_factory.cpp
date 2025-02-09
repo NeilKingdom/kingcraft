@@ -8,15 +8,14 @@
 
 #include "chunk_factory.hpp"
 
-/**
- * @brief Returns the single instance of ChunkFactory.
- * @since 24-10-2024
- * @returns The ChunkFactory instance
- */
-ChunkFactory &ChunkFactory::get_instance()
-{
-    static ChunkFactory instance;
-    return instance;
+static unsigned hash_coord_to_range(const vec3 location, const unsigned min, const unsigned max) {
+    size_t h1 = std::hash<int>{}(location[0]);
+    size_t h2 = std::hash<int>{}(location[1]);
+    size_t h3 = std::hash<int>{}(location[2]);
+    size_t combined_hash = h1 ^ (h2 << 1) ^ (h3 << 2);
+
+    // Map to range (min..max)
+    return static_cast<unsigned>(combined_hash % (max - min + 1)) + min;
 }
 
 /**
@@ -26,11 +25,11 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces) const
+std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces)
 {
-    auto chunk = std::make_shared<Chunk>(Chunk());
-    BlockFactory &block_factory = BlockFactory::get_instance();
     GameState &game = GameState::get_instance();
+    auto chunk = std::make_shared<Chunk>(Chunk());
+
     ssize_t chunk_size = game.chunk_size;
     assert(chunk_size > 1);
 
@@ -68,14 +67,19 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
         }
     }
 
-    chunk->blocks.resize(chunk_size);
-    for (ssize_t _z = (location[2] * chunk_size), z = 0; _z < (location[2] * chunk_size) + chunk_size; ++_z, z = _z - (location[2] * chunk_size))
+    chunk->blocks.resize(
+        chunk_size,
+        std::vector<std::vector<Block>>(
+            chunk_size,
+            std::vector<Block>(chunk_size, Block())
+        )
+    );
+
+    for (ssize_t z = 0, _z = (location[2] * chunk_size); z < chunk_size; ++z, ++_z)
     {
-        chunk->blocks[z].resize(chunk_size);
-        for (ssize_t _y = 1, y = 0; _y < chunk_size + 1; ++_y, y = _y - 1)
+        for (ssize_t y = 0, _y = 1; y < chunk_size; ++y, ++_y)
         {
-            chunk->blocks[z][y].resize(chunk_size);
-            for (ssize_t _x = 1, x = 0; _x < chunk_size + 1; ++_x, x = _x - 1)
+            for (ssize_t x = 0, _x = 1; x < chunk_size; ++x, ++_x)
             {
                 // Determine block types
                 // TODO: Add other block types at different z values
@@ -125,16 +129,28 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
                     block_data[z][y][x].faces |= RIGHT;
                 }
 
+                vec3 block_location = {
+                    -(location[0] * chunk_size) + x,
+                     (location[1] * chunk_size) + y,
+                     (location[2] * chunk_size) + z
+                };
+
                 // Construct block
-                chunk->blocks[z][y][x] = block_factory.make_block(
+                chunk->blocks[z][y][x] = BlockFactory::make_block(
                     block_data[z][y][x].type,
-                    vec3{
-                        -(location[0] * chunk_size) + x,
-                         (location[1] * chunk_size) + y,
-                         (location[2] * chunk_size) + z
-                    },
+                    block_location,
                     block_data[z][y][x].faces
                 );
+
+                // Pseudo-random chance to plant tree here (based off block hash)
+                if (_z == block_heights[_y][_x] && hash_coord_to_range(block_location, 0, 20) == 0)
+                {
+                    ChunkFactory::plant_tree(chunk, vec3{
+                        (float)x,
+                        (float)y,
+                        (float)(_z % 16),
+                    });
+                }
             }
         }
     }
@@ -143,10 +159,9 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
     return chunk;
 }
 
-std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 location) const
+std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 location)
 {
     GameState &game = GameState::get_instance();
-    ChunkFactory &chunk_factory = ChunkFactory::get_instance();
     auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
 
     ssize_t chunk_size = game.chunk_size;
@@ -180,7 +195,7 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
         }
     }
 
-    for (int i = std::max(0, (int)(height_lo / chunk_size) - 1); i < (height_hi / chunk_size) + 1; ++i)
+    for (ssize_t i = std::max(0, (int)(height_lo / chunk_size) - 1); i < (height_hi / chunk_size) + 1; ++i)
     {
         vec3 tmp_location = { location[0], location[1], (float)i };
         chunk_col.push_back(make_chunk(tmp_location, ALL));
@@ -188,3 +203,48 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
 
     return chunk_col;
 }
+
+void ChunkFactory::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location)
+{
+    // Trunk
+    for (int i = 1; i <= 6; ++i)
+    {
+        ChunkManager::add_block(chunk, BlockType::WOOD, vec3{ location[0], location[1], location[2] + i });
+    }
+
+    // Leaves (two 5x5 layers)
+    for (int y = -2; y <= 2; ++y)
+    {
+        for (int x = -2; x <= 2; ++x)
+        {
+            if (x == 0 && y == 0)
+            {
+                continue;
+            }
+            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 4 });
+            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 5 });
+        }
+    }
+
+    // Leaves (first 3x3 layer)
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
+        {
+            if (x == 0 && y == 0)
+            {
+                continue;
+            }
+            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 6 });
+            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 6 });
+        }
+    }
+
+    // Leaves (second 3x3 layer: x-shaped)
+    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] + 0, location[2] + 7 });
+    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 1, location[1] + 0, location[2] + 7 });
+    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] - 1, location[1] + 0, location[2] + 7 });
+    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] + 1, location[2] + 7 });
+    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] - 1, location[2] + 7 });
+}
+

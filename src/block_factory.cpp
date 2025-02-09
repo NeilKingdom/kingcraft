@@ -9,25 +9,13 @@
 #include "block_factory.hpp"
 
 /**
- * @brief Returns the single instance of BlockFactory.
- * @since 16-10-2024
- * @returns The BlockFactory instance
- */
-BlockFactory &BlockFactory::get_instance()
-{
-    static BlockFactory instance;
-    instance.populate_uv_cache();
-    return instance;
-}
-
-/**
  * @brief Returns a tuple of UV coordinates for each face of the block based on __type__.
  * @since 24-10-2024
  * @param[in] type The block type that we are retrieving UV coordinates for
  * @returns Optionally returns a tuple of UV coordinates for the top, sides, and bottom of the block, respectively
  */
 std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>
-BlockFactory::get_uv_coords(const BlockType type) const
+BlockFactory::get_uv_coords(const BlockType type)
 {
     unsigned row, col;
     float tx_offset, ty_offset;
@@ -39,8 +27,9 @@ BlockFactory::get_uv_coords(const BlockType type) const
             ty_offset = 0.0f;
             tx_offset = 2.0f;
 
+            // Top + Sides + Bottom
             uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::GRASS:
             ty_offset = 0.0f;
@@ -48,17 +37,46 @@ BlockFactory::get_uv_coords(const BlockType type) const
             // Top
             tx_offset = 0.0f;
             uv_top[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = ty_offset;
+            uv_top[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Sides
             tx_offset = 1.0f;
             uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_sides[1] = ty_offset;
+            uv_sides[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Bottom
             tx_offset = 2.0f;
             uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_bottom[1] = ty_offset;
+            uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::WOOD:
+            ty_offset = 0.0f;
+
+            // Top + Bottom
+            tx_offset = 3.0f;
+            uv_top[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+
+            // Sides
+            tx_offset = 4.0f;
+            uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_sides[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::LEAVES:
+            ty_offset = 0.0f;
+            tx_offset = 5.0f;
+
+            // Top + Sides + Bottom
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::SAND:
+            ty_offset = 1.0f;
+            tx_offset = 0.0f;
+
+            // Top + Sides + Bottom
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         default:
             return std::nullopt;
@@ -69,7 +87,11 @@ BlockFactory::get_uv_coords(const BlockType type) const
 
 void BlockFactory::populate_uv_cache()
 {
-    m_uv_cache[BlockType::GRASS] = get_uv_coords(BlockType::GRASS);
+    uv_cache[BlockType::DIRT]       = get_uv_coords(BlockType::DIRT);
+    uv_cache[BlockType::GRASS]      = get_uv_coords(BlockType::GRASS);
+    uv_cache[BlockType::WOOD]       = get_uv_coords(BlockType::WOOD);
+    uv_cache[BlockType::LEAVES]     = get_uv_coords(BlockType::LEAVES);
+    uv_cache[BlockType::SAND]       = get_uv_coords(BlockType::SAND);
     // TODO: ...
 }
 
@@ -100,7 +122,7 @@ Block BlockFactory::make_block(
     constexpr float uw = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
     constexpr float vh = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
 
-    auto uv = m_uv_cache[type].value_or(
+    auto uv = uv_cache[type].value_or(
         std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
     );
 
