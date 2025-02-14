@@ -3,20 +3,32 @@
  * @author Neil Kingdom
  * @since 16-10-2024
  * @version 1.0
- * @brief A singleton class which constructs Block objects.
+ * @brief A factory class for creating blocks.
  */
 
 #include "block_factory.hpp"
 
 /**
- * @brief Returns the single instance of BlockFactory.
- * @since 16-10-2024
- * @returns The BlockFactory instance
+ * @brief Default constructor for BlockFactory class.
+ * @since 13-02-2025
  */
-BlockFactory &BlockFactory::get_instance()
+BlockFactory::BlockFactory()
 {
-    static BlockFactory instance;
-    return instance;
+    populate_uv_cache();
+}
+
+/**
+ * @brief Populates the UV coordinate cache for later usage.
+ * @since 13-02-2025
+ */
+void BlockFactory::populate_uv_cache()
+{
+    uv_cache[BlockType::DIRT]       = get_uv_coords(BlockType::DIRT);
+    uv_cache[BlockType::GRASS]      = get_uv_coords(BlockType::GRASS);
+    uv_cache[BlockType::WOOD]       = get_uv_coords(BlockType::WOOD);
+    uv_cache[BlockType::LEAVES]     = get_uv_coords(BlockType::LEAVES);
+    uv_cache[BlockType::SAND]       = get_uv_coords(BlockType::SAND);
+    // TODO: ...
 }
 
 /**
@@ -26,7 +38,7 @@ BlockFactory &BlockFactory::get_instance()
  * @returns Optionally returns a tuple of UV coordinates for the top, sides, and bottom of the block, respectively
  */
 std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>
-BlockFactory::get_uv_coords(const BlockType type) const
+BlockFactory::get_uv_coords(const BlockType type)
 {
     unsigned row, col;
     float tx_offset, ty_offset;
@@ -38,8 +50,9 @@ BlockFactory::get_uv_coords(const BlockType type) const
             ty_offset = 0.0f;
             tx_offset = 2.0f;
 
+            // Top + Sides + Bottom
             uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::GRASS:
             ty_offset = 0.0f;
@@ -47,17 +60,46 @@ BlockFactory::get_uv_coords(const BlockType type) const
             // Top
             tx_offset = 0.0f;
             uv_top[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = ty_offset;
+            uv_top[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Sides
             tx_offset = 1.0f;
             uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_sides[1] = ty_offset;
+            uv_sides[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Bottom
             tx_offset = 2.0f;
             uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_bottom[1] = ty_offset;
+            uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::WOOD:
+            ty_offset = 0.0f;
+
+            // Top + Bottom
+            tx_offset = 3.0f;
+            uv_top[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+
+            // Sides
+            tx_offset = 4.0f;
+            uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_sides[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::LEAVES:
+            ty_offset = 0.0f;
+            tx_offset = 5.0f;
+
+            // Top + Sides + Bottom
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::SAND:
+            ty_offset = 1.0f;
+            tx_offset = 0.0f;
+
+            // Top + Sides + Bottom
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         default:
             return std::nullopt;
@@ -67,43 +109,33 @@ BlockFactory::get_uv_coords(const BlockType type) const
 }
 
 /**
- * @brief Creates a single block based on a set of given parameters.
+ * @brief Creates a single block based on the given parameters.
  * @since 16-10-2024
- * @param[in] type The block type of the block being created e.g. dirt, grass, etc.
+ * @param[in] type The block type of the block being created e.g., dirt, grass, etc.
  * @param[in] location A vec3 which determines the location of the block relative to the parent chunk
  * @param[in] sides A mask which determines which sides of the block will be rendered
- * @returns A Block object with the specified attributes
+ * @returns A Block object which matches the requested attributes
  */
 Block BlockFactory::make_block(
     const BlockType type,
     const vec3 location,
-    const uint8_t sides
+    const uint8_t faces
 )
 {
-    typedef const std::array<float, 30> face_t;
-    auto block = Block(type);
-
-    if (sides == 0 || block.type == BlockType::AIR)
+    if (faces == 0 || type == BlockType::AIR)
     {
-        return Block(BlockType::AIR);
+        return Block();
     }
 
-    block.vertices.reserve(sizeof(face_t) / sizeof(float) * KC::CUBE_FACES);
-
-    const auto add_face = [&](face_t f)
-    {
-        for (auto i = f.begin(); i != f.end(); ++i)
-        {
-            block.vertices.emplace_back(*i);
-        }
-    };
+    Block block = Block(type);
+    block.faces = faces;
 
     // UV coordinates
     constexpr float uv_pad = 0.005f;
     constexpr float uw = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
     constexpr float vh = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
 
-    auto uv = get_uv_coords(type).value_or(
+    auto uv = uv_cache[type].value_or(
         std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
     );
 
@@ -130,7 +162,7 @@ Block BlockFactory::make_block(
     vec3 v6 = {  0.5f + location[0], -0.5f + location[1], -0.5f + location[2] };
     vec3 v7 = {  0.5f + location[0],  0.5f + location[1], -0.5f + location[2] };
 
-    const face_t right = {
+    block.right_face = {
         v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
         v7[0], v7[1], v7[2], uv_sides[0] + uw,     uv_sides[1] + vh,
         v3[0], v3[1], v3[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
@@ -139,7 +171,7 @@ Block BlockFactory::make_block(
         v5[0], v5[1], v5[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
-    const face_t left = {
+    block.left_face = {
         v4[0], v4[1], v4[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
         v2[0], v2[1], v2[2], uv_sides[0] + uw,     uv_sides[1] + vh,
         v6[0], v6[1], v6[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
@@ -148,7 +180,7 @@ Block BlockFactory::make_block(
         v0[0], v0[1], v0[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
-    const face_t front = {
+    block.front_face = {
         v0[0], v0[1], v0[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
         v3[0], v3[1], v3[2], uv_sides[0] + uw,     uv_sides[1] + vh,
         v2[0], v2[1], v2[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
@@ -157,7 +189,7 @@ Block BlockFactory::make_block(
         v1[0], v1[1], v1[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
-    const face_t back = {
+    block.back_face = {
         v5[0], v5[1], v5[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,
         v6[0], v6[1], v6[2], uv_sides[0] + uw,     uv_sides[1] + vh,
         v7[0], v7[1], v7[2], uv_sides[0] + uv_pad, uv_sides[1] + vh,
@@ -166,7 +198,7 @@ Block BlockFactory::make_block(
         v4[0], v4[1], v4[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad
     };
 
-    const face_t bottom = {
+    block.bottom_face = {
         v2[0], v2[1], v2[2], uv_bottom[0] + uv_pad, uv_bottom[1] + vh,
         v3[0], v3[1], v3[2], uv_bottom[0] + uw,     uv_bottom[1] + vh,
         v6[0], v6[1], v6[2], uv_bottom[0] + uv_pad, uv_bottom[1] + uv_pad,
@@ -175,7 +207,7 @@ Block BlockFactory::make_block(
         v3[0], v3[1], v3[2], uv_bottom[0] + uw,     uv_bottom[1] + vh
     };
 
-    const face_t top = {
+    block.top_face = {
         v4[0], v4[1], v4[2], uv_top[0] + uv_pad, uv_top[1] + uv_pad,
         v1[0], v1[1], v1[2], uv_top[0] + uw,     uv_top[1] + vh,
         v0[0], v0[1], v0[2], uv_top[0] + uv_pad, uv_top[1] + vh,
@@ -184,37 +216,5 @@ Block BlockFactory::make_block(
         v5[0], v5[1], v5[2], uv_top[0] + uw,     uv_top[1] + uv_pad
     };
 
-    if (IS_BIT_SET(sides, RIGHT))
-    {
-        add_face(right);
-        SET_BIT(block.faces, RIGHT);
-    }
-    if (IS_BIT_SET(sides, LEFT))
-    {
-        add_face(left);
-        SET_BIT(block.faces, LEFT);
-    }
-    if (IS_BIT_SET(sides, BACK))
-    {
-        add_face(back);
-        SET_BIT(block.faces, BACK);
-    }
-    if (IS_BIT_SET(sides, FRONT))
-    {
-        add_face(front);
-        SET_BIT(block.faces, FRONT);
-    }
-    if (IS_BIT_SET(sides, BOTTOM))
-    {
-        add_face(bottom);
-        SET_BIT(block.faces, BOTTOM);
-    }
-    if (IS_BIT_SET(sides, TOP))
-    {
-        add_face(top);
-        SET_BIT(block.faces, TOP);
-    }
-
-    block.vertices.shrink_to_fit();
     return block;
 }

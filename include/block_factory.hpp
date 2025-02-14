@@ -10,18 +10,16 @@ class BlockFactory
 {
 public:
     // Special member functions
-    BlockFactory(const BlockFactory &factory) = delete;
-    BlockFactory &operator=(const BlockFactory &factory) = delete;
+    BlockFactory();
     ~BlockFactory() = default;
 
     // General
-    static BlockFactory &get_instance();
-    Block make_block(const BlockType type, const vec3 location, const uint8_t sides);
+    Block make_block(const BlockType type, const vec3 location, const uint8_t faces);
 
 private:
-    // Special member functions
-    BlockFactory() = default;
+    std::map<BlockType, std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>> uv_cache;
 
     // General
-    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type) const;
+    void populate_uv_cache();
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type);
 };

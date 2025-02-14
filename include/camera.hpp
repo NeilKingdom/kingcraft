@@ -2,11 +2,12 @@
 
 #include "common.hpp"
 #include "constants.hpp"
-#include "game_state.hpp"
+#include "settings.hpp"
 #include "chunk.hpp"
 
-struct CullingFrustum
+class CullingFrustum
 {
+public:
     std::array<float, 2> v_eye;
     std::array<float, 2> v_left;
     std::array<float, 2> v_right;
@@ -44,8 +45,8 @@ public:
     // General
     void calculate_view_matrix();
     void update_rotation_from_pointer(const KCWindow &win);
-    CullingFrustum get_frustum_coords(size_t render_distance);
-    std::optional<Block> cast_ray(const std::vector<std::shared_ptr<Chunk>> &chunks, const unsigned n_iters) const;
+    CullingFrustum get_frustum_coords(const size_t render_distance) const;
+    //std::optional<Block> cast_ray(const std::vector<std::shared_ptr<Chunk>> &chunks, const unsigned n_iters) const;
 
 private:
     float camera_yaw;   // Rotation about the z axis

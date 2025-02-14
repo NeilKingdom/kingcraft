@@ -46,13 +46,6 @@
 #define IS_BIT_SET(mask, bit) (((mask) & (bit)) == (bit))
 #define TOGGLE_BIT(mask, bit) ((mask) ^= (bit))
 
-// Custom cursor (right now only X11 is supported)
-struct KCCursor
-{
-    Cursor cursor;
-    Pixmap cpmap;
-};
-
 // Window data (right now only X11 is supported)
 struct KCWindow
 {
@@ -63,7 +56,13 @@ struct KCWindow
     XEvent                  xev;    // Stores the event type of the most recently received event
     GLXContext              glx;    // OpenGL context
     Colormap               cmap;    // Colormap for the X window
-    KCCursor                cur;    // Custom cursor to replace the default one
+
+    // Custom cursor (right now only X11 is supported)
+    struct KCCursor
+    {
+        Cursor cursor;
+        Pixmap cpmap;
+    } cur;
 };
 
 enum BlockFace : uint8_t

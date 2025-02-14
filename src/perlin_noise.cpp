@@ -1,7 +1,11 @@
 #include "perlin_noise.hpp"
 
-PerlinNoise::PerlinNoise(const uint8_t octaves)
-    : m_octaves(octaves)
+/**
+ * @brief Default constructor for PerlinNoise generator.
+ * @since 02-01-2025
+ * @param[in] octaves Optional parameter which specifies the amount of octaves used in octave_perlin()
+ */
+PerlinNoise::PerlinNoise()
 {
 	m_permutations_table.resize(256);
     for (size_t i = 0; i < m_permutations_table.size(); ++i)
@@ -86,6 +90,7 @@ float PerlinNoise::perlin(const float x, const float y, const float z)
  * @param[in] y The y component of the sampled coordinate
  * @param[in] z The z component of the sampled coordinate
  * @param[in] scale Scaling factor for noise
+ * @param[in] octaves The amount of samples to take
  * @param[in] lo The minimum value that can be returned
  * @param[in] hi The maximum value that can be returned
  * @returns A value between __lo__ and __hi__ for the sampled point
@@ -95,6 +100,7 @@ float PerlinNoise::octave_perlin(
     const float y,
     const float z,
     const float scale,
+    const uint8_t octaves,
     const unsigned lo,
     const unsigned hi
 )
@@ -104,7 +110,7 @@ float PerlinNoise::octave_perlin(
     float max_amp = 0.0f;
     float freq = scale;
 
-    for (uint8_t i = 0; i < m_octaves; ++i)
+    for (uint8_t i = 0; i < octaves; ++i)
     {
         noise += perlin(x * freq, y * freq, z * freq) * amp;
         max_amp += amp;
@@ -117,6 +123,7 @@ float PerlinNoise::octave_perlin(
     return noise;
 }
 
+// TODO: Document.
 /**
  * @brief Calculate the gradient vector for a given grid point.
  * @since 02-01-2025

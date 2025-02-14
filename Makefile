@@ -7,16 +7,13 @@ CCFLAGS_RELEASE = -Ofast
 SRC_DIR = src
 OBJ_DIR = obj
 INC_DIR = include
-GUI_DIR = res/vendor/imgui
 
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
-DEPS := $(wildcard $(INC_DIR)/*.hpp) $(wildcard $(GUI_DIR)/*.hpp)
+DEPS := $(wildcard $(INC_DIR)/*.hpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
-GUI_SRCS := $(wildcard $(GUI_DIR)/*.cpp)
-GUI_OBJS := $(patsubst $(GUI_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(GUI_SRCS))
 
-CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I$(GUI_DIR) -std=c++20 -Wall -Wextra -Wformat
-LDFLAGS += -lX11 -lGL -lGLEW -llac -limc
+CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I./res/vendor/imgui -std=c++20 -Wall -Wextra
+LDFLAGS += -L./ -lX11 -lGL -lGLEW -llac -limc -l:imgui.a
 
 BIN := kingcraft
 
@@ -31,15 +28,11 @@ clean:
 rebuild: clean all
 
 # Make the binary
-$(BIN): $(OBJS) $(GUI_OBJS)
+$(BIN): $(OBJS) ./imgui.a
 	$(CC) $^ -o $@ $(CCFLAGS) $(LDFLAGS)
 
-# Intermediate objects for the main application
+# Intermediate objects
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CC) $< -c -o $@ $(CCFLAGS) $(LDFLAGS)
-
-# Intermediate objects for ImGui
-$(OBJ_DIR)/%.o: $(GUI_DIR)/%.cpp
 	$(CC) $< -c -o $@ $(CCFLAGS) $(LDFLAGS)
 
 .PHONY: clean all rebuild

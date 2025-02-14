@@ -31,9 +31,9 @@ Texture::Texture(
     glBindTexture(GL_TEXTURE_2D, id);
 
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB,
+        GL_TEXTURE_2D, 0, GL_RGBA,
         pixmap->width, pixmap->height,
-        0, GL_RGB, GL_UNSIGNED_BYTE,
+        0, GL_RGBA, GL_UNSIGNED_BYTE,
         pixmap->data
     );
 

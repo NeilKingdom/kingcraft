@@ -1,7 +1,7 @@
 #include "skybox.hpp"
 
 SkyBox::SkyBox(
-    const cube_map_textures_t textures,
+    const std::array<std::filesystem::path, 6> tex_paths,
     const unsigned min_filter,
     const unsigned mag_filter,
     const bool make_mipmap
@@ -14,13 +14,13 @@ SkyBox::SkyBox(
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-    for (auto i = textures.begin(); i != textures.end(); ++i)
+    for (auto i = tex_paths.begin(); i != tex_paths.end(); ++i)
     {
         png_hndl = imc_png_open(std::filesystem::absolute(*i).c_str());
         pixmap = imc_png_parse(png_hndl);
 
         glTexImage2D(
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i - textures.begin()),
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i - tex_paths.begin()),
             0, GL_RGBA, pixmap->width, pixmap->height,
             0, GL_RGBA, GL_UNSIGNED_BYTE, pixmap->data
         );
