@@ -7,13 +7,19 @@
  */
 
 #include "settings.hpp"
+#include "camera.hpp"
 
 extern IMGUI_IMPL_API int ImGui_ImplX11_EventHandler(XEvent &event, XEvent *next_event);
 
-static void _draw_minimap(KCWindow &win, Camera &camera, GameState &game, float zoom = 1.0f)
+Settings &Settings::get_instance()
+{
+    static Settings instance;
+    return instance;
+}
+
+void Settings::draw_minimap(KCWindow &win, Camera &camera, const float zoom)
 {
     bool show_map = false;
-    ssize_t chunk_size = game.chunk_size;
 
     // Make collapsible
     if (ImGui::CollapsingHeader("Camera POV", ImGuiTreeNodeFlags_DefaultOpen))
@@ -148,7 +154,7 @@ static void _draw_minimap(KCWindow &win, Camera &camera, GameState &game, float 
  * @since 07-05-2024
  * @param[in] win Reference to the application's window
  */
-void init_imgui(const KCWindow &win)
+void Settings::init_imgui(const KCWindow &win)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -168,7 +174,7 @@ void init_imgui(const KCWindow &win)
  * @since 07-05-2024
  * @param[in] win Reference to the application's window
  */
-void process_imgui_events(KCWindow &win)
+void Settings::process_imgui_events(KCWindow &win)
 {
     while (XPending(win.dpy) > 0)
     {
@@ -189,10 +195,8 @@ void process_imgui_events(KCWindow &win)
  * @param[in] win Reference to the application's window
  * @param[in] camera A reference to a Camera object that manages the camera's state
  */
-void render_imgui_frame(KCWindow &win, Camera &camera)
+void Settings::render_imgui_frame(KCWindow &win, Camera &camera)
 {
-    GameState &game = GameState::get_instance();
-
     // Start a new ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplX11_NewFrame();
@@ -200,12 +204,12 @@ void render_imgui_frame(KCWindow &win, Camera &camera)
 
     // ImGui widgets
     ImGui::Begin("KingCraft");
-    ImGui::SliderFloat("FOV", &game.fov, 89.0f, 91.0f);
+    ImGui::SliderFloat("FOV", &fov, 89.0f, 91.0f);
     ImGui::SliderFloat("Camera X Pos", &camera.v_eye[0], camera.v_eye[0] - 1.0f, camera.v_eye[0] + 1.0f);
     ImGui::SliderFloat("Camera Y Pos", &camera.v_eye[1], camera.v_eye[1] - 1.0f, camera.v_eye[1] + 1.0f);
     ImGui::SliderFloat("Camera Z Pos", &camera.v_eye[2], camera.v_eye[2] - 1.0f, camera.v_eye[2] + 1.0f);
-    ImGui::Checkbox("Game Running", &game.is_running);
-    _draw_minimap(win, camera, game, 1.5f);
+    ImGui::Checkbox("Game Running", &is_running);
+    draw_minimap(win, camera, 1.5f);
     ImGui::End();
 
     // Render frame

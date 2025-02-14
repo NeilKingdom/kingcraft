@@ -3,19 +3,26 @@
  * @author Neil Kingdom
  * @since 16-10-2024
  * @version 1.0
- * @brief A singleton class which constructs Chunk objects.
+ * @brief A factory class which constructs Chunk objects.
  */
 
 #include "chunk_factory.hpp"
 
-static unsigned hash_coord_to_range(const vec3 location, const unsigned min, const unsigned max) {
-    size_t h1 = std::hash<int>{}(location[0]);
-    size_t h2 = std::hash<int>{}(location[1]);
-    size_t h3 = std::hash<int>{}(location[2]);
-    size_t combined_hash = h1 ^ (h2 << 1) ^ (h3 << 2);
-
-    // Map to range (min..max)
-    return static_cast<unsigned>(combined_hash % (max - min + 1)) + min;
+/**
+ * @brief Produces a pseudo-random hash based off __location__ and maps it to the range __min__..__max__.
+ * @since 13-02-2025
+ * @param[in] location A vec3, from which the hash is produced
+ * @param[in] min The minimum value that can be produced
+ * @param[in] max The maximum value that can be produced
+ * @returns A pseudo-random number in the range __min__..__max__
+ */
+size_t ChunkFactory::hash_coord_to_range(const vec3 location, const size_t min, const size_t max) const
+{
+    size_t hx = std::hash<int>{}(location[0]);
+    size_t hy = std::hash<int>{}(location[1]);
+    size_t hz = std::hash<int>{}(location[2]);
+    size_t hash = hx ^ (hy << 1) ^ (hz << 2);
+    return hash % ((max - min + 1) + min);
 }
 
 /**
@@ -25,12 +32,13 @@ static unsigned hash_coord_to_range(const vec3 location, const unsigned min, con
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8_t faces)
+std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 location, const uint8_t faces) const
 {
-    GameState &game = GameState::get_instance();
+    BlockFactory block_factory;
+    Settings &settings = Settings::get_instance();
     auto chunk = std::make_shared<Chunk>(Chunk());
 
-    ssize_t chunk_size = game.chunk_size;
+    ssize_t chunk_size = settings.chunk_size;
     assert(chunk_size > 1);
 
     std::memcpy(chunk->location, location, sizeof(vec3));
@@ -58,11 +66,11 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
     {
         for (ssize_t x = -1; x < chunk_size + 1; ++x)
         {
-            block_heights[y + 1][x + 1] = game.pn.octave_perlin(
+            block_heights[y + 1][x + 1] = pn.octave_perlin(
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
-                 0.8f,
-                 0.05f, KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
+                 0.8f, 0.05f, 3,
+                 KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
         }
     }
@@ -136,21 +144,20 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
                 };
 
                 // Construct block
-                chunk->blocks[z][y][x] = BlockFactory::make_block(
+                chunk->blocks[z][y][x] = block_factory.make_block(
                     block_data[z][y][x].type,
                     block_location,
                     block_data[z][y][x].faces
                 );
 
                 // Pseudo-random chance to plant tree here (based off block hash)
-                if (_z == block_heights[_y][_x] && hash_coord_to_range(block_location, 0, 20) == 0)
-                {
-                    ChunkFactory::plant_tree(chunk, vec3{
-                        (float)x,
-                        (float)y,
-                        (float)(_z % 16),
-                    });
-                }
+                //if (_z == block_heights[_y][_x] && hash_coord_to_range(block_location, 0, 20) == 0)
+                //{
+                //    ChunkFactory::plant_tree(
+                //        chunk,
+                //        vec3{ (float)x, (float)y, (float)(_z % 16) }
+                //    );
+                //}
             }
         }
     }
@@ -159,12 +166,19 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 location, const uint8
     return chunk;
 }
 
-std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 location)
+/**
+ * @brief Generates all chunks within a given chunk column.
+ * @since 13-02-2025
+ * @param[in] location A vec2 specifying the (x, y) location of the chunk column to generate
+ * @returns A vector of chunks that make up the chunk column
+ */
+std::vector<std::shared_ptr<Chunk>>
+ChunkFactory::make_chunk_column(PerlinNoise &pn, const vec2 location) const
 {
-    GameState &game = GameState::get_instance();
+    Settings &settings = Settings::get_instance();
     auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
 
-    ssize_t chunk_size = game.chunk_size;
+    ssize_t chunk_size = settings.chunk_size;
     ssize_t height_lo = KC::MAX_BLOCK_HEIGHT;
     ssize_t height_hi = 0;
     ssize_t height;
@@ -176,11 +190,11 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
     {
         for (ssize_t x = 0; x < chunk_size; ++x)
         {
-            height = heights[y][x] = game.pn.octave_perlin(
+            height = heights[y][x] = pn.octave_perlin(
                 -location[0] * chunk_size + x,
                  location[1] * chunk_size + y,
-                 0.8f,
-                 0.05f, KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
+                 0.8f, 0.05f, 3,
+                 KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
 
             if (height < height_lo)
@@ -198,53 +212,8 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(const vec2 l
     for (ssize_t i = std::max(0, (int)(height_lo / chunk_size) - 1); i < (height_hi / chunk_size) + 1; ++i)
     {
         vec3 tmp_location = { location[0], location[1], (float)i };
-        chunk_col.push_back(make_chunk(tmp_location, ALL));
+        chunk_col.push_back(make_chunk(pn, tmp_location, ALL));
     }
 
     return chunk_col;
 }
-
-void ChunkFactory::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location)
-{
-    // Trunk
-    for (int i = 1; i <= 6; ++i)
-    {
-        ChunkManager::add_block(chunk, BlockType::WOOD, vec3{ location[0], location[1], location[2] + i });
-    }
-
-    // Leaves (two 5x5 layers)
-    for (int y = -2; y <= 2; ++y)
-    {
-        for (int x = -2; x <= 2; ++x)
-        {
-            if (x == 0 && y == 0)
-            {
-                continue;
-            }
-            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 4 });
-            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 5 });
-        }
-    }
-
-    // Leaves (first 3x3 layer)
-    for (int y = -1; y <= 1; ++y)
-    {
-        for (int x = -1; x <= 1; ++x)
-        {
-            if (x == 0 && y == 0)
-            {
-                continue;
-            }
-            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 6 });
-            ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 6 });
-        }
-    }
-
-    // Leaves (second 3x3 layer: x-shaped)
-    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] + 0, location[2] + 7 });
-    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 1, location[1] + 0, location[2] + 7 });
-    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] - 1, location[1] + 0, location[2] + 7 });
-    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] + 1, location[2] + 7 });
-    ChunkManager::add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] - 1, location[2] + 7 });
-}
-

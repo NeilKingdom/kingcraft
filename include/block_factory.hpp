@@ -5,20 +5,21 @@
 #include "block.hpp"
 
 typedef std::array<float, 2> UvCoords;
-static std::map<BlockType, std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>> uv_cache;
 
 class BlockFactory
 {
 public:
     // Special member functions
-    BlockFactory() = default;
+    BlockFactory();
     ~BlockFactory() = default;
 
     // General
-    static Block make_block(const BlockType type, const vec3 location, const uint8_t faces);
-    static void populate_uv_cache();
+    Block make_block(const BlockType type, const vec3 location, const uint8_t faces);
 
 private:
+    std::map<BlockType, std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>> uv_cache;
+
     // General
-    static std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type);
+    void populate_uv_cache();
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type);
 };

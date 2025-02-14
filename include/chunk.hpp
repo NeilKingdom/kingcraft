@@ -3,7 +3,8 @@
 #include "common.hpp"
 #include "block.hpp"
 #include "block_factory.hpp"
-#include "game_state.hpp"
+#include "settings.hpp"
+#include "mesh.hpp"
 
 class Chunk
 {
@@ -19,7 +20,9 @@ public:
 
     // General
     void squash_block_meshes();
-
-    // Operator overloads
     bool operator==(const Chunk &chunk) const;
+
+private:
+    // General
+    void delete_vao_and_vbo();
 };

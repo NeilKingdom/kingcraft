@@ -1,6 +1,27 @@
+/**
+ * @file chunk.cpp
+ * @author Neil Kingdom
+ * @since 14-06-2024
+ * @version 1.0
+ * @brief Contains operations and helper functions pertaining to Chunk objects.
+ */
+
 #include "chunk.hpp"
 
+/**
+ * @brief Destructor for Chunk object.
+ * @since 13-02-2025
+ */
 Chunk::~Chunk()
+{
+    delete_vao_and_vbo();
+}
+
+/**
+ * @brief Deletes the VAO and VBO for the chunk if they have been created.
+ * @since 13-02-2025
+ */
+void Chunk::delete_vao_and_vbo()
 {
     if (glIsBuffer(mesh.vbo))
     {
@@ -12,6 +33,13 @@ Chunk::~Chunk()
     }
 }
 
+/**
+ * @brief Operator overload for equality operation.
+ * Chunks are considered to be equal if their positions match.
+ * @since 13-02-2025
+ * @param[in] chunk The chunk to compare against
+ * @returns True if the chunks match, otherwise returns false
+ */
 bool Chunk::operator==(const Chunk &chunk) const
 {
     return this->location[0] == chunk.location[0]
@@ -19,29 +47,26 @@ bool Chunk::operator==(const Chunk &chunk) const
         && this->location[2] == chunk.location[2];
 }
 
+/**
+ * @brief Squashes the block vertices into one unified mesh.
+ * Creates a VAO and VBO for the new chunk mesh.
+ * @since 13-02-2025
+ */
 void Chunk::squash_block_meshes()
 {
-    GameState &game = GameState::get_instance();
-    ssize_t chunk_size = game.chunk_size;
+    Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
     auto &chunk_mesh = mesh.vertices;
 
     chunk_mesh.clear();
-
-    if (glIsBuffer(mesh.vbo))
-    {
-        glDeleteBuffers(1, &mesh.vbo);
-    }
-    if (glIsVertexArray(mesh.vao))
-    {
-        glDeleteVertexArrays(1, &mesh.vao);
-    }
+    delete_vao_and_vbo();
 
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
         for (ssize_t y = 0; y < chunk_size; ++y)
         {
             for (ssize_t x = 0; x < chunk_size; ++x)
-             {
+            {
                 Block &block = blocks[z][y][x];
                 if (block.type != BlockType::AIR && block.faces != 0)
                 {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common.hpp"
-#include "mesh.hpp"
 
 enum class BlockType
 {
@@ -15,12 +14,12 @@ enum class BlockType
     WATER
 };
 
-class Block
+struct Block
 {
-public:
     BlockType type;
     uint8_t faces;
 
+    // TODO: Ew, Magic numbers!
     std::array<float, 6 * 5> top_face;
     std::array<float, 6 * 5> bottom_face;
     std::array<float, 6 * 5> right_face;
@@ -30,6 +29,6 @@ public:
 
     // Special member functions
     Block();
-    Block(BlockType type);
+    Block(const BlockType type);
     ~Block() = default;
 };

@@ -18,7 +18,7 @@ Camera::Camera() :
     v_eye{},
     m_view(std::make_shared<std::array<float, 16>>())
 {
-    std::memcpy(v_look_dir, KC::v_fwd, sizeof(v_look_dir));
+    std::memcpy(v_look_dir, KC::v_fwd, sizeof(vec3));
 }
 
 /**
@@ -46,8 +46,8 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     win_edge_y = win.xwa.y + win.xwa.height;
 
     // Cursor is outside window. Warp to nearest edge.
-    if (root_off_x < win_loc_x || root_off_x > win_edge_x
-        || root_off_y < win_loc_y || root_off_y > win_edge_y)
+    if (root_off_x < win_loc_x || root_off_x > win_edge_x ||
+        root_off_y < win_loc_y || root_off_y > win_edge_y)
     {
         dist_x = std::min(std::abs(root_off_x - win_loc_x), std::abs(root_off_x - win_edge_x));
         dist_y = std::min(std::abs(root_off_y - win_loc_y), std::abs(root_off_y - win_edge_y));
@@ -73,58 +73,58 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     );
 }
 
-std::optional<Block> Camera::cast_ray(
-    const std::vector<std::shared_ptr<Chunk>> &chunks,
-    const unsigned n_iters
-) const
-{
-    GameState &game = GameState::get_instance();
-    ssize_t chunk_size = game.chunk_size;
-
-    vec3 v_ray = { v_look_dir[0], v_look_dir[1], v_look_dir[2] };
-
-    vec3 chunk_location = {
-        std::floorf(v_eye[0] / chunk_size),
-        std::floorf(v_eye[1] / chunk_size),
-        std::floorf(v_eye[2] / chunk_size)
-    };
-
-    for (unsigned i = 0; i < n_iters; ++i)
-    {
-        // March ray
-        lac_normalize_vec3(v_ray, v_ray);
-        for (unsigned j = 0; j < n_iters; ++j)
-        {
-            lac_add_vec3(v_ray, v_ray, v_ray);
-            v_ray[0] = std::floorf(v_ray[0]);
-            v_ray[1] = std::floorf(v_ray[1]);
-            v_ray[2] = std::floorf(v_ray[2]);
-        }
-
-        // Check for block
-        Chunk needle = Chunk();
-        std::memcpy(needle.location, chunk_location, sizeof(vec3));
-
-        for (auto chunk : chunks)
-        {
-            if (*chunk.get() == needle)
-            {
-                Block &block = chunk.get()->blocks[v_ray[0]][v_ray[1]][v_ray[2]];
-                if (block.type != BlockType::AIR)
-                {
-                    std::cout << "Looking at "
-                        << "x: " << v_ray[0] << ", "
-                        << "y: " << v_ray[1] << ", "
-                        << "z: " << v_ray[2]
-                        << std::endl;
-                    return block;
-                }
-            }
-        }
-    }
-
-    return std::nullopt;
-}
+//std::optional<Block> Camera::cast_ray(
+//    const std::vector<std::shared_ptr<Chunk>> &chunks,
+//    const unsigned n_iters
+//) const
+//{
+//    GameState &game = GameState::get_instance();
+//    ssize_t chunk_size = game.chunk_size;
+//
+//    vec3 v_ray = { v_look_dir[0], v_look_dir[1], v_look_dir[2] };
+//
+//    vec3 chunk_location = {
+//        std::floorf(v_eye[0] / chunk_size),
+//        std::floorf(v_eye[1] / chunk_size),
+//        std::floorf(v_eye[2] / chunk_size)
+//    };
+//
+//    for (unsigned i = 0; i < n_iters; ++i)
+//    {
+//        // March ray
+//        lac_normalize_vec3(v_ray, v_ray);
+//        for (unsigned j = 0; j < n_iters; ++j)
+//        {
+//            lac_add_vec3(v_ray, v_ray, v_ray);
+//            v_ray[0] = std::floorf(v_ray[0]);
+//            v_ray[1] = std::floorf(v_ray[1]);
+//            v_ray[2] = std::floorf(v_ray[2]);
+//        }
+//
+//        // Check for block
+//        Chunk needle = Chunk();
+//        std::memcpy(needle.location, chunk_location, sizeof(vec3));
+//
+//        for (auto chunk : chunks)
+//        {
+//            if (*chunk.get() == needle)
+//            {
+//                Block &block = chunk.get()->blocks[v_ray[0]][v_ray[1]][v_ray[2]];
+//                if (block.type != BlockType::AIR)
+//                {
+//                    std::cout << "Looking at "
+//                        << "x: " << v_ray[0] << ", "
+//                        << "y: " << v_ray[1] << ", "
+//                        << "z: " << v_ray[2]
+//                        << std::endl;
+//                    return block;
+//                }
+//            }
+//        }
+//    }
+//
+//    return std::nullopt;
+//}
 
 /**
  * @brief Calculates the view matrix based on the look direction of the camera.
@@ -178,12 +178,12 @@ void Camera::calculate_view_matrix()
  * @param[in] render_distance The distance (in chunks) that the frustum should cover
  * @returns A CullingFrustum object which represents the space that should not be culled when rendering chunks
  */
-CullingFrustum Camera::get_frustum_coords(size_t render_distance)
+CullingFrustum Camera::get_frustum_coords(const size_t render_distance) const
 {
-    GameState &game = GameState::get_instance();
-    ssize_t chunk_size = game.chunk_size;
+    Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
 
-    const float fov = game.fov + 30; // Want fov to be a bit wider than the camera
+    const float fov = settings.fov + 30; // Want fov to be a bit wider than the camera
     const float w_half = std::tanf(lac_deg_to_rad(fov / 2.0f)) * render_distance;
 
     vec2 tmp = {};
@@ -209,6 +209,7 @@ CullingFrustum Camera::get_frustum_coords(size_t render_distance)
 
     /* TODO: Streamline this. Wasteful considering we already have v_LD above */
 
+    // Move all points a little bit behind the camera's actual position
     const float scalar = 2.0f;
     vec2 v_LD_tmp = { v_look_dir[0], -v_look_dir[1] };
     lac_normalize_vec2(v_LD_tmp, v_LD_tmp);
@@ -228,4 +229,3 @@ CullingFrustum Camera::get_frustum_coords(size_t render_distance)
         std::array<float, 2>{ v_C[0], v_C[1] }
     };
 }
-
