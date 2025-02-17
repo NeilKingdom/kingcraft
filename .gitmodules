@@ -1,0 +1,4 @@
+[submodule "res/vendor/imgui"]
+	path = res/vendor/imgui
+	url = git@github.com:NeilKingdom/imgui.git
+	branch = main

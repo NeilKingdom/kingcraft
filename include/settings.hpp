@@ -2,9 +2,9 @@
 
 #include "common.hpp"
 
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_x11.h"
+#include "../res/vendor/imgui/include/imgui.h"
+#include "../res/vendor/imgui/include/imgui_impl_opengl3.h"
+#include "../res/vendor/imgui/include/imgui_impl_x11.h"
 
 // Foward class declaration
 class Camera;

@@ -8,12 +8,14 @@ SRC_DIR = src
 OBJ_DIR = obj
 INC_DIR = include
 
+IMGUI = res/vendor/imgui
+
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 DEPS := $(wildcard $(INC_DIR)/*.hpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I./res/vendor/imgui -std=c++20 -Wall -Wextra
-LDFLAGS += -L./ -lX11 -lGL -lGLEW -llac -limc -l:imgui.a
+CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I$(IMGUI)/include -std=c++20 -Wall -Wextra
+LDFLAGS += -L$(IMGUI)/bin -l:imgui.a -llac -limc -lX11 -lGL -lGLEW
 
 BIN := kingcraft
 
@@ -28,11 +30,11 @@ clean:
 rebuild: clean all
 
 # Make the binary
-$(BIN): $(OBJS) ./imgui.a
+$(BIN): $(OBJS)
 	$(CC) $^ -o $@ $(CCFLAGS) $(LDFLAGS)
 
 # Intermediate objects
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $< -c -o $@ $(CCFLAGS) $(LDFLAGS)
 
-.PHONY: clean all rebuild
+.PHONY: clean all rebuild imgui

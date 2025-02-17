@@ -44,7 +44,7 @@ public:
 
     // General
     void calculate_view_matrix();
-    void update_rotation_from_pointer(const KCWindow &win);
+    void update_rotation_from_pointer(const KCWindow &win, const vec2 &pointer_pos);
     CullingFrustum get_frustum_coords(const size_t render_distance) const;
     //std::optional<Block> cast_ray(const std::vector<std::shared_ptr<Chunk>> &chunks, const unsigned n_iters) const;
 

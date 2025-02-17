@@ -340,7 +340,13 @@ void Game::process_events(KCWindow &win, Camera &camera)
                 query_pointer_location = !query_pointer_location;
                 if (query_pointer_location)
                 {
-                    camera.update_rotation_from_pointer(win);
+                    camera.update_rotation_from_pointer(
+                        win,
+                        vec2{
+                            (float)win.xev.xmotion.x,
+                            (float)win.xev.xmotion.y
+                        }
+                    );
                 }
                 break;
             }
