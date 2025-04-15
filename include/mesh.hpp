@@ -2,9 +2,26 @@
 
 #include "common.hpp"
 
+struct BlockVertex
+{
+    float x;
+    float y;
+    float z;
+    float u;
+    float v;
+};
+
+struct SkyboxVertex
+{
+    float x;
+    float y;
+    float z;
+};
+
+template <typename T>
 struct Mesh
 {
-    ID vao;                         // Vertex attribute object ID
-    ID vbo;                         // Vertex buffer object ID
-    std::vector<float> vertices;    // Raw buffer for vertex data
+    ID vao;                   // Vertex Attribute Object ID
+    ID vbo;                   // Vertex Buffer Object ID
+    std::vector<T> vertices;  // Vertex buffer data
 };

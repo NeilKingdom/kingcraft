@@ -8,30 +8,61 @@
 
 #include "chunk.hpp"
 
+Chunk::Chunk()
+{
+    Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
+
+    this->is_tallest_in_col = false;
+    this->blocks.resize(
+        chunk_size,
+        std::vector<std::vector<Block>>(
+            chunk_size,
+            std::vector<Block>(chunk_size, Block())
+        )
+    );
+}
+
+Chunk::Chunk(const vec3 location)
+{
+    Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
+
+    std::memcpy(this->location, location, sizeof(vec3));
+    this->is_tallest_in_col = false;
+    this->blocks.resize(
+        chunk_size,
+        std::vector<std::vector<Block>>(
+            chunk_size,
+            std::vector<Block>(chunk_size, Block())
+        )
+    );
+}
+
 /**
  * @brief Destructor for Chunk object.
  * @since 13-02-2025
  */
 Chunk::~Chunk()
 {
-    delete_vao_and_vbo();
+    //delete_vao_and_vbo();
 }
 
 /**
  * @brief Deletes the VAO and VBO for the chunk if they have been created.
  * @since 13-02-2025
  */
-void Chunk::delete_vao_and_vbo()
-{
-    if (glIsBuffer(mesh.vbo))
-    {
-        glDeleteBuffers(1, &mesh.vbo);
-    }
-    if (glIsVertexArray(mesh.vao))
-    {
-        glDeleteVertexArrays(1, &mesh.vao);
-    }
-}
+//void Chunk::delete_vao_and_vbo()
+//{
+//    if (glIsBuffer(mesh.vbo))
+//    {
+//        glDeleteBuffers(1, &mesh.vbo);
+//    }
+//    if (glIsVertexArray(mesh.vao))
+//    {
+//        glDeleteVertexArrays(1, &mesh.vao);
+//    }
+//}
 
 /**
  * @brief Operator overload for equality operation.
@@ -42,9 +73,7 @@ void Chunk::delete_vao_and_vbo()
  */
 bool Chunk::operator==(const Chunk &chunk) const
 {
-    return this->location[0] == chunk.location[0]
-        && this->location[1] == chunk.location[1]
-        && this->location[2] == chunk.location[2];
+    return is_equal(this->location, chunk.location);
 }
 
 /**
@@ -52,14 +81,14 @@ bool Chunk::operator==(const Chunk &chunk) const
  * Creates a VAO and VBO for the new chunk mesh.
  * @since 13-02-2025
  */
-void Chunk::squash_block_meshes()
+void Chunk::update_mesh()
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
-    auto &chunk_mesh = mesh.vertices;
+    //auto &chunk_mesh = mesh.vertices;
 
-    chunk_mesh.clear();
-    delete_vao_and_vbo();
+    vertices.clear();
+    //delete_vao_and_vbo();
 
     for (ssize_t z = 0; z < chunk_size; ++z)
     {
@@ -72,51 +101,51 @@ void Chunk::squash_block_meshes()
                 {
                     if (IS_BIT_SET(block.faces, BOTTOM))
                     {
-                        chunk_mesh.insert(chunk_mesh.end(), block.bottom_face.begin(), block.bottom_face.end());
+                        vertices.insert(vertices.end(), block.bottom_face.begin(), block.bottom_face.end());
                     }
                     if (IS_BIT_SET(block.faces, TOP))
                     {
-                        chunk_mesh.insert(chunk_mesh.end(), block.top_face.begin(), block.top_face.end());
+                        vertices.insert(vertices.end(), block.top_face.begin(), block.top_face.end());
                     }
                     if (IS_BIT_SET(block.faces, RIGHT))
                     {
-                        chunk_mesh.insert(chunk_mesh.end(), block.right_face.begin(), block.right_face.end());
+                        vertices.insert(vertices.end(), block.right_face.begin(), block.right_face.end());
                     }
                     if (IS_BIT_SET(block.faces, LEFT))
                     {
-                        chunk_mesh.insert(chunk_mesh.end(), block.left_face.begin(), block.left_face.end());
+                        vertices.insert(vertices.end(), block.left_face.begin(), block.left_face.end());
                     }
                     if (IS_BIT_SET(block.faces, FRONT))
                     {
-                        chunk_mesh.insert(chunk_mesh.end(), block.front_face.begin(), block.front_face.end());
+                        vertices.insert(vertices.end(), block.front_face.begin(), block.front_face.end());
                     }
                     if (IS_BIT_SET(block.faces, BACK))
                     {
-                        chunk_mesh.insert(chunk_mesh.end(), block.back_face.begin(), block.back_face.end());
+                        vertices.insert(vertices.end(), block.back_face.begin(), block.back_face.end());
                     }
                 }
              }
         }
     }
-    chunk_mesh.shrink_to_fit();
+    vertices.shrink_to_fit();
 
-    glGenBuffers(1, &mesh.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, chunk_mesh.size() * sizeof(float), chunk_mesh.data(), GL_STATIC_DRAW);
+    //glGenBuffers(1, &mesh.vbo);
+    //glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+    //glBufferData(GL_ARRAY_BUFFER, chunk_mesh.size() * sizeof(float), chunk_mesh.data(), GL_STATIC_DRAW);
 
-    glGenVertexArrays(1, &mesh.vao);
-    glBindVertexArray(mesh.vao);
+    //glGenVertexArrays(1, &mesh.vao);
+    //glBindVertexArray(mesh.vao);
 
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    //// Position attribute
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(0);
 
-    // TODO: Color attribute
+    //// TODO: Color attribute
 
-    // Texture attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    //// Texture attribute
+    //glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    //glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindVertexArray(0);
 }

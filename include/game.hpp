@@ -12,6 +12,7 @@
 #include "player.hpp"
 #include "perlin_noise.hpp"
 #include "mvp.hpp"
+#include "helpers.hpp"
 
 class Game
 {
@@ -33,7 +34,8 @@ private:
     void start();
     void cleanup();
     void generate_terrain();
+    void plant_trees(ChunkManager &chunk_mgr, PerlinNoise &pn);
     void apply_physics();
     void process_events(KCWindow &win, Camera &camera);
-    void render_frame(Camera &camera, Mvp &mvp, KCShaders &shaders, std::vector<std::shared_ptr<Chunk>> &chunks, SkyBox &skybox);
+    void render_frame(ChunkManager &chunk_mgr, Camera &camera, Mvp &mvp, KCShaders &shaders, SkyBox &skybox);
 };

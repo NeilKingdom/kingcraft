@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "mesh.hpp"
 
 enum class BlockType
 {
@@ -19,13 +20,12 @@ struct Block
     BlockType type;
     uint8_t faces;
 
-    // TODO: Ew, Magic numbers!
-    std::array<float, 6 * 5> top_face;
-    std::array<float, 6 * 5> bottom_face;
-    std::array<float, 6 * 5> right_face;
-    std::array<float, 6 * 5> left_face;
-    std::array<float, 6 * 5> front_face;
-    std::array<float, 6 * 5> back_face;
+    std::array<BlockVertex, 6> top_face;
+    std::array<BlockVertex, 6> bottom_face;
+    std::array<BlockVertex, 6> right_face;
+    std::array<BlockVertex, 6> left_face;
+    std::array<BlockVertex, 6> front_face;
+    std::array<BlockVertex, 6> back_face;
 
     // Special member functions
     Block();

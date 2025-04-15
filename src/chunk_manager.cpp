@@ -10,6 +10,66 @@
 
 #include "chunk_manager.hpp"
 
+// TODO: Move to private func or something
+static void add_block_relative_to_current(const vec3 &chunk_location, const vec3 &block_location)
+{
+    BlockFactory block_factory;
+    ChunkManager &chunk_mgr = ChunkManager::get_instance();
+
+    vec3 actual_chunk_location{};
+    vec3 actual_block_location{};
+
+    actual_chunk_location[0] = std::floorf(((chunk_location[0] * 16) + block_location[0]) / 16.0f);
+    actual_chunk_location[1] = std::floorf(((chunk_location[1] * 16) + block_location[1]) / 16.0f);
+    actual_chunk_location[2] = std::floorf(((chunk_location[2] * 16) + block_location[2]) / 16.0f);
+
+    actual_block_location[0] = ((int)block_location[0] % 16 + 16) % 16;
+    actual_block_location[1] = ((int)block_location[1] % 16 + 16) % 16;
+    actual_block_location[2] = ((int)block_location[2] % 16 + 16) % 16;
+
+    auto chunk = chunk_mgr.get_chunk(Chunk(actual_chunk_location));
+    if (chunk == std::nullopt)
+    {
+        return;
+    }
+
+    chunk_mgr.add_block(chunk.value(), BlockType::DIRT, actual_block_location, false);
+}
+
+ChunkManager::ChunkManager()
+{
+    glGenVertexArrays(1, &terrain_mesh.vao);
+    glBindVertexArray(terrain_mesh.vao);
+
+    glGenBuffers(1, &terrain_mesh.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
+
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // TODO: Color attribute
+
+    // Texture attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+ChunkManager::~ChunkManager()
+{
+    if (glIsBuffer(terrain_mesh.vbo))
+    {
+        glDeleteBuffers(1, &terrain_mesh.vbo);
+    }
+    if (glIsVertexArray(terrain_mesh.vao))
+    {
+        glDeleteVertexArrays(1, &terrain_mesh.vao);
+    }
+}
+
 /**
  * @brief Entry point for accessing the singleton's instance.
  * @since 13-02-2025
@@ -30,7 +90,7 @@ ChunkManager &ChunkManager::get_instance()
  * @param[in] overwrite Specifies whether to overwrite a block if one exists at the location specified by __location__
  * @returns True if the block was successfully added, otherwise returns false
  */
-bool ChunkManager::add_block(
+Result ChunkManager::add_block(
     std::shared_ptr<Chunk> &chunk,
     const BlockType type,
     const vec3 location,
@@ -45,12 +105,12 @@ bool ChunkManager::add_block(
         location[1] < 0 || location[1] >= chunk_size ||
         location[2] < 0 || location[2] >= chunk_size)
     {
-        return false;
+        return Result::OOB;
     }
 
     if (!overwrite && chunk->blocks[location[2]][location[1]][location[0]].type != BlockType::AIR)
     {
-        return false;
+        return Result::FAILURE;
     }
 
     Block &block = chunk->blocks[location[2]][location[1]][location[0]];
@@ -125,7 +185,7 @@ bool ChunkManager::add_block(
 
     // TODO: Add chunk to cache if not already present
 
-    return true;
+    return Result::SUCCESS;
 }
 
 /**
@@ -135,13 +195,44 @@ bool ChunkManager::add_block(
  * @param[in] location The location relative to __chunk__'s location where the block will be removed
  * @returns True if the block was successfully removed, otherwise false
  */
-bool ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 location)
+Result ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 location)
 {
     chunk->blocks[location[2]][location[1]][location[0]].type = BlockType::AIR;
 
     // TODO: Regenerate neighboring block faces
 
-    return false;
+    return Result::FAILURE;
+}
+
+/**
+ * @brief Optionally returns the chunk at the location specified by __location__ if it exists.
+ * @since 13-02-2025
+ * @param location A vec3 that specifies the location of the chunk to return; measured in units of blocks
+ * @returns The chunk at location __location__ if it exists, otherwise returns std::nullopt
+ */
+std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk(const Block &block) const
+{
+    return std::nullopt;
+}
+
+/**
+ * @brief Optionally returns the chunk at the location specified by __location__ if it exists.
+ * @since 13-02-2025
+ * @param location A vec3 that specifies the location of the chunk to return; measured in units of chunks
+ * @returns The chunk at location __location__ if it exists, otherwise returns std::nullopt
+ */
+std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk(const Chunk &chunk) const
+{
+    auto found = std::find_if(
+        chunks.begin(),
+        chunks.end(),
+        [&](const std::shared_ptr<Chunk> &item)
+        {
+            return chunk == *item;
+        }
+    );
+
+    return (found != chunks.end()) ? std::make_optional(*found) : std::nullopt;
 }
 
 /**
@@ -150,12 +241,18 @@ bool ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 locati
  * @param[in/out] chunk The chunk in which the tree will be planted
  * @param[in] location The location relative to __chunk__'s location at which the tree will be planted
  */
-void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location)
+void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location) const
 {
+    ChunkManager &chunk_mgr = ChunkManager::get_instance();
+
     // Trunk
     for (int i = 1; i <= 6; ++i)
     {
-        add_block(chunk, BlockType::WOOD, vec3{ location[0], location[1], location[2] + i }, true);
+        vec3 block_location = { location[0], location[1], location[2] + i };
+        if (chunk_mgr.add_block(chunk, BlockType::WOOD, block_location, true) == Result::OOB)
+        {
+            add_block_relative_to_current(chunk->location, block_location);
+        }
     }
 
     // Leaves (two 5x5 layers)
@@ -167,8 +264,17 @@ void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location
             {
                 continue;
             }
-            add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 4 }, true);
-            add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 5 }, true);
+
+            vec3 block_location1 = { location[0] + x, location[1] + y, location[2] + 4 };
+            if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
+            {
+                add_block_relative_to_current(chunk->location, block_location1);
+            }
+            vec3 block_location2 = { location[0] + x, location[1] + y, location[2] + 5 };
+            if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
+            {
+                add_block_relative_to_current(chunk->location, block_location2);
+            }
         }
     }
 
@@ -181,57 +287,52 @@ void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location
             {
                 continue;
             }
-            add_block(chunk, BlockType::LEAVES, vec3{ location[0] + x, location[1] + y, location[2] + 6 }, true);
+
+            vec3 block_location = { location[0] + x, location[1] + y, location[2] + 6 };
+            if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location, true) == Result::OOB)
+            {
+                add_block_relative_to_current(chunk->location, block_location);
+            }
         }
     }
 
     // Leaves (second 3x3 layer: x-shaped)
-    add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] + 0, location[2] + 7 }, true);
-    add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 1, location[1] + 0, location[2] + 7 }, true);
-    add_block(chunk, BlockType::LEAVES, vec3{ location[0] - 1, location[1] + 0, location[2] + 7 }, true);
-    add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] + 1, location[2] + 7 }, true);
-    add_block(chunk, BlockType::LEAVES, vec3{ location[0] + 0, location[1] - 1, location[2] + 7 }, true);
+    vec3 block_location1 = { location[0] + 0, location[1] + 0, location[2] + 7 };
+    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
+    {
+        add_block_relative_to_current(chunk->location, block_location1);
+    }
+    vec3 block_location2 = { location[0] + 1, location[1] + 0, location[2] + 7 };
+    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
+    {
+        add_block_relative_to_current(chunk->location, block_location2);
+    }
+    vec3 block_location3 = { location[0] - 1, location[1] + 0, location[2] + 7 };
+    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location3, true) == Result::OOB)
+    {
+        add_block_relative_to_current(chunk->location, block_location3);
+    }
+    vec3 block_location4 = { location[0] + 0, location[1] + 1, location[2] + 7 };
+    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location4, true) == Result::OOB)
+    {
+        add_block_relative_to_current(chunk->location, block_location4);
+    }
+    vec3 block_location5 = { location[0] + 0, location[1] - 1, location[2] + 7 };
+    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location5, true) == Result::OOB)
+    {
+        add_block_relative_to_current(chunk->location, block_location5);
+    }
 }
 
-/**
- * @brief Optionally returns the chunk at the location specified by __location__ if it exists.
- * @since 13-02-2025
- * @param location A vec3 that specifies the location of the chunk to return; measured in units of blocks
- * @returns The chunk at location __location__ if it exists, otherwise returns std::nullopt
- */
-std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk_at_block_offset(const vec3 location) const
+void ChunkManager::update_mesh()
 {
-    Settings &settings = Settings::get_instance();
-    ssize_t chunk_size = settings.chunk_size;
+    terrain_mesh.vertices.clear();
+    for (auto chunk : chunks)
+    {
+        terrain_mesh.vertices.insert(terrain_mesh.vertices.end(), chunk->vertices.begin(), chunk->vertices.end());
+    }
 
-    vec3 chunk_offset = {
-        (float)((ssize_t)location[0] % chunk_size),
-        (float)((ssize_t)location[1] % chunk_size),
-        (float)((ssize_t)location[2] % chunk_size),
-    };
-
-    return get_chunk_at_chunk_offset(chunk_offset);
-}
-
-/**
- * @brief Optionally returns the chunk at the location specified by __location__ if it exists.
- * @since 13-02-2025
- * @param location A vec3 that specifies the location of the chunk to return; measured in units of chunks
- * @returns The chunk at location __location__ if it exists, otherwise returns std::nullopt
- */
-std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk_at_chunk_offset(const vec3 location) const
-{
-    Chunk needle;
-    std::memcpy(needle.location, location, sizeof(vec3));
-
-    auto found = std::find_if(
-        chunks.begin(),
-        chunks.end(),
-        [&](const std::shared_ptr<Chunk> &chunk)
-        {
-            return needle == *chunk;
-        }
-    );
-
-    return (found != chunks.end()) ? std::make_optional(*found) : std::nullopt;
+    glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, terrain_mesh.vertices.size() * sizeof(BlockVertex), terrain_mesh.vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(0, terrain_mesh.vbo);
 }

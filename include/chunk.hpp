@@ -4,25 +4,22 @@
 #include "block.hpp"
 #include "block_factory.hpp"
 #include "settings.hpp"
-#include "mesh.hpp"
+#include "helpers.hpp"
 
 class Chunk
 {
 public:
-    Mesh mesh;
     vec3 location;
-    uint8_t faces;
+    bool is_tallest_in_col;
+    std::vector<BlockVertex> vertices;
     std::vector<std::vector<std::vector<Block>>> blocks;
 
     // Special member functions
-    Chunk() = default;
+    Chunk();
+    Chunk(const vec3 location);
     ~Chunk();
 
     // General
-    void squash_block_meshes();
+    void update_mesh();
     bool operator==(const Chunk &chunk) const;
-
-private:
-    // General
-    void delete_vao_and_vbo();
 };

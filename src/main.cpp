@@ -11,8 +11,7 @@
 int main()
 {
     {
-        Game game = Game();
-        Game game2 = Game();
+        Game game;
     }
     return EXIT_SUCCESS;
 }

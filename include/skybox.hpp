@@ -9,7 +9,7 @@ class SkyBox
 {
 public:
     ID id;
-    Mesh mesh;
+    Mesh<SkyboxVertex> mesh;
 
     // Special member functions
     SkyBox() = delete;

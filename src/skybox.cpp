@@ -62,7 +62,7 @@ SkyBox::SkyBox(
     lac_multiply_vec4_mat4(v7, v7, m_scale);
 
     // Static mesh coordinates
-    std::array<float, 108> vertices = {
+    std::array<SkyboxVertex, 36> vertices = {
         // Right
         v3[0], v3[1], v3[2],
         v7[0], v7[1], v7[2],
@@ -120,7 +120,7 @@ SkyBox::SkyBox(
     glBindVertexArray(mesh.vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(SkyboxVertex), vertices.data(), GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
@@ -132,6 +132,12 @@ SkyBox::SkyBox(
 SkyBox::~SkyBox()
 {
     glDeleteTextures(1, &id);
-    glDeleteBuffers(1, &mesh.vbo);
-    glDeleteVertexArrays(1, &mesh.vao);
+    if (glIsBuffer(mesh.vbo))
+    {
+        glDeleteBuffers(1, &mesh.vbo);
+    }
+    if (glIsVertexArray(mesh.vao))
+    {
+        glDeleteVertexArrays(1, &mesh.vao);
+    }
 }

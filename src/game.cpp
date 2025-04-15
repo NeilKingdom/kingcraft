@@ -52,7 +52,7 @@ void Game::cleanup()
 {
     /*** ImGui ***/
 
-#if DEBUG
+#ifdef DEBUG
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
     ImGui::DestroyContext();
@@ -96,18 +96,6 @@ void Game::start()
     nanoseconds::rep frame_duration = 0L;
     constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
 
-    Camera camera;
-    CullingFrustum frustum;
-    Mvp mvp = Mvp(camera);
-
-    Settings &settings = Settings::get_instance();
-    ChunkManager &chunk_mgr = ChunkManager::get_instance();
-    ChunkFactory chunk_factory;
-
-    auto &chunks = chunk_mgr.chunks;
-    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
-    auto chunk_col_coords_iter = chunk_col_coords.end();
-
     /*** Window and OpenGL context initialization ***/
 
     KCWindow kc_win;
@@ -117,7 +105,8 @@ void Game::start()
     GLXContext glx = create_opengl_context(kc_win, fb_config);
     glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
 
-#ifdef DEBUG
+//#ifdef DEBUG
+#if 0
     (void)create_window(imgui_win, "ImGui", 400, 400);
     settings.init_imgui(imgui_win);
 #endif
@@ -130,6 +119,18 @@ void Game::start()
         exit(EXIT_FAILURE);
     }
     std::cout << glGetString(GL_VERSION) << std::endl;
+
+    Camera camera;
+    CullingFrustum frustum;
+    Mvp mvp = Mvp(camera);
+
+    Settings &settings = Settings::get_instance();
+    ChunkManager &chunk_mgr = ChunkManager::get_instance();
+    ChunkFactory chunk_factory;
+
+    auto &chunks = chunk_mgr.chunks;
+    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
+    auto chunk_col_coords_iter = chunk_col_coords.end();
 
     // Enable debug logging
     //glEnable(GL_DEBUG_OUTPUT);
@@ -205,6 +206,9 @@ void Game::start()
         // Re-calculate chunk positions list once all chunks have been rendered
         if (chunk_col_coords_iter >= chunk_col_coords.end())
         {
+            //chunk_factory.plant_trees(pn);
+            chunk_mgr.update_mesh();
+
             chunk_col_coords.clear();
             frustum = camera.get_frustum_coords(settings.render_distance);
 
@@ -270,6 +274,7 @@ void Game::start()
             chunk_col_coords_iter = chunk_col_coords.begin();
         }
 
+        // Once per frame, make next chunk column
         if (!chunk_col_coords.empty())
         {
             auto chunk_col = chunk_factory.make_chunk_column(
@@ -284,19 +289,19 @@ void Game::start()
         chunk_col_coords_iter++;
 
         process_events(kc_win, camera);
-        render_frame(camera, mvp, shaders, chunks, skybox);
+        render_frame(chunk_mgr, camera, mvp, shaders, skybox);
 
-        auto frame_end = steady_clock::now();
-        frame_duration = duration_cast<nanoseconds>(frame_end - frame_start).count();
+        frame_duration = duration_cast<nanoseconds>(steady_clock::now() - frame_start).count();
         calculate_frame_rate(fps, frames_elapsed, since);
 
+//#ifdef DEBUG
 #if 0
         // Update once per 5 frames
         if (frames_elapsed % 5 == 0)
         {
             glXMakeCurrent(imgui_win.dpy, imgui_win.win, glx);
-            process_imgui_events(imgui_win);
-            render_imgui_frame(imgui_win, camera);
+            settings.process_imgui_events(imgui_win);
+            settings.render_imgui_frame(imgui_win, camera);
             glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
         }
 #endif
@@ -431,14 +436,15 @@ void Game::process_events(KCWindow &win, Camera &camera)
  * @param[in] shader Shader being used for the current draw call
  */
 void Game::render_frame(
+    ChunkManager &chunk_mgr,
     Camera &camera,
     Mvp &mvp,
     KCShaders &shaders,
-    std::vector<std::shared_ptr<Chunk>> &chunks,
     SkyBox &skybox
 )
 {
     Settings &settings = Settings::get_instance();
+    Mesh<BlockVertex> &terrain_mesh = chunk_mgr.terrain_mesh;
     unsigned u_model, u_view, u_proj;
 
     glClearColor(1.0f, 1.0, 1.0f, 1.0);
@@ -468,11 +474,21 @@ void Game::render_frame(
     u_proj = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
-    for (auto chunk : chunks)
-    {
-        glBindVertexArray(chunk->mesh.vao);
-        glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
-    }
+    //for (auto chunk : chunks)
+    //{
+    //    if (chunk->meta.is_empty)
+    //    {
+    //        continue;
+    //    }
+    //    glBindVertexArray(chunk->mesh.vao);
+    //    glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
+    //}
+
+    //auto vertices = squash_chunk_meshes(chunks);
+
+    glBindVertexArray(terrain_mesh.vao);
+    glDrawArrays(GL_TRIANGLES, 0, terrain_mesh.vertices.size());
+    glBindVertexArray(0);
 
     shaders.block.unbind();
 
@@ -497,10 +513,96 @@ void Game::render_frame(
     // Issue draw call
     glBindVertexArray(skybox.mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.vertices.size());
+    glBindVertexArray(0);
 
     shaders.skybox.unbind();
     glDepthFunc(GL_LESS);
 
     // Blit
     glFlush();
+}
+
+// TODO: Move to private func
+static uint32_t fnv1a_hash(const vec3 &chunk_location, const vec3 &block_location) {
+    constexpr uint32_t FNV_OFFSET_BASIS = 2166136261u;
+    constexpr uint32_t FNV_PRIME = 16777619u;
+
+    unsigned long seed = Settings::get_instance().seed;
+    uint32_t hash = FNV_OFFSET_BASIS;
+
+    auto hash_int = [&](int value) {
+        // Split int into bytes and hash each
+        for (int i = 0; i < 4; ++i) {
+            uint8_t byte = (value >> (i * 8)) & 0xFF;
+            hash ^= byte;
+            hash *= FNV_PRIME;
+        }
+    };
+
+    vec3 v;
+    lac_add_vec3(v, chunk_location, block_location);
+
+    hash_int(v[0]);
+    hash_int(v[1]);
+    hash_int(v[2]);
+    hash_int(seed);
+
+    return hash;
+}
+
+void Game::plant_trees(ChunkManager &chunk_mgr, PerlinNoise &pn)
+{
+    Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
+
+    auto tallest_chunks = std::vector<std::shared_ptr<Chunk>>{};
+    std::copy_if(
+        chunk_mgr.chunks.begin(),
+        chunk_mgr.chunks.end(),
+        std::back_inserter(tallest_chunks),
+        [&](std::shared_ptr<Chunk> &chunk)
+        {
+            return chunk->is_tallest_in_col;
+        }
+    );
+
+    for (auto chunk : tallest_chunks)
+    {
+        std::vector<std::vector<uint8_t>> block_heights;
+        block_heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
+
+        for (ssize_t y = -1; y < chunk_size + 1; ++y)
+        {
+            for (ssize_t x = -1; x < chunk_size + 1; ++x)
+            {
+                block_heights[y + 1][x + 1] = pn.octave_perlin(
+                    -chunk->location[0] * chunk_size + x,
+                     chunk->location[1] * chunk_size + y,
+                     0.8f, 0.05f, 3,
+                     KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
+                );
+            }
+        }
+
+        for (ssize_t z = 0, _z = (chunk->location[2] * chunk_size); z < chunk_size; ++z, ++_z)
+        {
+            for (ssize_t y = 0, _y = 1; y < chunk_size; ++y, ++_y)
+            {
+                for (ssize_t x = 0, _x = 1; x < chunk_size; ++x, ++_x)
+                {
+                    if (_z == block_heights[_y][_x])
+                    {
+                        const unsigned rand_threshold = 578; // The higher, the less probable
+                        vec3 tmp_location = { (float)x, (float)y, (float) z };
+                        if ((fnv1a_hash(chunk->location, tmp_location) % rand_threshold) == 0)
+                        {
+                            chunk_mgr.plant_tree(chunk, tmp_location);
+                        }
+                    }
+                }
+            }
+        }
+
+        chunk->update_mesh();
+    }
 }
