@@ -6,7 +6,7 @@
  * @brief Creates an OpenGL shader program given GLSL code for fragment and vertex shaders.
  */
 
-#include "shader_program.hpp"
+#include "shader.hpp"
 
 /**
  * @brief Constructor for ShaderProgram which uses __vertex_path__ and __fragment_path__ for the program.
@@ -14,7 +14,7 @@
  * @param[in] vertex_path Path to the GLSL source code for the vertex shader
  * @param[in] fragment_path Path to the GLSL source code for the fragment shader
  */
-ShaderProgram::ShaderProgram(
+Shader::Shader(
     const std::filesystem::path vertex_path,
     const std::filesystem::path fragment_path
 )
@@ -48,7 +48,7 @@ ShaderProgram::ShaderProgram(
  * @brief Default destructor for ShaderProgram
  * @since 20-10-2024
  */
-ShaderProgram::~ShaderProgram()
+Shader::~Shader()
 {
     glUseProgram(0);
 }
@@ -57,7 +57,7 @@ ShaderProgram::~ShaderProgram()
  * @brief Binds the current shader program as the active one.
  * @since 20-10-2024
  */
-void ShaderProgram::bind() const
+void Shader::bind() const
 {
     glUseProgram(id);
 }
@@ -66,7 +66,7 @@ void ShaderProgram::bind() const
  * @brief Unbinds the current shader program.
  * @since 20-10-2024
  */
-void ShaderProgram::unbind() const
+void Shader::unbind() const
 {
     glUseProgram(0);
 }
@@ -78,7 +78,7 @@ void ShaderProgram::unbind() const
  * @param[in] source The GLSL source code for the shader
  * @returns The id of the compiled GLSL shader or 0 on failure
  */
-ID ShaderProgram::compile(const unsigned type, const std::string src) const
+ID Shader::compile(const unsigned type, const std::string src) const
 {
     assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 

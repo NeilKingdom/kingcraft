@@ -1,12 +1,12 @@
 #pragma once
 
 #include "common.hpp"
-#include "shader_program.hpp"
+#include "shader.hpp"
 
 struct KCShaders
 {
-    ShaderProgram block;
-    ShaderProgram skybox;
+    Shader block;
+    Shader skybox;
 };
 
 static bool query_pointer_location = true;

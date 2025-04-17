@@ -120,7 +120,7 @@ Block BlockFactory::make_block(
     const BlockType type,
     const vec3 location,
     const uint8_t faces
-)
+) const
 {
     if (faces == 0 || type == BlockType::AIR)
     {
@@ -135,7 +135,7 @@ Block BlockFactory::make_block(
     constexpr float uw = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
     constexpr float vh = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
 
-    auto uv = uv_cache[type].value_or(
+    auto uv = uv_cache.at(type).value_or(
         std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
     );
 

@@ -33,59 +33,6 @@ static void GLAPIENTRY debug_callback(
  */
 Game::Game()
 {
-    start();
-}
-
-Game::~Game()
-{
-    cleanup();
-}
-
-/**
- * @brief Cleanup all of the application's resources.
- * @since 02-03-2024
- * @param[in] glx An instance of the OpenGL context object
- * @param[in] kc_win An instance of KCWindow containing X11-related resources
- * @param[in] imgui_win An optional instance of KCWindow containing ImGui-related resources
- */
-void Game::cleanup()
-{
-    /*** ImGui ***/
-
-#ifdef DEBUG
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplX11_Shutdown();
-    ImGui::DestroyContext();
-
-    // X11
-
-    XDestroyWindow(imgui_win.dpy, imgui_win.win);
-    XFreeColormap(imgui_win.dpy, imgui_win.cmap);
-    XCloseDisplay(imgui_win.dpy);
-#endif
-
-    /*** OpenGL ***/
-
-    glXMakeCurrent(kc_win.dpy, None, NULL);
-    glXDestroyContext(kc_win.dpy, glx);
-
-    // X11
-
-    // Restore normal cursor and free the custom one
-    XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
-    XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
-
-    Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
-    XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
-    XFreeCursor(kc_win.dpy, default_cursor);
-
-    XDestroyWindow(kc_win.dpy, kc_win.win);
-    XFreeColormap(kc_win.dpy, kc_win.cmap);
-    XCloseDisplay(kc_win.dpy);
-}
-
-void Game::start()
-{
     using namespace std::chrono;
 
     /*** Variable declarations ***/
@@ -127,6 +74,7 @@ void Game::start()
     Settings &settings = Settings::get_instance();
     ChunkManager &chunk_mgr = ChunkManager::get_instance();
     ChunkFactory chunk_factory;
+    BlockFactory block_factory;
 
     auto &chunks = chunk_mgr.chunks;
     auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
@@ -158,8 +106,8 @@ void Game::start()
 
     /*** Create shader program(s) ***/
 
-    ShaderProgram block_shader  = ShaderProgram("res/shader/block.vs", "res/shader/block.fs");
-    ShaderProgram skybox_shader = ShaderProgram("res/shader/skybox.vs", "res/shader/skybox.fs");
+    Shader block_shader  = Shader("res/shader/block.vs", "res/shader/block.fs");
+    Shader skybox_shader = Shader("res/shader/skybox.vs", "res/shader/skybox.fs");
     KCShaders shaders = { block_shader, skybox_shader };
 
     /*** Create texture atlas ***/
@@ -207,8 +155,6 @@ void Game::start()
         if (chunk_col_coords_iter >= chunk_col_coords.end())
         {
             //chunk_factory.plant_trees(pn);
-            chunk_mgr.update_mesh();
-
             chunk_col_coords.clear();
             frustum = camera.get_frustum_coords(settings.render_distance);
 
@@ -257,7 +203,7 @@ void Game::start()
 
             // Remove positions which are visible in the camera's frustum, but who's chunk columns have already been generated
 
-            std::vector<std::array<float, 2>> to_remove;
+            auto to_remove = std::vector<std::array<float, 2>>{};
             for (auto &chunk : chunks)
             {
                 auto chunk_pos = std::array<float, 2>{ chunk->location[0], chunk->location[1] };
@@ -308,10 +254,46 @@ void Game::start()
     }
 }
 
+Game::~Game()
+{
+    /*** ImGui ***/
+
+#ifdef DEBUG
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplX11_Shutdown();
+    ImGui::DestroyContext();
+
+    // X11
+
+    XDestroyWindow(imgui_win.dpy, imgui_win.win);
+    XFreeColormap(imgui_win.dpy, imgui_win.cmap);
+    XCloseDisplay(imgui_win.dpy);
+#endif
+
+    /*** OpenGL ***/
+
+    glXMakeCurrent(kc_win.dpy, None, NULL);
+    glXDestroyContext(kc_win.dpy, glx);
+
+    // X11
+
+    // Restore normal cursor and free the custom one
+    XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
+    XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
+
+    Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
+    XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
+    XFreeCursor(kc_win.dpy, default_cursor);
+
+    XDestroyWindow(kc_win.dpy, kc_win.win);
+    XFreeColormap(kc_win.dpy, kc_win.cmap);
+    XCloseDisplay(kc_win.dpy);
+}
+
 /**
  * @brief Processes window events in the queue until there aren't any left.
  * @since 02-03-2024
- * @param[in,out] win An instance of KCWindow containing window-related data
+ * @param[in,out] win A reference to an instance of KCWindow containing window-related data
  * @param[in,out] camera The active camera which will be updated on MotionNotify events
  */
 void Game::process_events(KCWindow &win, Camera &camera)
@@ -430,10 +412,11 @@ void Game::process_events(KCWindow &win, Camera &camera)
 
 /**
  * @brief Renders the current game frame.
- * @param[in,out] win An instance of KCWindow containing window-related data
+ * @param[in,out] chunk_mgr A reference to instance of ChunkManager for gathering chunk meshes
  * @param[in,out] camera The currently active camera used for calculating perspective
  * @param[in,out] mvp The Model View Projection matrix
- * @param[in] shader Shader being used for the current draw call
+ * @param[in] shaders Contains the available program shaders
+ * @param[in] skybox The skybox mesh/entity
  */
 void Game::render_frame(
     ChunkManager &chunk_mgr,
@@ -474,18 +457,7 @@ void Game::render_frame(
     u_proj = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
-    //for (auto chunk : chunks)
-    //{
-    //    if (chunk->meta.is_empty)
-    //    {
-    //        continue;
-    //    }
-    //    glBindVertexArray(chunk->mesh.vao);
-    //    glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertices.size());
-    //}
-
-    //auto vertices = squash_chunk_meshes(chunks);
-
+    chunk_mgr.update_mesh();
     glBindVertexArray(terrain_mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, terrain_mesh.vertices.size());
     glBindVertexArray(0);

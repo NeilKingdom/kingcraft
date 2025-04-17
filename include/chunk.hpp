@@ -11,13 +11,14 @@ class Chunk
 public:
     vec3 location;
     bool is_tallest_in_col;
+    bool updated;
     std::vector<BlockVertex> vertices;
     std::vector<std::vector<std::vector<Block>>> blocks;
 
     // Special member functions
     Chunk();
     Chunk(const vec3 location);
-    ~Chunk();
+    ~Chunk() = default;
 
     // General
     void update_mesh();

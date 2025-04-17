@@ -8,25 +8,6 @@
 
 #include "chunk_factory.hpp"
 
-//static void defer(std::vector<DeferItem> &defer_list, const vec3 &chunk_location, const vec3 &block_location)
-//{
-//    vec3 actual_chunk_location{};
-//    vec3 actual_block_location{};
-//
-//    actual_chunk_location[0] = std::floorf(((chunk_location[0] * 16) + block_location[0]) / 16.0f);
-//    actual_chunk_location[1] = std::floorf(((chunk_location[1] * 16) + block_location[1]) / 16.0f);
-//    actual_chunk_location[2] = std::floorf(((chunk_location[2] * 16) + block_location[2]) / 16.0f);
-//
-//    actual_block_location[0] = ((int)block_location[0] % 16 + 16) % 16;
-//    actual_block_location[1] = ((int)block_location[1] % 16 + 16) % 16;
-//    actual_block_location[2] = ((int)block_location[2] % 16 + 16) % 16;
-//
-//    defer_list.push_back(DeferItem{
-//        std::array{ actual_chunk_location[0], actual_chunk_location[1], actual_chunk_location[2] },
-//        std::array{ actual_block_location[0], actual_block_location[1], actual_block_location[2] }
-//    });
-//}
-
 /**
  * @brief Creates a Chunk object given a set of input parameters.
  * @since 24-10-2024

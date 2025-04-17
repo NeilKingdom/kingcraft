@@ -10,32 +10,6 @@
 
 #include "chunk_manager.hpp"
 
-// TODO: Move to private func or something
-static void add_block_relative_to_current(const vec3 &chunk_location, const vec3 &block_location)
-{
-    BlockFactory block_factory;
-    ChunkManager &chunk_mgr = ChunkManager::get_instance();
-
-    vec3 actual_chunk_location{};
-    vec3 actual_block_location{};
-
-    actual_chunk_location[0] = std::floorf(((chunk_location[0] * 16) + block_location[0]) / 16.0f);
-    actual_chunk_location[1] = std::floorf(((chunk_location[1] * 16) + block_location[1]) / 16.0f);
-    actual_chunk_location[2] = std::floorf(((chunk_location[2] * 16) + block_location[2]) / 16.0f);
-
-    actual_block_location[0] = ((int)block_location[0] % 16 + 16) % 16;
-    actual_block_location[1] = ((int)block_location[1] % 16 + 16) % 16;
-    actual_block_location[2] = ((int)block_location[2] % 16 + 16) % 16;
-
-    auto chunk = chunk_mgr.get_chunk(Chunk(actual_chunk_location));
-    if (chunk == std::nullopt)
-    {
-        return;
-    }
-
-    chunk_mgr.add_block(chunk.value(), BlockType::DIRT, actual_block_location, false);
-}
-
 ChunkManager::ChunkManager()
 {
     glGenVertexArrays(1, &terrain_mesh.vao);
@@ -91,13 +65,13 @@ ChunkManager &ChunkManager::get_instance()
  * @returns True if the block was successfully added, otherwise returns false
  */
 Result ChunkManager::add_block(
+    const BlockFactory &block_factory,
     std::shared_ptr<Chunk> &chunk,
     const BlockType type,
     const vec3 location,
     const bool overwrite
 )
 {
-    BlockFactory block_factory;
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
@@ -241,17 +215,15 @@ std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk(const Chunk &chunk
  * @param[in/out] chunk The chunk in which the tree will be planted
  * @param[in] location The location relative to __chunk__'s location at which the tree will be planted
  */
-void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location) const
+void ChunkManager::plant_tree(const BlockFactory &block_factory, std::shared_ptr<Chunk> &chunk, const vec3 location)
 {
-    ChunkManager &chunk_mgr = ChunkManager::get_instance();
-
     // Trunk
     for (int i = 1; i <= 6; ++i)
     {
         vec3 block_location = { location[0], location[1], location[2] + i };
-        if (chunk_mgr.add_block(chunk, BlockType::WOOD, block_location, true) == Result::OOB)
+        if (add_block(block_factory, chunk, BlockType::WOOD, block_location, true) == Result::OOB)
         {
-            add_block_relative_to_current(chunk->location, block_location);
+            add_block_relative_to_current(block_factory, chunk->location, block_location);
         }
     }
 
@@ -266,14 +238,14 @@ void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location
             }
 
             vec3 block_location1 = { location[0] + x, location[1] + y, location[2] + 4 };
-            if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
+            if (add_block(block_factory, chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
             {
-                add_block_relative_to_current(chunk->location, block_location1);
+                add_block_relative_to_current(block_factory, chunk->location, block_location1);
             }
             vec3 block_location2 = { location[0] + x, location[1] + y, location[2] + 5 };
-            if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
+            if (add_block(block_factory, chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
             {
-                add_block_relative_to_current(chunk->location, block_location2);
+                add_block_relative_to_current(block_factory, chunk->location, block_location2);
             }
         }
     }
@@ -289,50 +261,84 @@ void ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 location
             }
 
             vec3 block_location = { location[0] + x, location[1] + y, location[2] + 6 };
-            if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location, true) == Result::OOB)
+            if (add_block(block_factory, chunk, BlockType::LEAVES, block_location, true) == Result::OOB)
             {
-                add_block_relative_to_current(chunk->location, block_location);
+                add_block_relative_to_current(block_factory, chunk->location, block_location);
             }
         }
     }
 
-    // Leaves (second 3x3 layer: x-shaped)
+    // Leaves (second 3x3 layer: +shaped)
     vec3 block_location1 = { location[0] + 0, location[1] + 0, location[2] + 7 };
-    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
+    if (add_block(block_factory, chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
     {
-        add_block_relative_to_current(chunk->location, block_location1);
+        add_block_relative_to_current(block_factory, chunk->location, block_location1);
     }
     vec3 block_location2 = { location[0] + 1, location[1] + 0, location[2] + 7 };
-    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
+    if (add_block(block_factory, chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
     {
-        add_block_relative_to_current(chunk->location, block_location2);
+        add_block_relative_to_current(block_factory, chunk->location, block_location2);
     }
     vec3 block_location3 = { location[0] - 1, location[1] + 0, location[2] + 7 };
-    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location3, true) == Result::OOB)
+    if (add_block(block_factory, chunk, BlockType::LEAVES, block_location3, true) == Result::OOB)
     {
-        add_block_relative_to_current(chunk->location, block_location3);
+        add_block_relative_to_current(block_factory, chunk->location, block_location3);
     }
     vec3 block_location4 = { location[0] + 0, location[1] + 1, location[2] + 7 };
-    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location4, true) == Result::OOB)
+    if (add_block(block_factory, chunk, BlockType::LEAVES, block_location4, true) == Result::OOB)
     {
-        add_block_relative_to_current(chunk->location, block_location4);
+        add_block_relative_to_current(block_factory, chunk->location, block_location4);
     }
     vec3 block_location5 = { location[0] + 0, location[1] - 1, location[2] + 7 };
-    if (chunk_mgr.add_block(chunk, BlockType::LEAVES, block_location5, true) == Result::OOB)
+    if (add_block(block_factory, chunk, BlockType::LEAVES, block_location5, true) == Result::OOB)
     {
-        add_block_relative_to_current(chunk->location, block_location5);
+        add_block_relative_to_current(block_factory, chunk->location, block_location5);
     }
 }
 
 void ChunkManager::update_mesh()
 {
-    terrain_mesh.vertices.clear();
-    for (auto chunk : chunks)
+    if (std::any_of(chunks.begin(), chunks.end(),
+        [&](std::shared_ptr<Chunk> &chunk)
+        {
+            return chunk->updated;
+        })
+    )
     {
-        terrain_mesh.vertices.insert(terrain_mesh.vertices.end(), chunk->vertices.begin(), chunk->vertices.end());
+        terrain_mesh.vertices.clear();
+        for (auto chunk : chunks)
+        {
+            terrain_mesh.vertices.insert(terrain_mesh.vertices.end(), chunk->vertices.begin(), chunk->vertices.end());
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
+        glBufferData(GL_ARRAY_BUFFER, terrain_mesh.vertices.size() * sizeof(BlockVertex), terrain_mesh.vertices.data(), GL_DYNAMIC_DRAW);
+        glBindBuffer(0, terrain_mesh.vbo);
+    }
+}
+
+void ChunkManager::add_block_relative_to_current(
+    const BlockFactory &block_factory,
+    const vec3 &chunk_location,
+    const vec3 &block_location
+)
+{
+    vec3 actual_chunk_location{};
+    vec3 actual_block_location{};
+
+    actual_chunk_location[0] = std::floorf(((chunk_location[0] * 16) + block_location[0]) / 16.0f);
+    actual_chunk_location[1] = std::floorf(((chunk_location[1] * 16) + block_location[1]) / 16.0f);
+    actual_chunk_location[2] = std::floorf(((chunk_location[2] * 16) + block_location[2]) / 16.0f);
+
+    actual_block_location[0] = ((int)block_location[0] % 16 + 16) % 16;
+    actual_block_location[1] = ((int)block_location[1] % 16 + 16) % 16;
+    actual_block_location[2] = ((int)block_location[2] % 16 + 16) % 16;
+
+    auto chunk = get_chunk(Chunk(actual_chunk_location));
+    if (chunk == std::nullopt)
+    {
+        return;
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, terrain_mesh.vertices.size() * sizeof(BlockVertex), terrain_mesh.vertices.data(), GL_STATIC_DRAW);
-    glBindBuffer(0, terrain_mesh.vbo);
+    add_block(block_factory, chunk.value(), BlockType::DIRT, actual_block_location, false);
 }

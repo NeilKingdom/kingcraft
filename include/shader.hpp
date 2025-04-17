@@ -2,15 +2,15 @@
 
 #include "common.hpp"
 
-class ShaderProgram
+class Shader
 {
 public:
     ID id;
 
     // Special member functions
-    ShaderProgram() = delete;
-    ShaderProgram(const std::filesystem::path vertex_path, const std::filesystem::path fragment_path);
-    ~ShaderProgram();
+    Shader() = delete;
+    Shader(const std::filesystem::path vertex_path, const std::filesystem::path fragment_path);
+    ~Shader();
 
     // General
     void bind() const;

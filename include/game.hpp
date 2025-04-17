@@ -5,7 +5,7 @@
 #include "constants.hpp"
 #include "window.hpp"
 #include "settings.hpp"
-#include "shader_program.hpp"
+#include "shader.hpp"
 #include "chunk_factory.hpp"
 #include "chunk_manager.hpp"
 #include "skybox.hpp"
@@ -31,8 +31,6 @@ private:
     PerlinNoise pn;
 
     // General
-    void start();
-    void cleanup();
     void generate_terrain();
     void plant_trees(ChunkManager &chunk_mgr, PerlinNoise &pn);
     void apply_physics();
