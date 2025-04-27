@@ -8,6 +8,8 @@
 
 #include "game.hpp"
 
+static int count;
+
 static void GLAPIENTRY debug_callback(
    GLenum source,
    GLenum type,
@@ -35,15 +37,7 @@ Game::Game()
 {
     using namespace std::chrono;
 
-    /*** Variable declarations ***/
-
-    int fps;
-    int frames_elapsed = 0;
-    time_point<steady_clock> since = steady_clock::now();
-    nanoseconds::rep frame_duration = 0L;
-    constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
-
-    /*** Window and OpenGL context initialization ***/
+    /*** Create windows and create OpenGL context ***/
 
     KCWindow kc_win;
     KCWindow imgui_win;
@@ -58,7 +52,8 @@ Game::Game()
     settings.init_imgui(imgui_win);
 #endif
 
-    // Bind graphics drivers to OpenGL API specification
+    /*** Bind graphics drivers to OpenGL API specification ***/
+
     // NOTE: Must be placed after a valid OpenGL context has been made current
     if (glewInit() != GLEW_OK)
     {
@@ -66,6 +61,14 @@ Game::Game()
         exit(EXIT_FAILURE);
     }
     std::cout << glGetString(GL_VERSION) << std::endl;
+
+    /*** Variable declarations ***/
+
+    int fps;
+    int frames_elapsed = 0;
+    time_point<steady_clock> since = steady_clock::now();
+    nanoseconds::rep frame_duration = 0L;
+    constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
 
     Camera camera;
     CullingFrustum frustum;
@@ -79,6 +82,8 @@ Game::Game()
     auto &chunks = chunk_mgr.chunks;
     auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
     auto chunk_col_coords_iter = chunk_col_coords.end();
+
+    /*** Enable/disable OpenGL options ***/
 
     // Enable debug logging
     //glEnable(GL_DEBUG_OUTPUT);
@@ -154,7 +159,6 @@ Game::Game()
         // Re-calculate chunk positions list once all chunks have been rendered
         if (chunk_col_coords_iter >= chunk_col_coords.end())
         {
-            //chunk_factory.plant_trees(pn);
             chunk_col_coords.clear();
             frustum = camera.get_frustum_coords(settings.render_distance);
 
@@ -224,13 +228,17 @@ Game::Game()
         if (!chunk_col_coords.empty())
         {
             auto chunk_col = chunk_factory.make_chunk_column(
-                pn,
+                block_factory, pn,
                 vec2{
                     (*chunk_col_coords_iter)[0],
                     (*chunk_col_coords_iter)[1]
                 }
             );
             chunks.insert(chunks.end(), chunk_col.begin(), chunk_col.end());
+        }
+        else
+        {
+            plant_trees(chunk_mgr, block_factory);
         }
         chunk_col_coords_iter++;
 
@@ -258,7 +266,8 @@ Game::~Game()
 {
     /*** ImGui ***/
 
-#ifdef DEBUG
+#if 0
+//#ifdef DEBUG
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplX11_Shutdown();
     ImGui::DestroyContext();
@@ -278,16 +287,16 @@ Game::~Game()
     // X11
 
     // Restore normal cursor and free the custom one
-    XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
-    XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
+    //XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
+    //XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
 
-    Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
-    XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
-    XFreeCursor(kc_win.dpy, default_cursor);
+    //Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
+    //XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
+    //XFreeCursor(kc_win.dpy, default_cursor);
 
-    XDestroyWindow(kc_win.dpy, kc_win.win);
-    XFreeColormap(kc_win.dpy, kc_win.cmap);
-    XCloseDisplay(kc_win.dpy);
+    //XDestroyWindow(kc_win.dpy, kc_win.win);
+    //XFreeColormap(kc_win.dpy, kc_win.cmap);
+    //XCloseDisplay(kc_win.dpy);
 }
 
 /**
@@ -427,7 +436,6 @@ void Game::render_frame(
 )
 {
     Settings &settings = Settings::get_instance();
-    Mesh<BlockVertex> &terrain_mesh = chunk_mgr.terrain_mesh;
     unsigned u_model, u_view, u_proj;
 
     glClearColor(1.0f, 1.0, 1.0f, 1.0);
@@ -457,9 +465,9 @@ void Game::render_frame(
     u_proj = glGetUniformLocation(shaders.block.id, "proj");
     glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
 
+    glBindVertexArray(chunk_mgr.terrain_mesh.vao);
     chunk_mgr.update_mesh();
-    glBindVertexArray(terrain_mesh.vao);
-    glDrawArrays(GL_TRIANGLES, 0, terrain_mesh.vertices.size());
+    glDrawArrays(GL_TRIANGLES, 0, chunk_mgr.terrain_mesh.vertices.size());
     glBindVertexArray(0);
 
     shaders.block.unbind();
@@ -522,7 +530,7 @@ static uint32_t fnv1a_hash(const vec3 &chunk_location, const vec3 &block_locatio
     return hash;
 }
 
-void Game::plant_trees(ChunkManager &chunk_mgr, PerlinNoise &pn)
+void Game::plant_trees(ChunkManager &chunk_mgr, const BlockFactory &block_factory)
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
@@ -540,41 +548,26 @@ void Game::plant_trees(ChunkManager &chunk_mgr, PerlinNoise &pn)
 
     for (auto chunk : tallest_chunks)
     {
-        std::vector<std::vector<uint8_t>> block_heights;
-        block_heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
-
-        for (ssize_t y = -1; y < chunk_size + 1; ++y)
-        {
-            for (ssize_t x = -1; x < chunk_size + 1; ++x)
-            {
-                block_heights[y + 1][x + 1] = pn.octave_perlin(
-                    -chunk->location[0] * chunk_size + x,
-                     chunk->location[1] * chunk_size + y,
-                     0.8f, 0.05f, 3,
-                     KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
-                );
-            }
-        }
-
         for (ssize_t z = 0, _z = (chunk->location[2] * chunk_size); z < chunk_size; ++z, ++_z)
         {
             for (ssize_t y = 0, _y = 1; y < chunk_size; ++y, ++_y)
             {
                 for (ssize_t x = 0, _x = 1; x < chunk_size; ++x, ++_x)
                 {
-                    if (_z == block_heights[_y][_x])
+                    if (_z == chunk->block_heights[_y][_x])
                     {
                         const unsigned rand_threshold = 578; // The higher, the less probable
                         vec3 tmp_location = { (float)x, (float)y, (float) z };
                         if ((fnv1a_hash(chunk->location, tmp_location) % rand_threshold) == 0)
                         {
-                            chunk_mgr.plant_tree(chunk, tmp_location);
+                            chunk_mgr.plant_tree(block_factory, chunk, tmp_location);
                         }
                     }
                 }
             }
         }
 
+        // TODO: Not accounting for blocks placed outside current chunk
         chunk->update_mesh();
     }
 }

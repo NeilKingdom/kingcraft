@@ -179,7 +179,7 @@ CullingFrustum Camera::get_frustum_coords(const size_t render_distance) const
     lac_multiply_vec2(v_C, v_C, w_half);
     lac_add_vec2(v_C, v_C, v_LD);
 
-    /* TODO: Streamline this. Wasteful considering we already have v_LD above */
+    // TODO: Streamline this. Wasteful considering we already have v_LD above
 
     // Move all points a little bit behind the camera's actual position
     const float scalar = 2.0f;

@@ -10,6 +10,8 @@
 
 #include "chunk_manager.hpp"
 
+static bool first = true;
+
 ChunkManager::ChunkManager()
 {
     glGenVertexArrays(1, &terrain_mesh.vao);
@@ -88,69 +90,55 @@ Result ChunkManager::add_block(
     }
 
     Block &block = chunk->blocks[location[2]][location[1]][location[0]];
-    if (block.type == BlockType::AIR)
-    {
-        vec3 real_location = {
-            -(chunk->location[0] * chunk_size) + location[0],
-             (chunk->location[1] * chunk_size) + location[1],
-             (chunk->location[2] * chunk_size) + location[2]
-        };
-        block = block_factory.make_block(type, real_location, ALL);
-    }
-
-    block.faces = ALL;
-    block.type = type;
+    vec3 real_location = {
+        -(chunk->location[0] * chunk_size) + location[0],
+         (chunk->location[1] * chunk_size) + location[1],
+         (chunk->location[2] * chunk_size) + location[2]
+    };
+    block = block_factory.make_block(type, real_location, ALL);
 
     // Remove block faces
 
     if (block.type != BlockType::LEAVES)
     {
-        if (
-            location[0] > 0 &&
+        if (location[0] > 0 &&
             chunk->blocks[location[2]][location[1]][location[0] - 1].type != BlockType::AIR &&
-            chunk->blocks[location[2]][location[1]][location[0] - 1].type != BlockType::LEAVES
-        )
+            chunk->blocks[location[2]][location[1]][location[0] - 1].type != BlockType::LEAVES)
         {
             UNSET_BIT(chunk->blocks[location[2]][location[1]][location[0] - 1].faces, BACK);
             UNSET_BIT(block.faces, FRONT);
         }
-        if (
-            location[0] < (chunk_size - 1) &&
+        if (location[0] < (chunk_size - 1) &&
             chunk->blocks[location[2]][location[1]][location[0] + 1].type != BlockType::AIR &&
-            chunk->blocks[location[2]][location[1]][location[0] + 1].type != BlockType::LEAVES
-        )
+            chunk->blocks[location[2]][location[1]][location[0] + 1].type != BlockType::LEAVES)
         {
             UNSET_BIT(chunk->blocks[location[2]][location[1]][location[0] + 1].faces, FRONT);
             UNSET_BIT(block.faces, BACK);
         }
         if (location[1] > 0 &&
             chunk->blocks[location[2]][location[1] - 1][location[0]].type != BlockType::AIR &&
-            chunk->blocks[location[2]][location[1] - 1][location[0]].type != BlockType::LEAVES
-        )
+            chunk->blocks[location[2]][location[1] - 1][location[0]].type != BlockType::LEAVES)
         {
             UNSET_BIT(chunk->blocks[location[2]][location[1] - 1][location[0]].faces, RIGHT);
             UNSET_BIT(block.faces, LEFT);
         }
         if (location[1] < (chunk_size - 1) &&
             chunk->blocks[location[2]][location[1] + 1][location[0]].type != BlockType::AIR &&
-            chunk->blocks[location[2]][location[1] + 1][location[0]].type != BlockType::LEAVES
-        )
+            chunk->blocks[location[2]][location[1] + 1][location[0]].type != BlockType::LEAVES)
         {
             UNSET_BIT(chunk->blocks[location[2]][location[1] + 1][location[0]].faces, LEFT);
             UNSET_BIT(block.faces, RIGHT);
         }
         if (location[2] > 0 &&
             chunk->blocks[location[2] - 1][location[1]][location[0]].type != BlockType::AIR &&
-            chunk->blocks[location[2] - 1][location[1]][location[0]].type != BlockType::LEAVES
-        )
+            chunk->blocks[location[2] - 1][location[1]][location[0]].type != BlockType::LEAVES)
         {
             UNSET_BIT(chunk->blocks[location[2] - 1][location[1]][location[0]].faces, TOP);
             UNSET_BIT(block.faces, BOTTOM);
         }
         if (location[2] < (chunk_size - 1) &&
             chunk->blocks[location[2] + 1][location[1]][location[0]].type != BlockType::AIR &&
-            chunk->blocks[location[2] + 1][location[1]][location[0]].type != BlockType::LEAVES
-        )
+            chunk->blocks[location[2] + 1][location[1]][location[0]].type != BlockType::LEAVES)
         {
             UNSET_BIT(chunk->blocks[location[2] + 1][location[1]][location[0]].faces, BOTTOM);
             UNSET_BIT(block.faces, TOP);
@@ -200,9 +188,9 @@ std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk(const Chunk &chunk
     auto found = std::find_if(
         chunks.begin(),
         chunks.end(),
-        [&](const std::shared_ptr<Chunk> &item)
+        [&](const std::shared_ptr<Chunk> &needle)
         {
-            return chunk == *item;
+            return chunk == *needle;
         }
     );
 
@@ -306,21 +294,25 @@ void ChunkManager::update_mesh()
     )
     {
         terrain_mesh.vertices.clear();
-        for (auto chunk : chunks)
+        for (auto &chunk : chunks)
         {
-            terrain_mesh.vertices.insert(terrain_mesh.vertices.end(), chunk->vertices.begin(), chunk->vertices.end());
+            chunk->updated = false;
+            if (!chunk->vertices.empty())
+            {
+                terrain_mesh.vertices.insert(terrain_mesh.vertices.end(), chunk->vertices.begin(), chunk->vertices.end());
+            }
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
-        glBufferData(GL_ARRAY_BUFFER, terrain_mesh.vertices.size() * sizeof(BlockVertex), terrain_mesh.vertices.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, terrain_mesh.vertices.size() * sizeof(BlockVertex), terrain_mesh.vertices.data(), GL_STATIC_DRAW);
         glBindBuffer(0, terrain_mesh.vbo);
     }
 }
 
 void ChunkManager::add_block_relative_to_current(
     const BlockFactory &block_factory,
-    const vec3 &chunk_location,
-    const vec3 &block_location
+    const vec3 chunk_location,
+    const vec3 block_location
 )
 {
     vec3 actual_chunk_location{};
@@ -337,7 +329,8 @@ void ChunkManager::add_block_relative_to_current(
     auto chunk = get_chunk(Chunk(actual_chunk_location));
     if (chunk == std::nullopt)
     {
-        return;
+        chunk = std::make_optional(std::make_shared<Chunk>(Chunk(actual_chunk_location)));
+        chunks.push_back(chunk.value());
     }
 
     add_block(block_factory, chunk.value(), BlockType::DIRT, actual_block_location, false);

@@ -15,7 +15,7 @@ class Player
 {
 public:
     float curr_speed;
-    MovementMode curr_move_mode = MovementMode::WALKING;
+    MovementMode curr_move_mode;
 
     // Special member functions
     Player();

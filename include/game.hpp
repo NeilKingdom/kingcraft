@@ -32,7 +32,7 @@ private:
 
     // General
     void generate_terrain();
-    void plant_trees(ChunkManager &chunk_mgr, PerlinNoise &pn);
+    void plant_trees(ChunkManager &chunk_mgr, const BlockFactory &block_factory);
     void apply_physics();
     void process_events(KCWindow &win, Camera &camera);
     void render_frame(ChunkManager &chunk_mgr, Camera &camera, Mvp &mvp, KCShaders &shaders, SkyBox &skybox);

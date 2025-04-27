@@ -8,12 +8,13 @@
 
 #include "chunk.hpp"
 
-Chunk::Chunk()
-    : updated(false), is_tallest_in_col(false)
+Chunk::Chunk() :
+    updated(false), is_tallest_in_col(false)
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
+    block_heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
     blocks.resize(
         chunk_size,
         std::vector<std::vector<Block>>(
@@ -23,13 +24,14 @@ Chunk::Chunk()
     );
 }
 
-Chunk::Chunk(const vec3 location)
-    : updated(false), is_tallest_in_col(false)
+Chunk::Chunk(const vec3 location) :
+    updated(false), is_tallest_in_col(false)
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
     std::memcpy(this->location, location, sizeof(vec3));
+    block_heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
     blocks.resize(
         chunk_size,
         std::vector<std::vector<Block>>(
@@ -100,5 +102,4 @@ void Chunk::update_mesh()
             }
         }
     }
-    vertices.shrink_to_fit();
 }

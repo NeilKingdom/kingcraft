@@ -13,6 +13,7 @@ public:
     bool is_tallest_in_col;
     bool updated;
     std::vector<BlockVertex> vertices;
+    std::vector<std::vector<uint8_t>> block_heights;
     std::vector<std::vector<std::vector<Block>>> blocks;
 
     // Special member functions

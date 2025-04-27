@@ -14,21 +14,13 @@
  */
 BlockFactory::BlockFactory()
 {
-    populate_uv_cache();
-}
-
-/**
- * @brief Populates the UV coordinate cache for later usage.
- * @since 13-02-2025
- */
-void BlockFactory::populate_uv_cache()
-{
+    // Populate UV cache
     uv_cache[BlockType::DIRT]       = get_uv_coords(BlockType::DIRT);
     uv_cache[BlockType::GRASS]      = get_uv_coords(BlockType::GRASS);
     uv_cache[BlockType::WOOD]       = get_uv_coords(BlockType::WOOD);
     uv_cache[BlockType::LEAVES]     = get_uv_coords(BlockType::LEAVES);
     uv_cache[BlockType::SAND]       = get_uv_coords(BlockType::SAND);
-    // TODO: ...
+    // TODO: Finish...
 }
 
 /**
@@ -113,7 +105,7 @@ BlockFactory::get_uv_coords(const BlockType type)
  * @since 16-10-2024
  * @param[in] type The block type of the block being created e.g., dirt, grass, etc.
  * @param[in] location A vec3 which determines the location of the block relative to the parent chunk
- * @param[in] sides A mask which determines which sides of the block will be rendered
+ * @param[in] faces A mask which determines which sides of the block will be rendered
  * @returns A Block object which matches the requested attributes
  */
 Block BlockFactory::make_block(

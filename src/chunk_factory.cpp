@@ -15,9 +15,8 @@
  * @param[in] faces A bitmask representing the faces of the chunk to be rendered
  * @returns The constructed Chunk object
  */
-std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 location, const bool is_tallest_in_col) const
+std::shared_ptr<Chunk> ChunkFactory::make_chunk(const BlockFactory &block_factory, PerlinNoise &pn, const vec3 location, const bool is_tallest_in_col) const
 {
-    BlockFactory block_factory;
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
@@ -28,25 +27,15 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 loca
     {
         uint8_t faces;
         BlockType type;
-    };
-    std::vector<std::vector<std::vector<BlockData>>> block_data;
-    block_data.resize(
-        chunk_size,
-        std::vector<std::vector<BlockData>>(
-            chunk_size,
-            std::vector<BlockData>(chunk_size, BlockData{})
-        )
-    );
+    } block_data;
 
-    std::vector<std::vector<uint8_t>> block_heights;
-    block_heights.resize(chunk_size + 2, std::vector<uint8_t>(chunk_size + 2));
     for (ssize_t y = -1; y < chunk_size + 1; ++y)
     {
         for (ssize_t x = -1; x < chunk_size + 1; ++x)
         {
-            block_heights[y + 1][x + 1] = pn.octave_perlin(
-                -location[0] * chunk_size + x,
-                 location[1] * chunk_size + y,
+            chunk->block_heights[y + 1][x + 1] = pn.octave_perlin(
+                -(location[0] * chunk_size) + x,
+                 (location[1] * chunk_size) + y,
                  0.8f, 0.05f, 3,
                  KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
@@ -59,7 +48,8 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 loca
         {
             for (ssize_t x = 0, _x = 1; x < chunk_size; ++x, ++_x)
             {
-                if (_z > block_heights[_y][_x])
+                // Air blocks can be skipped
+                if (_z > chunk->block_heights[_y][_x])
                 {
                     continue;
                 }
@@ -68,47 +58,49 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 loca
                 // TODO: Add other block types at different z values
                 if (x == 0)
                 {
-                    block_data[z][y][x].type = BlockType::SAND;
+                    block_data.type = BlockType::SAND;
                 }
                 else
                 {
-                    block_data[z][y][x].type = BlockType::GRASS;
+                    block_data.type = BlockType::GRASS;
                 }
+
+                block_data.faces = 0;
 
                 // Bottom
                 if (_z == 0)
                 {
-                    block_data[z][y][x].faces |= BOTTOM;
+                    block_data.faces |= BOTTOM;
                 }
 
                 // Top
-                if (_z == block_heights[_y][_x])
+                if (_z == chunk->block_heights[_y][_x])
                 {
-                    block_data[z][y][x].faces |= TOP;
+                    block_data.faces |= TOP;
                 }
 
                 // Front
-                if (_z > block_heights[_y][_x - 1])
+                if (_z > chunk->block_heights[_y][_x - 1])
                 {
-                    block_data[z][y][x].faces |= FRONT;
+                    block_data.faces |= FRONT;
                 }
 
                 // Back
-                if (_z > block_heights[_y][_x + 1])
+                if (_z > chunk->block_heights[_y][_x + 1])
                 {
-                    block_data[z][y][x].faces |= BACK;
+                    block_data.faces |= BACK;
                 }
 
                 // Left
-                if (_z > block_heights[_y - 1][_x])
+                if (_z > chunk->block_heights[_y - 1][_x])
                 {
-                    block_data[z][y][x].faces |= LEFT;
+                    block_data.faces |= LEFT;
                 }
 
                 // Right
-                if (_z > block_heights[_y + 1][_x])
+                if (_z > chunk->block_heights[_y + 1][_x])
                 {
-                    block_data[z][y][x].faces |= RIGHT;
+                    block_data.faces |= RIGHT;
                 }
 
                 vec3 block_location = {
@@ -119,9 +111,9 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 loca
 
                 // Construct block
                 chunk->blocks[z][y][x] = block_factory.make_block(
-                    block_data[z][y][x].type,
+                    block_data.type,
                     block_location,
-                    block_data[z][y][x].faces
+                    block_data.faces
                 );
             }
         }
@@ -138,27 +130,23 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(PerlinNoise &pn, const vec3 loca
  * @returns A vector of chunks that make up the chunk column
  */
 std::vector<std::shared_ptr<Chunk>>
-ChunkFactory::make_chunk_column(PerlinNoise &pn, const vec2 location) const
+ChunkFactory::make_chunk_column(const BlockFactory &block_factory, PerlinNoise &pn, const vec2 location) const
 {
     Settings &settings = Settings::get_instance();
     auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
 
-    ssize_t i;
     ssize_t chunk_size = settings.chunk_size;
     ssize_t height_lo = KC::MAX_BLOCK_HEIGHT;
     ssize_t height_hi = 0;
     ssize_t height;
 
-    std::vector<std::vector<uint8_t>> heights;
-    heights.resize(chunk_size, std::vector<uint8_t>(chunk_size));
-
     for (ssize_t y = 0; y < chunk_size; ++y)
     {
         for (ssize_t x = 0; x < chunk_size; ++x)
         {
-            height = heights[y][x] = pn.octave_perlin(
-                -location[0] * chunk_size + x,
-                 location[1] * chunk_size + y,
+            height = pn.octave_perlin(
+                -(location[0] * chunk_size) + x,
+                 (location[1] * chunk_size) + y,
                  0.8f, 0.05f, 3,
                  KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
@@ -175,20 +163,12 @@ ChunkFactory::make_chunk_column(PerlinNoise &pn, const vec2 location) const
         }
     }
 
-    // Terrain chunks
-    for (i = std::max(0, (int)(height_lo / chunk_size) - 1); i < (height_hi / chunk_size) + 1; ++i)
+    // Solid terrain chunks
+    for (size_t i = std::max(0, (int)(height_lo / chunk_size) - 1); i < (height_hi / chunk_size) + 1; ++i)
     {
         bool is_highest_in_col = (i == (height_hi / chunk_size));
         vec3 tmp_location = { location[0], location[1], (float)i };
-        auto chunk = make_chunk(pn, tmp_location, is_highest_in_col);
-        chunk_col.push_back(chunk);
-    }
-
-    // Empty air chunks
-    for (; i < ((KC::SEA_LEVEL + (chunk_size * 3)) / chunk_size) + 1; ++i)
-    {
-        vec3 tmp_location = { location[0], location[1], (float)i };
-        chunk_col.push_back(std::make_shared<Chunk>(Chunk(tmp_location)));
+        chunk_col.push_back(make_chunk(block_factory, pn, tmp_location, is_highest_in_col));
     }
 
     return chunk_col;

@@ -1,6 +1,48 @@
 #include "perlin_noise.hpp"
 
 /**
+ * @brief Calculate the gradient vector for a given grid point.
+ * @since 02-01-2025
+ * @param[in] hash
+ * @param[in] x [TODO:parameter]
+ * @param[in] y [TODO:parameter]
+ * @param[in] z [TODO:parameter]
+ * @return [TODO:return]
+ */
+float PerlinNoise::gradient(const int hash, const float x, const float y, const float z)
+{
+	int h = hash & 0x0F;
+	// Convert lower 4 bits of hash into 12 gradient directions
+	float u = (h < 8) ? x : y;
+    float v = (h < 4) ? y : h == 12 || h == 14 ? x : z;
+	return (((h & 1) == 0) ? u : -u) + (((h & 2) == 0) ? v : -v);
+}
+
+/**
+ * @brief Linearly interpolates between two points __a__ and __b__ at the normalized distance __t__.
+ * @since 02-01-2025
+ * @param[in] t The normalized distance to be interpolated between __a__ and __b__
+ * @param[in] a The starting value used for the interpolation
+ * @param[in] b The ending value used for the interpolation
+ * @returns The value that corresponds to the interpolated distance __t__ which lies between values __a__ and __b__
+ */
+inline float PerlinNoise::lerp(const float t, const float a, const float b)
+{
+    return (b - a) * t + a;
+}
+
+/**
+ * @brief Provides a smooth step transition given __t__, which represents the normalized distance between two points.
+ * @since 02-01-2025
+ * @param[in] t A normalized value between 0 and 1 representing the distance between two points
+ * @returns A value between 0 and 1 which represents the smoothed value of t
+ */
+inline float PerlinNoise::fade(const float t)
+{
+    return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+/**
  * @brief Default constructor for PerlinNoise generator.
  * @since 02-01-2025
  * @param[in] octaves Optional parameter which specifies the amount of octaves used in octave_perlin()
@@ -123,45 +165,3 @@ float PerlinNoise::octave_perlin(
     return noise;
 }
 
-// TODO: Document.
-/**
- * @brief Calculate the gradient vector for a given grid point.
- * @since 02-01-2025
- * @param[in] hash
- * @param[in] x [TODO:parameter]
- * @param[in] y [TODO:parameter]
- * @param[in] z [TODO:parameter]
- * @return [TODO:return]
- */
-float PerlinNoise::gradient(const int hash, const float x, const float y, const float z)
-{
-	int h = hash & 0x0F;
-	// Convert lower 4 bits of hash into 12 gradient directions
-	float u = (h < 8) ? x : y;
-    float v = (h < 4) ? y : h == 12 || h == 14 ? x : z;
-	return (((h & 1) == 0) ? u : -u) + (((h & 2) == 0) ? v : -v);
-}
-
-/**
- * @brief Linearly interpolates between two points __a__ and __b__ at the normalized distance __t__.
- * @since 02-01-2025
- * @param[in] t The normalized distance to be interpolated between __a__ and __b__
- * @param[in] a The starting value used for the interpolation
- * @param[in] b The ending value used for the interpolation
- * @returns The value that corresponds to the interpolated distance __t__ which lies between values __a__ and __b__
- */
-inline float PerlinNoise::lerp(const float t, const float a, const float b)
-{
-    return (b - a) * t + a;
-}
-
-/**
- * @brief Provides a smooth step transition given __t__, which represents the normalized distance between two points.
- * @since 02-01-2025
- * @param[in] t A normalized value between 0 and 1 representing the distance between two points
- * @returns A value between 0 and 1 which represents the smoothed value of t
- */
-inline float PerlinNoise::fade(const float t)
-{
-    return t * t * t * (t * (t * 6 - 15) + 10);
-}

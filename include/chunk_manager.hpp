@@ -40,5 +40,5 @@ private:
     ChunkManager();
 
     // General
-    void add_block_relative_to_current(const BlockFactory &block_factory, const vec3 &chunk_location, const vec3 &block_location);
+    void add_block_relative_to_current(const BlockFactory &block_factory, const vec3 chunk_location, const vec3 block_location);
 };
