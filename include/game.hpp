@@ -24,16 +24,32 @@ public:
     Game &operator=(const Game &game) = delete;
 
 private:
-    GLXContext glx;
-    KCWindow kc_win;
-    KCWindow imgui_win;
-    Player player;
-    PerlinNoise pn;
+    GLXContext glx; // OpenGL Context
+    KCWindow kc_win; // KingCraft window
+    KCWindow imgui_win; // ImGui window
+    Player player; // Player instance
+    PerlinNoise pn; // Perlin noise instance
+    std::thread fps_thread; // Thread for tracking game FPS
 
     // General
-    void generate_terrain();
-    void plant_trees(ChunkManager &chunk_mgr, const BlockFactory &block_factory);
+    void generate_terrain(
+        Settings &settings,
+        ChunkManager &chunk_mgr,
+        Camera &camera,
+        ChunkFactory &chunk_factory,
+        BlockFactory &block_factory,
+        Mvp &mvp,
+        KCShaders &shaders,
+        SkyBox &skybox
+    );
+    void plant_trees(
+        Camera &camera,
+        const BlockFactory &block_factory,
+        Mvp &mvp,
+        KCShaders &shaders,
+        SkyBox &skybox
+    );
     void apply_physics();
-    void process_events(KCWindow &win, Camera &camera);
+    void process_events(Settings &settings, Camera &camera);
     void render_frame(ChunkManager &chunk_mgr, Camera &camera, Mvp &mvp, KCShaders &shaders, SkyBox &skybox);
 };

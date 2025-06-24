@@ -65,7 +65,7 @@ void Settings::draw_minimap(KCWindow &win, Camera &camera, const float zoom)
 
         // Render visible chunks
 
-        CullingFrustum frustum = camera.get_frustum_coords(5);
+        Frustum2D frustum = camera.get_frustum2D(5);
 
         ImVec2 v_eye = { win_pos.x + (win_size.x / 2.0f), win_pos.y + (win_size.y / 2.0f) };
         ImVec2 v_left = {

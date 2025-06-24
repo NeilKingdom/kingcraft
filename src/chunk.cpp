@@ -9,7 +9,7 @@
 #include "chunk.hpp"
 
 Chunk::Chunk() :
-    updated(false), is_tallest_in_col(false)
+    update_pending(false), is_tallest_in_col(false)
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
@@ -25,7 +25,7 @@ Chunk::Chunk() :
 }
 
 Chunk::Chunk(const vec3 location) :
-    updated(false), is_tallest_in_col(false)
+    update_pending(false), is_tallest_in_col(false)
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
@@ -50,7 +50,21 @@ Chunk::Chunk(const vec3 location) :
  */
 bool Chunk::operator==(const Chunk &chunk) const
 {
-    return is_equal(this->location, chunk.location);
+    return KC::v3_eq(this->location, chunk.location);
+}
+
+/**
+ * @since 03-04-2025
+ * @brief Returns a unique hash as a std::string.
+ * Hash is computed as the string literal "x_pos,y_pos,z_pos" where x_pos, y_pos, and z_pos are the x, y, z
+ * components of the chunk's location vector.
+ * @returns The unique hash of the chunk as a std::string
+ */
+std::string Chunk::get_string_hash() const
+{
+    return std::to_string((ssize_t)location[0])
+        + "," + std::to_string((ssize_t)location[1])
+        + "," + std::to_string((ssize_t)location[2]);
 }
 
 /**
@@ -62,7 +76,7 @@ void Chunk::update_mesh()
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
-    updated = true;
+    update_pending = true;
     vertices.clear();
 
     for (ssize_t z = 0; z < chunk_size; ++z)

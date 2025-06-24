@@ -5,7 +5,7 @@
 #include "settings.hpp"
 #include "chunk.hpp"
 
-class CullingFrustum
+class Frustum2D
 {
 public:
     std::array<float, 2> v_eye;
@@ -34,9 +34,9 @@ public:
 class Camera
 {
 public:
-    vec3 v_eye;                                    // Camera's origin
-    vec3 v_look_dir;                               // The direction that the camera is facing on the current frame
-    std::shared_ptr<std::array<float, 16>> m_view; // View matrix
+    vec3 v_eye; // Camera's origin
+    vec3 v_look_dir; // Unit vector representing direction camera is facing on current frame
+    std::shared_ptr<std::array<float, 16>> m_view; // View matrix (4x4)
 
     // Special member functions
     Camera();
@@ -44,8 +44,8 @@ public:
 
     // General
     void calculate_view_matrix();
-    void update_rotation_from_pointer(const KCWindow &win, const vec2 &pointer_pos);
-    CullingFrustum get_frustum_coords(const size_t render_distance) const;
+    void update_rotation_from_pointer(const KCWindow &win, const vec2 pointer_pos);
+    Frustum2D get_frustum2D(const size_t render_distance) const;
     //std::optional<Block> cast_ray(const std::vector<std::shared_ptr<Chunk>> &chunks, const unsigned n_iters) const;
 
 private:

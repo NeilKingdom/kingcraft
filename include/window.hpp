@@ -43,6 +43,10 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(
 
 // Forward function declarations
 
-void        calculate_frame_rate(int &fps, int &frames_elapsed, std::chrono::steady_clock::time_point &since);
-GLXFBConfig create_window(KCWindow &win, const std::string win_name, const size_t win_width, const size_t win_height);
-GLXContext  create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);
+GLXFBConfig create_window(
+    KCWindow &win,
+    const std::string win_name,
+    const size_t win_width,
+    const size_t win_height
+);
+GLXContext create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);

@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <iterator>
+#include <unordered_set>
 #include <algorithm>
 #include <vector>
 #include <array>
@@ -17,6 +18,8 @@
 #include <filesystem>
 #include <chrono>
 #include <random>
+#include <atomic>
+#include <thread>
 
 // C APIs
 #include <cmath>
@@ -77,3 +80,4 @@ enum BlockFace : uint8_t
 };
 
 typedef unsigned ID;
+extern std::atomic<unsigned> frames_elapsed;

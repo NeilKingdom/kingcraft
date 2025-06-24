@@ -19,7 +19,8 @@ Block::Block() :
 /**
  * @brief Parameterized constructor for creating a block of type __type__.
  * @param[in] type The type of block being generated
+ * @param[in] faces The initial faces that the block ought to render
  */
-Block::Block(const BlockType type) :
-    type(type), faces(ALL)
+Block::Block(const BlockType type, const uint8_t faces) :
+    type(type), faces(faces)
 {}

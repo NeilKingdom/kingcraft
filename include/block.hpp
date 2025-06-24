@@ -29,6 +29,6 @@ struct Block
 
     // Special member functions
     Block();
-    Block(const BlockType type);
+    Block(const BlockType type, const uint8_t faces);
     ~Block() = default;
 };

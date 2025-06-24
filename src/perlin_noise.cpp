@@ -69,7 +69,7 @@ PerlinNoise::PerlinNoise()
  * @param z[in] The z component of the sampled coordinate
  * @returns A normalized value between -1 and 1 representing the sampled point
  */
-float PerlinNoise::perlin(const float x, const float y, const float z)
+float PerlinNoise::perlin(const float x, const float y, const float z) const
 {
     float _x = x;
     float _y = y;
@@ -145,7 +145,7 @@ float PerlinNoise::octave_perlin(
     const uint8_t octaves,
     const unsigned lo,
     const unsigned hi
-)
+) const
 {
     float noise = 0.0f;
     float amp = 1.0f;

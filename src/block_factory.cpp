@@ -97,21 +97,21 @@ BlockFactory::get_uv_coords(const BlockType type)
             return std::nullopt;
     }
 
-    return std::make_tuple(uv_top, uv_sides, uv_bottom);
+    return std::make_optional(std::make_tuple(uv_top, uv_sides, uv_bottom));
 }
 
 /**
  * @brief Creates a single block based on the given parameters.
  * @since 16-10-2024
  * @param[in] type The block type of the block being created e.g., dirt, grass, etc.
- * @param[in] location A vec3 which determines the location of the block relative to the parent chunk
  * @param[in] faces A mask which determines which sides of the block will be rendered
+ * @param[in] world_location A vec3 which determines the location of the block relative to the world origin
  * @returns A Block object which matches the requested attributes
  */
 Block BlockFactory::make_block(
     const BlockType type,
-    const vec3 location,
-    const uint8_t faces
+    const uint8_t faces,
+    const vec3 world_location
 ) const
 {
     if (faces == 0 || type == BlockType::AIR)
@@ -119,8 +119,7 @@ Block BlockFactory::make_block(
         return Block();
     }
 
-    Block block = Block(type);
-    block.faces = faces;
+    Block block = Block(type, faces);
 
     // UV coordinates
     constexpr float uv_pad = 0.005f;
@@ -145,14 +144,14 @@ Block BlockFactory::make_block(
      * |/   |/
      * 2----3
      */
-    vec3 v0 = { -0.5f + location[0], -0.5f + location[1],  0.5f + location[2] };
-    vec3 v1 = { -0.5f + location[0],  0.5f + location[1],  0.5f + location[2] };
-    vec3 v2 = { -0.5f + location[0], -0.5f + location[1], -0.5f + location[2] };
-    vec3 v3 = { -0.5f + location[0],  0.5f + location[1], -0.5f + location[2] };
-    vec3 v4 = {  0.5f + location[0], -0.5f + location[1],  0.5f + location[2] };
-    vec3 v5 = {  0.5f + location[0],  0.5f + location[1],  0.5f + location[2] };
-    vec3 v6 = {  0.5f + location[0], -0.5f + location[1], -0.5f + location[2] };
-    vec3 v7 = {  0.5f + location[0],  0.5f + location[1], -0.5f + location[2] };
+    vec3 v0 = { -0.5f + world_location[0], -0.5f + world_location[1],  0.5f + world_location[2] };
+    vec3 v1 = { -0.5f + world_location[0],  0.5f + world_location[1],  0.5f + world_location[2] };
+    vec3 v2 = { -0.5f + world_location[0], -0.5f + world_location[1], -0.5f + world_location[2] };
+    vec3 v3 = { -0.5f + world_location[0],  0.5f + world_location[1], -0.5f + world_location[2] };
+    vec3 v4 = {  0.5f + world_location[0], -0.5f + world_location[1],  0.5f + world_location[2] };
+    vec3 v5 = {  0.5f + world_location[0],  0.5f + world_location[1],  0.5f + world_location[2] };
+    vec3 v6 = {  0.5f + world_location[0], -0.5f + world_location[1], -0.5f + world_location[2] };
+    vec3 v7 = {  0.5f + world_location[0],  0.5f + world_location[1], -0.5f + world_location[2] };
 
     block.right_face = {
         v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad,

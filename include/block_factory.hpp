@@ -14,7 +14,7 @@ public:
     ~BlockFactory() = default;
 
     // General
-    Block make_block(const BlockType type, const vec3 location, const uint8_t faces) const;
+    Block make_block(const BlockType type, const uint8_t faces, const vec3 world_location) const;
 
 private:
     std::map<BlockType, std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>> uv_cache;

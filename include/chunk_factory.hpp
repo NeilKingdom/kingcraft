@@ -14,6 +14,15 @@ public:
     ~ChunkFactory() = default;
 
     // General
-    std::shared_ptr<Chunk> make_chunk(const BlockFactory &block_factory, PerlinNoise &pn, const vec3 location, const bool is_tallest_in_col) const;
-    std::vector<std::shared_ptr<Chunk>> make_chunk_column(const BlockFactory &block_factory, PerlinNoise &pn, const vec2 location) const;
+    std::shared_ptr<Chunk> make_chunk(
+        const BlockFactory &block_factory,
+        const PerlinNoise &pn,
+        const vec3 chunk_location,
+        const bool is_tallest_in_col
+    ) const;
+    std::vector<std::shared_ptr<Chunk>> make_chunk_column(
+        const BlockFactory &block_factory,
+        const PerlinNoise &pn,
+        const vec2 chunk_col_location
+    ) const;
 };

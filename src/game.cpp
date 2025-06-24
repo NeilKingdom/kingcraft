@@ -1,15 +1,54 @@
 /**
- * @file game_state.cpp
+ * @file game.cpp
  * @author Neil Kingdom
  * @since 14-10-2024
  * @version 1.0
- * @brief A singleton class which acts as a context object for the game's state.
+ * @brief Oversees the execution of the game.
  */
 
 #include "game.hpp"
 
-static int count;
+std::atomic<unsigned> frames_elapsed = std::atomic<unsigned>(0);
 
+//// TODO: Move to private func
+//static uint32_t fnv1a_hash(const vec3 &chunk_location, const vec3 &block_location) {
+//    constexpr uint32_t FNV_OFFSET_BASIS = 2166136261u;
+//    constexpr uint32_t FNV_PRIME = 16777619u;
+//
+//    unsigned long seed = Settings::get_instance().seed;
+//    uint32_t hash = FNV_OFFSET_BASIS;
+//
+//    auto hash_int = [&](int value) {
+//        // Split int into bytes and hash each
+//        for (int i = 0; i < 4; ++i) {
+//            uint8_t byte = (value >> (i * 8)) & 0xFF;
+//            hash ^= byte;
+//            hash *= FNV_PRIME;
+//        }
+//    };
+//
+//    vec3 v;
+//    lac_add_vec3(v, chunk_location, block_location);
+//
+//    hash_int(v[0]);
+//    hash_int(v[1]);
+//    hash_int(v[2]);
+//    hash_int(seed);
+//
+//    return hash;
+//}
+
+/**
+ * @brief OpenGL callback for logging events.
+ * @since 14-10-2024
+ * @param[in] source Source of the event
+ * @param[in] type The type/level of the message
+ * @param[in] id Identifier for the message category
+ * @param[in] severity The level of severity of the message
+ * @param[in] length Size of the message
+ * @param[in] msg Message text
+ * @param[in] args Additional optional arguments
+ */
 static void GLAPIENTRY debug_callback(
    GLenum source,
    GLenum type,
@@ -29,21 +68,15 @@ static void GLAPIENTRY debug_callback(
 }
 
 /**
- * @brief Returns the single instance of GameState.
+ * @brief Default constructor for Game class.
  * @since 14-10-2024
- * @returns The GameState instance
  */
 Game::Game()
 {
-    using namespace std::chrono;
-
     /*** Create windows and create OpenGL context ***/
 
-    KCWindow kc_win;
-    KCWindow imgui_win;
-
     GLXFBConfig fb_config = create_window(kc_win, "KingCraft", 1920, 1080);
-    GLXContext glx = create_opengl_context(kc_win, fb_config);
+    glx = create_opengl_context(kc_win, fb_config);
     glXMakeCurrent(kc_win.dpy, kc_win.win, glx);
 
 //#ifdef DEBUG
@@ -64,30 +97,21 @@ Game::Game()
 
     /*** Variable declarations ***/
 
-    int fps;
-    int frames_elapsed = 0;
-    time_point<steady_clock> since = steady_clock::now();
-    nanoseconds::rep frame_duration = 0L;
-    constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
-
     Camera camera;
-    CullingFrustum frustum;
+    Frustum2D frustum;
     Mvp mvp = Mvp(camera);
 
+    BlockFactory block_factory;
+    ChunkFactory chunk_factory;
     Settings &settings = Settings::get_instance();
     ChunkManager &chunk_mgr = ChunkManager::get_instance();
-    ChunkFactory chunk_factory;
-    BlockFactory block_factory;
-
-    auto &chunks = chunk_mgr.chunks;
-    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
-    auto chunk_col_coords_iter = chunk_col_coords.end();
 
     /*** Enable/disable OpenGL options ***/
 
     // Enable debug logging
-    //glEnable(GL_DEBUG_OUTPUT);
-    glDisable(GL_DEBUG_OUTPUT);
+#if 0
+//#ifdef DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
     if (glDebugMessageCallback)
     {
         glDebugMessageCallback(debug_callback, nullptr);
@@ -96,6 +120,7 @@ Game::Game()
     {
         std::cerr << "WARNING: glDebugMessageCallback() is unavailable!" << std::endl;
     }
+#endif
 
     // Enable depth buffering
     glEnable(GL_DEPTH_TEST);
@@ -137,116 +162,18 @@ Game::Game()
     /*** Other setup ***/
 
     srandom(settings.seed);
+    fps_thread = std::thread(KC::fps_callback);
 
     /*** Game loop ***/
 
-    // Steps:
-    // 1. Calculate the view matrix for the current frame based on the mouse cursor deltas
-    // 2. Calculate the points which make up the camera's frustum based on the render distance
-    // 3. Determine which points lie within the frustum and add them to the list
-    // 4. If the chunks list is populated, discard chunks which don't exist in the positions list
-    // 5. For any chunks which do not exist in the chunks list, but do exist in the positions list,
-    //    generate the appropriate chunk column once per frame
-    // 6. Once all chunks have been generated in the positions list, repeat the process
-
     while (settings.is_running)
     {
-        auto frame_start = steady_clock::now();
-        player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
-
+        generate_terrain(settings, chunk_mgr, camera, chunk_factory, block_factory, mvp, shaders, skybox);
+        plant_trees(camera, block_factory, mvp, shaders, skybox);
+        //apply_physics();
+        process_events(settings, camera);
         camera.calculate_view_matrix();
-
-        // Re-calculate chunk positions list once all chunks have been rendered
-        if (chunk_col_coords_iter >= chunk_col_coords.end())
-        {
-            chunk_col_coords.clear();
-            frustum = camera.get_frustum_coords(settings.render_distance);
-
-            ssize_t min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-            ssize_t min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-            ssize_t max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
-            ssize_t max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
-
-            // Add chunk positions if they belong within the frustum
-            chunk_col_coords.reserve((std::fabs(max_x - min_x) * std::fabs(max_y - min_y)));
-            for (ssize_t y = min_y; y < max_y; ++y)
-            {
-                for (ssize_t x = min_x; x < max_x; ++x)
-                {
-                    if (frustum.is_point_within(vec2{ (float)x, (float)y }))
-                    {
-                        chunk_col_coords.emplace_back(std::array<float, 2>{ (float)x, (float)y });
-                    }
-                }
-            }
-            chunk_col_coords.shrink_to_fit();
-
-            // Sort chunk positions by distance relative to player
-            std::sort(
-                chunk_col_coords.begin(),
-                chunk_col_coords.end(),
-                [&](const std::array<float, 2> &a, const std::array<float, 2> &b) {
-                    float dx_a = a[0] - frustum.v_eye[0];
-                    float dy_a = a[1] - frustum.v_eye[1];
-                    float dx_b = b[0] - frustum.v_eye[0];
-                    float dy_b = b[1] - frustum.v_eye[1];
-
-                    return ((dx_a * dx_a) + (dy_a * dy_a)) < ((dx_b * dx_b) + (dy_b * dy_b));
-                }
-            );
-
-            // Remove chunk columns which are no longer visible in the camera's frustum
-
-            chunks.erase(
-                std::remove_if(chunks.begin(), chunks.end(), [&](std::shared_ptr<Chunk> &chunk) {
-                    auto chunk_pos = std::array<float, 2>{ chunk->location[0], chunk->location[1] };
-                    return std::find(chunk_col_coords.begin(), chunk_col_coords.end(), chunk_pos) == chunk_col_coords.end();
-                }),
-                chunks.end()
-            );
-
-            // Remove positions which are visible in the camera's frustum, but who's chunk columns have already been generated
-
-            auto to_remove = std::vector<std::array<float, 2>>{};
-            for (auto &chunk : chunks)
-            {
-                auto chunk_pos = std::array<float, 2>{ chunk->location[0], chunk->location[1] };
-                to_remove.push_back(chunk_pos);
-            }
-
-            chunk_col_coords.erase(
-                std::remove_if(chunk_col_coords.begin(), chunk_col_coords.end(), [&](const std::array<float, 2> &pos) {
-                    return std::find(to_remove.begin(), to_remove.end(), pos) != to_remove.end();
-                }),
-                chunk_col_coords.end()
-            );
-
-            chunk_col_coords_iter = chunk_col_coords.begin();
-        }
-
-        // Once per frame, make next chunk column
-        if (!chunk_col_coords.empty())
-        {
-            auto chunk_col = chunk_factory.make_chunk_column(
-                block_factory, pn,
-                vec2{
-                    (*chunk_col_coords_iter)[0],
-                    (*chunk_col_coords_iter)[1]
-                }
-            );
-            chunks.insert(chunks.end(), chunk_col.begin(), chunk_col.end());
-        }
-        else
-        {
-            plant_trees(chunk_mgr, block_factory);
-        }
-        chunk_col_coords_iter++;
-
-        process_events(kc_win, camera);
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
-
-        frame_duration = duration_cast<nanoseconds>(steady_clock::now() - frame_start).count();
-        calculate_frame_rate(fps, frames_elapsed, since);
 
 //#ifdef DEBUG
 #if 0
@@ -262,8 +189,14 @@ Game::Game()
     }
 }
 
+/**
+ * @brief Default destructor for Game class.
+ * @since 14-10-2024
+ */
 Game::~Game()
 {
+    fps_thread.join();
+
     /*** ImGui ***/
 
 #if 0
@@ -286,6 +219,8 @@ Game::~Game()
 
     // X11
 
+    // TODO: Throwing exception because resources have already been freed at this point
+
     // Restore normal cursor and free the custom one
     //XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
     //XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
@@ -300,55 +235,236 @@ Game::~Game()
 }
 
 /**
+ * @brief Generates all visible terrain within the camera's viewing frustum.
+ *
+ *    Steps:
+ *    1. Obtain viewing frustum (based on desired render distance)
+ *    2. Populate chunk_col_coords list with any (x, y) coordinates that lie within the viewing frustum and
+ *       also do not already have previously generated chunks within the global chunks list
+ *    3. Sort chunk_col_coords list by distance relative to the player so that chunks that are nearer are
+ *       rendered first
+ *    4. Remove chunks from global chunk list they are not visible within the frustum for the current iteration
+ *    5. Once per frame, make next chunk column and render to the screen. This step continues until all
+ *       chunk column positions have been exhausted for the current iteration
+ *
+ * @param settings [TODO:parameter]
+ * @param chunk_mgr [TODO:parameter]
+ * @param camera [TODO:parameter]
+ * @param chunk_factory [TODO:parameter]
+ * @param block_factory [TODO:parameter]
+ * @param mvp [TODO:parameter]
+ * @param shaders [TODO:parameter]
+ * @param skybox [TODO:parameter]
+ */
+void Game::generate_terrain(
+    Settings &settings,
+    ChunkManager &chunk_mgr,
+    Camera &camera,
+    ChunkFactory &chunk_factory,
+    BlockFactory &block_factory,
+    Mvp &mvp,
+    KCShaders &shaders,
+    SkyBox &skybox
+)
+{
+    auto &chunks = chunk_mgr.chunks;
+    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
+
+    // 1. Obtain viewing frustum
+    Frustum2D frustum = camera.get_frustum2D(settings.render_distance);
+    ssize_t min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+    ssize_t min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+    ssize_t max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
+    ssize_t max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
+
+    // 2. Populate chunk column coords list
+    chunk_col_coords.clear();
+    chunk_col_coords.reserve((std::fabs(max_x - min_x) * std::fabs(max_y - min_y)));
+    for (ssize_t y = min_y; y < max_y; ++y)
+    {
+        for (ssize_t x = min_x; x < max_x; ++x)
+        {
+            if (frustum.is_point_within(vec2{ (float)x, (float)y }))
+            {
+                // Only add chunk position if the global chunk list doesn't already
+                // contain a chunk at that position
+                bool chunk_col_exists = std::find_if(
+                    chunks.begin(),
+                    chunks.end(),
+                    [&](const std::shared_ptr<Chunk> &chunk)
+                    {
+                        return chunk->location[0] == x && chunk->location[1] == y;
+                    }
+                ) != chunks.end();
+
+                if (!chunk_col_exists)
+                {
+                    chunk_col_coords.emplace_back(std::array<float, 2>{ (float)x, (float)y });
+                }
+            }
+        }
+    }
+
+    // 3. Sort chunk positions by distance relative to player
+    std::sort(
+        chunk_col_coords.begin(),
+        chunk_col_coords.end(),
+        [&](const std::array<float, 2> &a, const std::array<float, 2> &b) {
+            float dx_a = a[0] - frustum.v_eye[0];
+            float dy_a = a[1] - frustum.v_eye[1];
+            float dx_b = b[0] - frustum.v_eye[0];
+            float dy_b = b[1] - frustum.v_eye[1];
+
+            return ((dx_a * dx_a) + (dy_a * dy_a)) < ((dx_b * dx_b) + (dy_b * dy_b));
+        }
+    );
+
+    // 4. Remove chunks from global chunk list they are not visible
+    std::erase_if(chunks, [&](const std::shared_ptr<Chunk> &chunk)
+        {
+            return !frustum.is_point_within(vec2{ chunk->location[0], chunk->location[1] });
+        }
+    );
+
+    // 5. Once per frame, make next chunk column
+    for (auto it = chunk_col_coords.begin(); it != chunk_col_coords.end(); ++it)
+    {
+        auto chunk_col = chunk_factory.make_chunk_column(block_factory, pn, vec2{ it->at(0), it->at(1) });
+        for (auto &chunk : chunk_col)
+        {
+            chunks.insert(chunk);
+        }
+
+        // TODO: Calculate player speed based on delta_time
+        //player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
+
+        process_events(settings, camera);
+        camera.calculate_view_matrix();
+        render_frame(chunk_mgr, camera, mvp, shaders, skybox);
+    }
+}
+
+/**
+ * @brief Plants trees within the visible frustum after terrain has been generated.
+ *
+ * @param camera [TODO:parameter]
+ * @param block_factory [TODO:parameter]
+ * @param mvp [TODO:parameter]
+ * @param shaders [TODO:parameter]
+ * @param skybox [TODO:parameter]
+ */
+void Game::plant_trees(
+    Camera &camera,
+    const BlockFactory &block_factory,
+    Mvp &mvp,
+    KCShaders &shaders,
+    SkyBox &skybox
+)
+{
+    ChunkManager &chunk_mgr = ChunkManager::get_instance();
+    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
+    Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
+
+    for (auto it = chunk_col_coords.begin(); it != chunk_col_coords.end(); ++it)
+    {
+        for (ssize_t y = 0; y < chunk_size; ++y)
+        {
+            for (ssize_t x = 0; x < chunk_size; ++x)
+            {
+                const unsigned rand_threshold = 578; // The higher, the less probable
+                // TODO: Use deterministic function rather than rand()
+                if (std::rand() % rand_threshold == 0)
+                {
+                    float z = pn.octave_perlin(
+                        -(it->at(0) * chunk_size) + x,
+                         (it->at(1) * chunk_size) + y,
+                         0.8f, 0.05f, 3,
+                         KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
+                    );
+
+                    vec3 block_location = { (float)x, (float)y, (float)((ssize_t)z % chunk_size) };
+                    vec3 chunk_location = { (float)it->at(0), (float)it->at(1), (float)((ssize_t)z / chunk_size) };
+
+                    auto lookup = std::make_shared<Chunk>(Chunk(chunk_location));
+                    auto chunk = chunk_mgr.chunks.find(lookup);
+                    if (chunk != chunk_mgr.chunks.end())
+                    {
+                        std::shared_ptr<Chunk> tmp_chunk = *chunk;
+                        chunk_mgr.plant_tree(tmp_chunk, block_factory, pn, block_location);
+                        // TODO: Need a defer list to update all newly updated chunks at the end
+                        //tmp->update_mesh();
+                    }
+                }
+            }
+        }
+
+        // TODO: Calculate player speed based on delta_time
+        //player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
+
+        process_events(settings, camera);
+        camera.calculate_view_matrix();
+        render_frame(chunk_mgr, camera, mvp, shaders, skybox);
+    }
+}
+
+void apply_physics()
+{}
+
+/**
  * @brief Processes window events in the queue until there aren't any left.
  * @since 02-03-2024
  * @param[in,out] win A reference to an instance of KCWindow containing window-related data
  * @param[in,out] camera The active camera which will be updated on MotionNotify events
  */
-void Game::process_events(KCWindow &win, Camera &camera)
+void Game::process_events(Settings &settings, Camera &camera)
 {
-    while (XPending(win.dpy) > 0)
+    while (XPending(kc_win.dpy) > 0)
     {
-        XNextEvent(win.dpy, &win.xev); // Blocks until event is received
+        XNextEvent(kc_win.dpy, &kc_win.xev); // Blocks until event is received
 
-        switch (win.xev.type)
+        switch (kc_win.xev.type)
         {
+            // Window was resized
             case ConfigureNotify:
             {
-                if (win.xev.xconfigure.window == win.win)
+                if (kc_win.xev.xconfigure.window == kc_win.win)
                 {
-                    win.xwa.width = win.xev.xconfigure.width;
-                    win.xwa.height = win.xev.xconfigure.height;
-                    Settings::get_instance().aspect = (float)win.xwa.width / (float)win.xwa.height;
+                    kc_win.xwa.width = kc_win.xev.xconfigure.width;
+                    kc_win.xwa.height = kc_win.xev.xconfigure.height;
+                    settings.aspect = (float)kc_win.xwa.width / (float)kc_win.xwa.height;
                 }
                 break;
             }
-            case Expose: // Window was being overlapped by another window, but is now exposed
+            // Window was being overlapped by another window, but is now exposed
+            case Expose:
             {
                 // Set affine transform for viewport based on window width/height
-                XGetWindowAttributes(win.dpy, win.win, &win.xwa);
-                glViewport(0, 0, win.xwa.width, win.xwa.height);
+                XGetWindowAttributes(kc_win.dpy, kc_win.win, &kc_win.xwa);
+                glViewport(0, 0, kc_win.xwa.width, kc_win.xwa.height);
                 break;
             }
-            case MotionNotify: // Mouse was moved
+            // Mouse was moved
+            case MotionNotify:
             {
                 // Only perform this check every other frame
                 query_pointer_location = !query_pointer_location;
                 if (query_pointer_location)
                 {
                     camera.update_rotation_from_pointer(
-                        win,
+                        kc_win,
                         vec2{
-                            (float)win.xev.xmotion.x,
-                            (float)win.xev.xmotion.y
+                            (float)kc_win.xev.xmotion.x,
+                            (float)kc_win.xev.xmotion.y
                         }
                     );
                 }
                 break;
             }
+            // Key was pressed
             case KeyPress:
             {
-                KeySym sym = XLookupKeysym(&win.xev.xkey, 0);
+                KeySym sym = XLookupKeysym(&kc_win.xev.xkey, 0);
                 if (key_binds.find(sym) != key_binds.end())
                 {
                     SET_BIT(key_mask, key_binds.at(sym));
@@ -360,18 +476,28 @@ void Game::process_events(KCWindow &win, Camera &camera)
                 }
                 break;
             }
+            // Key was released
             case KeyRelease:
             {
-                KeySym sym = XLookupKeysym(&win.xev.xkey, 0);
+                KeySym sym = XLookupKeysym(&kc_win.xev.xkey, 0);
                 if (key_binds.find(sym) != key_binds.end())
                 {
                     UNSET_BIT(key_mask, key_binds.at(sym));
                 }
                 break;
             }
-            case ButtonPress: // Mouse button pressed
+            // Mouse button was pressed
+            case ButtonPress:
             {
-                std::cout << "Click detected" << std::endl;
+                break;
+            }
+            // Mouse button was released
+            case ButtonRelease:
+            {
+                break;
+            }
+            default:
+            {
                 break;
             }
         }
@@ -500,74 +626,7 @@ void Game::render_frame(
 
     // Blit
     glFlush();
-}
 
-// TODO: Move to private func
-static uint32_t fnv1a_hash(const vec3 &chunk_location, const vec3 &block_location) {
-    constexpr uint32_t FNV_OFFSET_BASIS = 2166136261u;
-    constexpr uint32_t FNV_PRIME = 16777619u;
-
-    unsigned long seed = Settings::get_instance().seed;
-    uint32_t hash = FNV_OFFSET_BASIS;
-
-    auto hash_int = [&](int value) {
-        // Split int into bytes and hash each
-        for (int i = 0; i < 4; ++i) {
-            uint8_t byte = (value >> (i * 8)) & 0xFF;
-            hash ^= byte;
-            hash *= FNV_PRIME;
-        }
-    };
-
-    vec3 v;
-    lac_add_vec3(v, chunk_location, block_location);
-
-    hash_int(v[0]);
-    hash_int(v[1]);
-    hash_int(v[2]);
-    hash_int(seed);
-
-    return hash;
-}
-
-void Game::plant_trees(ChunkManager &chunk_mgr, const BlockFactory &block_factory)
-{
-    Settings &settings = Settings::get_instance();
-    ssize_t chunk_size = settings.chunk_size;
-
-    auto tallest_chunks = std::vector<std::shared_ptr<Chunk>>{};
-    std::copy_if(
-        chunk_mgr.chunks.begin(),
-        chunk_mgr.chunks.end(),
-        std::back_inserter(tallest_chunks),
-        [&](std::shared_ptr<Chunk> &chunk)
-        {
-            return chunk->is_tallest_in_col;
-        }
-    );
-
-    for (auto chunk : tallest_chunks)
-    {
-        for (ssize_t z = 0, _z = (chunk->location[2] * chunk_size); z < chunk_size; ++z, ++_z)
-        {
-            for (ssize_t y = 0, _y = 1; y < chunk_size; ++y, ++_y)
-            {
-                for (ssize_t x = 0, _x = 1; x < chunk_size; ++x, ++_x)
-                {
-                    if (_z == chunk->block_heights[_y][_x])
-                    {
-                        const unsigned rand_threshold = 578; // The higher, the less probable
-                        vec3 tmp_location = { (float)x, (float)y, (float) z };
-                        if ((fnv1a_hash(chunk->location, tmp_location) % rand_threshold) == 0)
-                        {
-                            chunk_mgr.plant_tree(block_factory, chunk, tmp_location);
-                        }
-                    }
-                }
-            }
-        }
-
-        // TODO: Not accounting for blocks placed outside current chunk
-        chunk->update_mesh();
-    }
+    // Update FPS thread
+    frames_elapsed++;
 }
