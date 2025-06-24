@@ -10,33 +10,30 @@
 
 std::atomic<unsigned> frames_elapsed = std::atomic<unsigned>(0);
 
-//// TODO: Move to private func
-//static uint32_t fnv1a_hash(const vec3 &chunk_location, const vec3 &block_location) {
-//    constexpr uint32_t FNV_OFFSET_BASIS = 2166136261u;
-//    constexpr uint32_t FNV_PRIME = 16777619u;
-//
-//    unsigned long seed = Settings::get_instance().seed;
-//    uint32_t hash = FNV_OFFSET_BASIS;
-//
-//    auto hash_int = [&](int value) {
-//        // Split int into bytes and hash each
-//        for (int i = 0; i < 4; ++i) {
-//            uint8_t byte = (value >> (i * 8)) & 0xFF;
-//            hash ^= byte;
-//            hash *= FNV_PRIME;
-//        }
-//    };
-//
-//    vec3 v;
-//    lac_add_vec3(v, chunk_location, block_location);
-//
-//    hash_int(v[0]);
-//    hash_int(v[1]);
-//    hash_int(v[2]);
-//    hash_int(seed);
-//
-//    return hash;
-//}
+// TODO: Move to private func
+static uint32_t fnv1a_hash(const vec3 chunk_location, const vec3 block_location) {
+    constexpr uint32_t FNV_OFFSET_BASIS = 2166136261u;
+    constexpr uint32_t FNV_PRIME = 16777619u;
+    uint32_t hash = FNV_OFFSET_BASIS;
+
+    auto hash_int = [&](int value) {
+        // Split int into bytes and hash each
+        for (int i = 0; i < 4; ++i) {
+            uint8_t byte = (value >> (i * 8)) & 0xFF;
+            hash ^= byte;
+            hash *= FNV_PRIME;
+        }
+    };
+
+    vec3 v;
+    lac_add_vec3(v, chunk_location, block_location);
+
+    hash_int(v[0]);
+    hash_int(v[1]);
+    hash_int(v[2]);
+
+    return hash;
+}
 
 /**
  * @brief OpenGL callback for logging events.
@@ -98,7 +95,6 @@ Game::Game()
     /*** Variable declarations ***/
 
     Camera camera;
-    Frustum2D frustum;
     Mvp mvp = Mvp(camera);
 
     BlockFactory block_factory;
@@ -170,7 +166,7 @@ Game::Game()
     {
         generate_terrain(settings, chunk_mgr, camera, chunk_factory, block_factory, mvp, shaders, skybox);
         plant_trees(camera, block_factory, mvp, shaders, skybox);
-        //apply_physics();
+        apply_physics();
         process_events(settings, camera);
         camera.calculate_view_matrix();
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
@@ -187,13 +183,15 @@ Game::Game()
         }
 #endif
     }
+
+    cleanup();
 }
 
 /**
  * @brief Default destructor for Game class.
  * @since 14-10-2024
  */
-Game::~Game()
+void Game::cleanup()
 {
     fps_thread.join();
 
@@ -219,19 +217,17 @@ Game::~Game()
 
     // X11
 
-    // TODO: Throwing exception because resources have already been freed at this point
-
     // Restore normal cursor and free the custom one
-    //XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
-    //XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
+    XFreePixmap(kc_win.dpy, kc_win.cur.cpmap);
+    XUndefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy));
 
-    //Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
-    //XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
-    //XFreeCursor(kc_win.dpy, default_cursor);
+    Cursor default_cursor = XCreateFontCursor(kc_win.dpy, XC_arrow);
+    XDefineCursor(kc_win.dpy, XDefaultRootWindow(kc_win.dpy), default_cursor);
+    XFreeCursor(kc_win.dpy, default_cursor);
 
-    //XDestroyWindow(kc_win.dpy, kc_win.win);
-    //XFreeColormap(kc_win.dpy, kc_win.cmap);
-    //XCloseDisplay(kc_win.dpy);
+    XDestroyWindow(kc_win.dpy, kc_win.win);
+    XFreeColormap(kc_win.dpy, kc_win.cmap);
+    XCloseDisplay(kc_win.dpy);
 }
 
 /**
@@ -286,8 +282,7 @@ void Game::generate_terrain(
         {
             if (frustum.is_point_within(vec2{ (float)x, (float)y }))
             {
-                // Only add chunk position if the global chunk list doesn't already
-                // contain a chunk at that position
+                // Only add chunk position if the global chunk list doesn't already contain a chunk at that position
                 bool chunk_col_exists = std::find_if(
                     chunks.begin(),
                     chunks.end(),
@@ -372,20 +367,19 @@ void Game::plant_trees(
         {
             for (ssize_t x = 0; x < chunk_size; ++x)
             {
-                const unsigned rand_threshold = 578; // The higher, the less probable
-                // TODO: Use deterministic function rather than rand()
-                if (std::rand() % rand_threshold == 0)
+                float z = pn.octave_perlin(
+                    -(it->at(0) * chunk_size) + x,
+                     (it->at(1) * chunk_size) + y,
+                     0.8f, 0.05f, 3,
+                     KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
+                );
+
+                vec3 block_location = { (float)x, (float)y, (float)((ssize_t)z % chunk_size) };
+                vec3 chunk_location = { (float)it->at(0), (float)it->at(1), (float)((ssize_t)(z / chunk_size)) };
+
+                const unsigned rand_threshold = 576; // The higher, the less probable
+                if (fnv1a_hash(chunk_location, block_location) % rand_threshold == 0)
                 {
-                    float z = pn.octave_perlin(
-                        -(it->at(0) * chunk_size) + x,
-                         (it->at(1) * chunk_size) + y,
-                         0.8f, 0.05f, 3,
-                         KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
-                    );
-
-                    vec3 block_location = { (float)x, (float)y, (float)((ssize_t)z % chunk_size) };
-                    vec3 chunk_location = { (float)it->at(0), (float)it->at(1), (float)((ssize_t)z / chunk_size) };
-
                     auto lookup = std::make_shared<Chunk>(Chunk(chunk_location));
                     auto chunk = chunk_mgr.chunks.find(lookup);
                     if (chunk != chunk_mgr.chunks.end())
@@ -408,8 +402,10 @@ void Game::plant_trees(
     }
 }
 
-void apply_physics()
-{}
+void Game::apply_physics()
+{
+    return;
+}
 
 /**
  * @brief Processes window events in the queue until there aren't any left.

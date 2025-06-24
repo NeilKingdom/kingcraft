@@ -19,7 +19,7 @@ class Game
 public:
     // Special member functions
     Game();
-    ~Game();
+    ~Game() = default;
     Game(const Game &game) = delete;
     Game &operator=(const Game &game) = delete;
 
@@ -52,4 +52,5 @@ private:
     void apply_physics();
     void process_events(Settings &settings, Camera &camera);
     void render_frame(ChunkManager &chunk_mgr, Camera &camera, Mvp &mvp, KCShaders &shaders, SkyBox &skybox);
+    void cleanup();
 };

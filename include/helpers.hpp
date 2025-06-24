@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "settings.hpp"
 
 namespace KC
 {
@@ -26,8 +27,8 @@ namespace KC
 
     static void fps_callback()
     {
-        // TODO: Use settings.is_running
-        while (true)
+        Settings &settings = Settings::get_instance();
+        while (settings.is_running)
         {
             std::this_thread::sleep_for(std::chrono::seconds(1));
             int fps = frames_elapsed.exchange(0);

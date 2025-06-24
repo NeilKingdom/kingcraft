@@ -50,33 +50,6 @@ static bool _is_glx_extension_supported(const char *ext_list, const char *ext_na
     }
 }
 
-using namespace std::chrono;
-
-/**
- * @brief Prints the current frame rate to stdout.
- * @warning Must be called once per frame.
- * @since 02-03-2024
- * @param[in,out] fps The current frames per second (FPS)
- * @param[in,out] frames_elapsed The amount of frames that have elapsed since __since__
- * @param[in,out] since The amount of time that has passed since the last call to this function
- */
-void calculate_frame_rate(int &fps, int &frames_elapsed, steady_clock::time_point &since)
-{
-    auto curr_time = steady_clock::now();
-    auto time_elapsed = duration_cast<nanoseconds>(curr_time - since).count();
-    constexpr auto second_as_nano = duration_cast<nanoseconds>(duration<int>(1)).count();
-    ++frames_elapsed;
-
-    if (time_elapsed > second_as_nano)
-    {
-        since = curr_time;
-        fps = frames_elapsed;
-        frames_elapsed = 0;
-
-        std::cout << "FPS: " << fps << std::endl;
-    }
-}
-
 /**
  * @brief Creates a new window.
  * @since 02-03-2024
