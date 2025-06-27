@@ -20,5 +20,5 @@ private:
     std::map<BlockType, std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>> uv_cache;
 
     // General
-    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type);
+    std::optional<std::tuple<UvCoords, UvCoords, UvCoords>> get_uv_coords(const BlockType type) const;
 };

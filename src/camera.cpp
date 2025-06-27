@@ -13,10 +13,10 @@
  * @since 02-03-2024
  */
 Camera::Camera() :
-    camera_yaw(0.0f),
-    camera_pitch(0.0f),
     v_eye{},
-    m_view(std::make_shared<std::array<float, 16>>())
+    m_view(std::make_shared<std::array<float, 16>>()),
+    camera_yaw(0.0f),
+    camera_pitch(0.0f)
 {
     std::memcpy(v_look_dir, KC::v_fwd, sizeof(vec3));
 }

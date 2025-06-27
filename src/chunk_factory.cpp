@@ -18,15 +18,13 @@
 std::shared_ptr<Chunk> ChunkFactory::make_chunk(
     const BlockFactory &block_factory,
     const PerlinNoise &pn,
-    const vec3 chunk_location,
-    const bool is_tallest_in_col
+    const vec3 chunk_location
 ) const
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
     auto chunk = std::make_shared<Chunk>(Chunk(chunk_location));
-    chunk->is_tallest_in_col = is_tallest_in_col;
 
     struct BlockData
     {
@@ -66,6 +64,10 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
                 if (x == 0)
                 {
                     block_data.type = BlockType::SAND;
+                }
+                else if (y == 0)
+                {
+                    block_data.type = BlockType::STONE;
                 }
                 else
                 {
@@ -110,7 +112,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
                     block_data.faces |= RIGHT;
                 }
 
-                vec3 block_location = {
+                vec3 world_location = {
                     -(chunk_location[0] * chunk_size) + x,
                      (chunk_location[1] * chunk_size) + y,
                      (chunk_location[2] * chunk_size) + z
@@ -120,7 +122,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
                 chunk->blocks[z][y][x] = block_factory.make_block(
                     block_data.type,
                     block_data.faces,
-                    block_location
+                    world_location
                 );
             }
         }
@@ -144,42 +146,45 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(
 ) const
 {
     Settings &settings = Settings::get_instance();
+    ssize_t chunk_size = settings.chunk_size;
     auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
 
-    ssize_t chunk_size = settings.chunk_size;
-    ssize_t height_lo = KC::MAX_BLOCK_HEIGHT;
-    ssize_t height_hi = 0;
-    ssize_t height;
+    ssize_t min_block_height = KC::MAX_BLOCK_HEIGHT;
+    ssize_t max_block_height = 0;
+    ssize_t block_height;
+    ssize_t min_chunk_height;
+    ssize_t max_chunk_height;
 
     for (ssize_t y = 0; y < chunk_size; ++y)
     {
         for (ssize_t x = 0; x < chunk_size; ++x)
         {
-            height = pn.octave_perlin(
+            block_height = pn.octave_perlin(
                 -(chunk_col_location[0] * chunk_size) + x,
                  (chunk_col_location[1] * chunk_size) + y,
                  0.8f, 0.05f, 3,
                  KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
             );
 
-            if (height < height_lo)
+            if (block_height < min_block_height)
             {
-                height_lo = height;
+                min_block_height = block_height;
             }
 
-            if (height > height_hi)
+            if (block_height > max_block_height)
             {
-                height_hi = height;
+                max_block_height = block_height;
             }
         }
     }
 
-    // Solid terrain chunks
-    for (size_t i = std::max(0, (int)(height_lo / chunk_size) - 1); i <= (height_hi / chunk_size); ++i)
+    min_chunk_height = std::max(0, (int)(min_block_height / chunk_size) - 1);
+    max_chunk_height = (max_block_height / chunk_size) + 1;
+
+    for (ssize_t i = min_chunk_height; i < max_chunk_height; ++i)
     {
-        bool is_highest_in_col = (i == (height_hi / chunk_size));
-        vec3 tmp_location = { chunk_col_location[0], chunk_col_location[1], (float)i };
-        chunk_col.push_back(make_chunk(block_factory, pn, tmp_location, is_highest_in_col));
+        vec3 chunk_location = { chunk_col_location[0], chunk_col_location[1], (float)i };
+        chunk_col.push_back(make_chunk(block_factory, pn, chunk_location));
     }
 
     return chunk_col;

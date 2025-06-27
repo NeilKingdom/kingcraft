@@ -21,7 +21,7 @@ public:
     size_t render_distance = 8;
 
     unsigned long seed = 12345UL;
-    volatile bool is_running = true;
+    bool is_running = true;
 
     // Special member functions
     ~Settings() = default;

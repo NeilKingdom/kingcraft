@@ -38,7 +38,7 @@ public:
     Result remove_block(std::shared_ptr<Chunk> &chunk, const vec3 block_location) const;
     //std::optional<std::shared_ptr<Chunk>> get_chunk(const Block &block) const;
     //std::optional<std::shared_ptr<Chunk>> get_chunk(const std::shared_ptr<Chunk> &chunk) const;
-    void plant_tree(
+    std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual> plant_tree(
         std::shared_ptr<Chunk> &chunk,
         const BlockFactory &block_factory,
         const PerlinNoise &pn,
@@ -51,7 +51,7 @@ private:
     ChunkManager();
 
     // General
-    void add_block_relative_to_current(
+    std::shared_ptr<Chunk> add_block_relative_to_current(
         const BlockFactory &block_factory,
         const PerlinNoise &pn,
         const BlockType type,

@@ -10,7 +10,6 @@ class Chunk
 {
 public:
     vec3 location;
-    bool is_tallest_in_col;
     bool update_pending;
     std::vector<BlockVertex> vertices;
     std::vector<std::vector<uint8_t>> block_heights;
@@ -23,7 +22,6 @@ public:
 
     // General
     void update_mesh();
-    std::string get_string_hash() const;
     bool operator==(const Chunk &chunk) const;
 };
 
@@ -31,7 +29,10 @@ struct ChunkHash
 {
     std::size_t operator()(const std::shared_ptr<Chunk> &chunk) const
     {
-        return std::hash<std::string>()(chunk->get_string_hash());
+        std::size_t h1 = std::hash<ssize_t>{}(chunk->location[0]);
+        std::size_t h2 = std::hash<ssize_t>{}(chunk->location[1]);
+        std::size_t h3 = std::hash<ssize_t>{}(chunk->location[2]);
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
     }
 };
 

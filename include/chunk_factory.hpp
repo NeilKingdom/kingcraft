@@ -17,8 +17,7 @@ public:
     std::shared_ptr<Chunk> make_chunk(
         const BlockFactory &block_factory,
         const PerlinNoise &pn,
-        const vec3 chunk_location,
-        const bool is_tallest_in_col
+        const vec3 chunk_location
     ) const;
     std::vector<std::shared_ptr<Chunk>> make_chunk_column(
         const BlockFactory &block_factory,

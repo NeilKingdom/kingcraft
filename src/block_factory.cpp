@@ -20,6 +20,7 @@ BlockFactory::BlockFactory()
     uv_cache[BlockType::WOOD]       = get_uv_coords(BlockType::WOOD);
     uv_cache[BlockType::LEAVES]     = get_uv_coords(BlockType::LEAVES);
     uv_cache[BlockType::SAND]       = get_uv_coords(BlockType::SAND);
+    uv_cache[BlockType::STONE]      = get_uv_coords(BlockType::STONE);
     // TODO: Finish...
 }
 
@@ -30,7 +31,7 @@ BlockFactory::BlockFactory()
  * @returns Optionally returns a tuple of UV coordinates for the top, sides, and bottom of the block, respectively
  */
 std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>
-BlockFactory::get_uv_coords(const BlockType type)
+BlockFactory::get_uv_coords(const BlockType type) const
 {
     unsigned row, col;
     float tx_offset, ty_offset;
@@ -88,6 +89,14 @@ BlockFactory::get_uv_coords(const BlockType type)
         case BlockType::SAND:
             ty_offset = 1.0f;
             tx_offset = 0.0f;
+
+            // Top + Sides + Bottom
+            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            break;
+        case BlockType::STONE:
+            ty_offset = 1.0f;
+            tx_offset = 1.0f;
 
             // Top + Sides + Bottom
             uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;

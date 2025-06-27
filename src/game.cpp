@@ -25,7 +25,7 @@ static uint32_t fnv1a_hash(const vec3 chunk_location, const vec3 block_location)
         }
     };
 
-    vec3 v;
+    vec3 v{};
     lac_add_vec3(v, chunk_location, block_location);
 
     hash_int(v[0]);
@@ -333,6 +333,7 @@ void Game::generate_terrain(
         // TODO: Calculate player speed based on delta_time
         //player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
 
+        apply_physics();
         process_events(settings, camera);
         camera.calculate_view_matrix();
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
@@ -363,6 +364,8 @@ void Game::plant_trees(
 
     for (auto it = chunk_col_coords.begin(); it != chunk_col_coords.end(); ++it)
     {
+        std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual> defered_list{};
+
         for (ssize_t y = 0; y < chunk_size; ++y)
         {
             for (ssize_t x = 0; x < chunk_size; ++x)
@@ -374,28 +377,33 @@ void Game::plant_trees(
                      KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
                 );
 
-                vec3 block_location = { (float)x, (float)y, (float)((ssize_t)z % chunk_size) };
+                vec3 root_location = { (float)x, (float)y, (float)((ssize_t)z % chunk_size) };
                 vec3 chunk_location = { (float)it->at(0), (float)it->at(1), (float)((ssize_t)(z / chunk_size)) };
 
                 const unsigned rand_threshold = 576; // The higher, the less probable
-                if (fnv1a_hash(chunk_location, block_location) % rand_threshold == 0)
+                if (fnv1a_hash(chunk_location, root_location) % rand_threshold == 0)
                 {
                     auto lookup = std::make_shared<Chunk>(Chunk(chunk_location));
-                    auto chunk = chunk_mgr.chunks.find(lookup);
-                    if (chunk != chunk_mgr.chunks.end())
+                    auto needle = chunk_mgr.chunks.find(lookup);
+                    if (needle != chunk_mgr.chunks.end())
                     {
-                        std::shared_ptr<Chunk> tmp_chunk = *chunk;
-                        chunk_mgr.plant_tree(tmp_chunk, block_factory, pn, block_location);
-                        // TODO: Need a defer list to update all newly updated chunks at the end
-                        //tmp->update_mesh();
+                        std::shared_ptr<Chunk> tmp_chunk = *needle;
+                        auto defered = chunk_mgr.plant_tree(tmp_chunk, block_factory, pn, root_location);
+                        defered_list.insert(defered.begin(), defered.end());
                     }
                 }
             }
         }
 
+        for (auto &chunk : defered_list)
+        {
+            chunk->update_mesh();
+        }
+
         // TODO: Calculate player speed based on delta_time
         //player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
 
+        apply_physics();
         process_events(settings, camera);
         camera.calculate_view_matrix();
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
@@ -499,6 +507,7 @@ void Game::process_events(Settings &settings, Camera &camera)
         }
     }
 
+    // Update player movement
     float magnitude = 0.0f;
     vec3 v_velocity = {};
     vec3 v_right = {};
@@ -625,4 +634,6 @@ void Game::render_frame(
 
     // Update FPS thread
     frames_elapsed++;
+
+    //usleep(50000);
 }
