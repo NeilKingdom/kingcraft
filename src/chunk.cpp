@@ -39,6 +39,7 @@ Chunk::Chunk(const vec3 location) :
             std::vector<Block>(chunk_size, Block())
         )
     );
+
 }
 
 /**

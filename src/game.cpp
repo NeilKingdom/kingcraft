@@ -8,7 +8,28 @@
 
 #include "game.hpp"
 
+// === Vec3Int for chunk identity ===
+struct Vec3Int {
+    int x, y, z;
+
+    bool operator==(const Vec3Int& other) const {
+        return x == other.x && y == other.y && z == other.z;
+    }
+};
+
+namespace std {
+    template <>
+    struct hash<Vec3Int> {
+        size_t operator()(const Vec3Int& v) const {
+            return ((hash<int>()(v.x) ^ (hash<int>()(v.y) << 1)) >> 1) ^ (hash<int>()(v.z) << 1);
+        }
+    };
+}
+
 std::atomic<unsigned> frames_elapsed = std::atomic<unsigned>(0);
+static std::queue<std::array<float, 3>> queue;
+static float tgt_fps = 30.0f;
+float avg_chunk_proc_time = 0.0f;
 
 // TODO: Move to private func
 static uint32_t fnv1a_hash(const vec3 chunk_location, const vec3 block_location) {
@@ -160,15 +181,105 @@ Game::Game()
     srandom(settings.seed);
     fps_thread = std::thread(KC::fps_callback);
 
+    auto &chunks = chunk_mgr.chunks;
+    auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
+
     /*** Game loop ***/
+
+    std::chrono::duration<float, std::milli> prev_duration;
 
     while (settings.is_running)
     {
-        generate_terrain(settings, chunk_mgr, camera, chunk_factory, block_factory, mvp, shaders, skybox);
-        plant_trees(camera, block_factory, mvp, shaders, skybox);
+        //generate_terrain(settings, chunk_mgr, camera, chunk_factory, block_factory, mvp, shaders, skybox);
+        //plant_trees(camera, block_factory, mvp, shaders, skybox);
+        //apply_physics();
+        //process_events(settings, camera);
+        //camera.calculate_view_matrix();
+        //render_frame(chunk_mgr, camera, mvp, shaders, skybox);
+
+        // === Main logic ===
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         apply_physics();
         process_events(settings, camera);
         camera.calculate_view_matrix();
+
+        // Frustum
+        Frustum2D frustum = camera.get_frustum2D(settings.render_distance);
+        ssize_t min_x = std::min({ frustum.v_eye[0], frustum.v_left[0], frustum.v_right[0] });
+        ssize_t min_y = std::min({ frustum.v_eye[1], frustum.v_left[1], frustum.v_right[1] });
+        ssize_t max_x = std::max({ frustum.v_eye[0], frustum.v_left[0], frustum.v_right[0] });
+        ssize_t max_y = std::max({ frustum.v_eye[1], frustum.v_left[1], frustum.v_right[1] });
+
+        // Cull old chunks
+        std::erase_if(chunks, [&](const std::shared_ptr<Chunk>& chunk) {
+            return !frustum.is_point_within(vec2{ chunk->location[0], chunk->location[1] });
+        });
+
+        // Existing chunks
+        std::unordered_set<Vec3Int> existing_chunk_coords;
+        for (const auto& chunk : chunks) {
+            existing_chunk_coords.insert(Vec3Int{
+                static_cast<int>(chunk->location[0]),
+                static_cast<int>(chunk->location[1]),
+                static_cast<int>(chunk->location[2])
+            });
+        }
+
+        // Determine visible chunk columns
+        chunk_col_coords.clear();
+        chunk_col_coords.reserve((max_x - min_x) * (max_y - min_y));
+        for (ssize_t y = min_y; y < max_y; ++y) {
+            for (ssize_t x = min_x; x < max_x; ++x) {
+                if (frustum.is_point_within(vec2{ (float)x, (float)y })) {
+                    chunk_col_coords.emplace_back(std::array<float, 2>{ (float)x, (float)y });
+                }
+            }
+        }
+
+        // Optional: sort by distance
+        std::sort(chunk_col_coords.begin(), chunk_col_coords.end(),
+            [&](const std::array<float, 2>& a, const std::array<float, 2>& b) {
+                float dx_a = a[0] - frustum.v_eye[0], dy_a = a[1] - frustum.v_eye[1];
+                float dx_b = b[0] - frustum.v_eye[0], dy_b = b[1] - frustum.v_eye[1];
+                return ((dx_a * dx_a) + (dy_a * dy_a)) < ((dx_b * dx_b) + (dy_b * dy_b));
+            });
+
+        // Queue unseen 3D chunks
+        for (const auto& pos : chunk_col_coords) {
+            for (int z = 8; z <= 10; ++z) {
+                Vec3Int key{ static_cast<int>(pos[0]), static_cast<int>(pos[1]), z };
+                if (!existing_chunk_coords.contains(key)) {
+                    queue.push({ pos[0], pos[1], static_cast<float>(z) });
+                }
+            }
+        }
+
+        // Chunk generation loop
+        float time_remaining;
+        do {
+            if (queue.empty()) break;
+
+            auto next = queue.front();
+            queue.pop();
+
+            Vec3Int key{ static_cast<int>(next[0]), static_cast<int>(next[1]), static_cast<int>(next[2]) };
+
+            if (!existing_chunk_coords.contains(key) &&
+                frustum.is_point_within(vec2{ next[0], next[1] }))
+            {
+                chunks.insert(chunk_factory.make_chunk(block_factory, pn, vec3{ next[0], next[1], next[2] }));
+                existing_chunk_coords.insert(key);
+            }
+
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float, std::milli> duration = end - start;
+            time_remaining = (1000.0f / tgt_fps) - duration.count();
+
+        } while (time_remaining >= avg_chunk_proc_time);
+
+        // Render
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
 
 //#ifdef DEBUG
@@ -383,7 +494,7 @@ void Game::plant_trees(
                 const unsigned rand_threshold = 576; // The higher, the less probable
                 if (fnv1a_hash(chunk_location, root_location) % rand_threshold == 0)
                 {
-                    auto lookup = std::make_shared<Chunk>(Chunk(chunk_location));
+                    auto lookup = std::make_shared<Chunk>(chunk_location);
                     auto needle = chunk_mgr.chunks.find(lookup);
                     if (needle != chunk_mgr.chunks.end())
                     {

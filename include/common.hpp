@@ -20,6 +20,7 @@
 #include <random>
 #include <atomic>
 #include <thread>
+#include <queue>
 
 // C APIs
 #include <cmath>
@@ -81,3 +82,4 @@ enum BlockFace : uint8_t
 
 typedef unsigned ID;
 extern std::atomic<unsigned> frames_elapsed;
+extern float avg_chunk_proc_time;

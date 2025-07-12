@@ -24,7 +24,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
-    auto chunk = std::make_shared<Chunk>(Chunk(chunk_location));
+    auto chunk = std::make_shared<Chunk>(chunk_location);
 
     struct BlockData
     {
