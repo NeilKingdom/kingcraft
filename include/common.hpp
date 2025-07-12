@@ -81,3 +81,4 @@ enum BlockFace : uint8_t
 
 typedef unsigned ID;
 extern std::atomic<unsigned> frames_elapsed;
+extern float avg_chunk_proc_time;

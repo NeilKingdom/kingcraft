@@ -21,10 +21,12 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
     const vec3 chunk_location
 ) const
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
 
-    auto chunk = std::make_shared<Chunk>(Chunk(chunk_location));
+    auto chunk = std::make_shared<Chunk>(chunk_location);
 
     struct BlockData
     {
@@ -129,6 +131,11 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
     }
 
     chunk->update_mesh();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float, std::milli> duration = end - start;
+    avg_chunk_proc_time = (avg_chunk_proc_time + duration.count()) / 2.0f;
+
     return chunk;
 }
 
@@ -139,7 +146,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
  * @param[in] chunk_col_location A vec2 specifying the (x, y) location of the chunk column to generate
  * @returns A vector of chunks that make up the chunk column
  */
-std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(
+std::vector<Chunk> ChunkFactory::make_chunk_column(
     const BlockFactory &block_factory,
     const PerlinNoise &pn,
     const vec2 chunk_col_location
@@ -147,7 +154,7 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(
 {
     Settings &settings = Settings::get_instance();
     ssize_t chunk_size = settings.chunk_size;
-    auto chunk_col = std::vector<std::shared_ptr<Chunk>>{};
+    auto chunk_col = std::vector<Chunk>{};
 
     ssize_t min_block_height = KC::MAX_BLOCK_HEIGHT;
     ssize_t max_block_height = 0;
@@ -184,7 +191,7 @@ std::vector<std::shared_ptr<Chunk>> ChunkFactory::make_chunk_column(
     for (ssize_t i = min_chunk_height; i < max_chunk_height; ++i)
     {
         vec3 chunk_location = { chunk_col_location[0], chunk_col_location[1], (float)i };
-        chunk_col.push_back(make_chunk(block_factory, pn, chunk_location));
+        //chunk_col.push_back(make_chunk(block_factory, pn, chunk_location));
     }
 
     return chunk_col;

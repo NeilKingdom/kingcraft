@@ -19,7 +19,7 @@ public:
         const PerlinNoise &pn,
         const vec3 chunk_location
     ) const;
-    std::vector<std::shared_ptr<Chunk>> make_chunk_column(
+    std::vector<Chunk> make_chunk_column(
         const BlockFactory &block_factory,
         const PerlinNoise &pn,
         const vec2 chunk_col_location

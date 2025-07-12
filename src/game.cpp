@@ -7,8 +7,38 @@
  */
 
 #include "game.hpp"
+#include <queue>
 
 std::atomic<unsigned> frames_elapsed = std::atomic<unsigned>(0);
+static float delta_time;
+
+static std::queue<std::array<float, 3>> queue;
+static float tgt_fps = 120.0f;
+float avg_chunk_proc_time = 0.0f;
+
+struct V3Int
+{
+    int x;
+    int y;
+    int z;
+
+    bool operator==(const V3Int &v) const
+    {
+        return x == v.x && y == v.y && z == v.z;
+    }
+};
+
+namespace std
+{
+    template <>
+    struct hash<V3Int>
+    {
+        size_t operator()(const V3Int &v) const
+        {
+            return ((hash<int>()(v.x) ^ (hash<int>()(v.y) << 1)) >> 1) ^ (hash<int>()(v.z) << 1);
+        }
+    };
+}
 
 // TODO: Move to private func
 static uint32_t fnv1a_hash(const vec3 chunk_location, const vec3 block_location) {
@@ -165,10 +195,7 @@ Game::Game()
     while (settings.is_running)
     {
         generate_terrain(settings, chunk_mgr, camera, chunk_factory, block_factory, mvp, shaders, skybox);
-        plant_trees(camera, block_factory, mvp, shaders, skybox);
-        apply_physics();
-        process_events(settings, camera);
-        camera.calculate_view_matrix();
+        //plant_trees(camera, block_factory, mvp, shaders, skybox);
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
 
 //#ifdef DEBUG
@@ -266,6 +293,14 @@ void Game::generate_terrain(
     auto &chunks = chunk_mgr.chunks;
     auto &chunk_col_coords = chunk_mgr.chunk_col_coords;
 
+    float time_remaining;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    apply_physics();
+    process_events(settings, camera);
+    camera.calculate_view_matrix();
+
+    // TODO: move to game loop and pass into func
     // 1. Obtain viewing frustum
     Frustum2D frustum = camera.get_frustum2D(settings.render_distance);
     ssize_t min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
@@ -273,7 +308,25 @@ void Game::generate_terrain(
     ssize_t max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
     ssize_t max_y = std::max(std::max(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
 
-    // 2. Populate chunk column coords list
+    // 2. Cull chunks that are no longer visible
+    std::erase_if(chunks, [&](const std::shared_ptr<Chunk> &chunk)
+        {
+            return !frustum.is_point_within(vec2{ chunk->location[0], chunk->location[1] });
+        }
+    );
+
+    // 3. Compute existing chunks
+    std::unordered_set<V3Int> existing_chunk_coords;
+    for (const auto &chunk : chunks)
+    {
+        existing_chunk_coords.insert(V3Int{
+            (int)(chunk->location[0]),
+            (int)(chunk->location[1]),
+            (int)(chunk->location[2]),
+        });
+    }
+
+    // 4. Determine visible chunk columns
     chunk_col_coords.clear();
     chunk_col_coords.reserve((std::fabs(max_x - min_x) * std::fabs(max_y - min_y)));
     for (ssize_t y = min_y; y < max_y; ++y)
@@ -282,25 +335,12 @@ void Game::generate_terrain(
         {
             if (frustum.is_point_within(vec2{ (float)x, (float)y }))
             {
-                // Only add chunk position if the global chunk list doesn't already contain a chunk at that position
-                bool chunk_col_exists = std::find_if(
-                    chunks.begin(),
-                    chunks.end(),
-                    [&](const std::shared_ptr<Chunk> &chunk)
-                    {
-                        return chunk->location[0] == x && chunk->location[1] == y;
-                    }
-                ) != chunks.end();
-
-                if (!chunk_col_exists)
-                {
-                    chunk_col_coords.emplace_back(std::array<float, 2>{ (float)x, (float)y });
-                }
+                chunk_col_coords.emplace_back(std::array<float, 2>{ (float)x, (float)y });
             }
         }
     }
 
-    // 3. Sort chunk positions by distance relative to player
+    // 5. Optional: Sort chunk positions by distance relative to player
     std::sort(
         chunk_col_coords.begin(),
         chunk_col_coords.end(),
@@ -314,30 +354,44 @@ void Game::generate_terrain(
         }
     );
 
-    // 4. Remove chunks from global chunk list they are not visible
-    std::erase_if(chunks, [&](const std::shared_ptr<Chunk> &chunk)
-        {
-            return !frustum.is_point_within(vec2{ chunk->location[0], chunk->location[1] });
-        }
-    );
-
-    // 5. Once per frame, make next chunk column
-    for (auto it = chunk_col_coords.begin(); it != chunk_col_coords.end(); ++it)
+    // TODO: Gather z coordinate based on biome (min, max) chunk height
+    // 6. Queue 3D chunk positions
+    for (const auto &coord2D : chunk_col_coords)
     {
-        auto chunk_col = chunk_factory.make_chunk_column(block_factory, pn, vec2{ it->at(0), it->at(1) });
-        for (auto &chunk : chunk_col)
+        for (int z = 0; z <= 10; ++z)
         {
-            chunks.insert(chunk);
+            V3Int key{ (int)coord2D[0], (int)coord2D[1], z };
+            if (!existing_chunk_coords.contains(key))
+            {
+                queue.push({ coord2D[0], coord2D[1], (float)z });
+            }
+        }
+    }
+
+    // 7. Generate as many chunks as possible given target FPS (minimum one chunk)
+    do
+    {
+        if (queue.empty())
+        {
+            break;
         }
 
-        // TODO: Calculate player speed based on delta_time
-        //player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
+        auto next = queue.front();
+        queue.pop();
 
-        apply_physics();
-        process_events(settings, camera);
-        camera.calculate_view_matrix();
-        render_frame(chunk_mgr, camera, mvp, shaders, skybox);
+        V3Int key{ (int)next[0], (int)next[1], (int)next[2] };
+        if (!existing_chunk_coords.contains(key)
+            && frustum.is_point_within(vec2{ next[0], next[1] }))
+        {
+            chunks.insert(chunk_factory.make_chunk(block_factory, pn, vec3{ next[0], next[1], next[2] }));
+            existing_chunk_coords.insert(key);
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float, std::milli> duration = end - start;
+        time_remaining = (1000.0f / tgt_fps) - duration.count();
     }
+    while (time_remaining >= avg_chunk_proc_time);
 }
 
 /**
@@ -364,6 +418,7 @@ void Game::plant_trees(
 
     for (auto it = chunk_col_coords.begin(); it != chunk_col_coords.end(); ++it)
     {
+        auto frame_begin = std::chrono::high_resolution_clock::now();
         std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual> defered_list{};
 
         for (ssize_t y = 0; y < chunk_size; ++y)
@@ -383,7 +438,7 @@ void Game::plant_trees(
                 const unsigned rand_threshold = 576; // The higher, the less probable
                 if (fnv1a_hash(chunk_location, root_location) % rand_threshold == 0)
                 {
-                    auto lookup = std::make_shared<Chunk>(Chunk(chunk_location));
+                    auto lookup = std::make_shared<Chunk>(chunk_location);
                     auto needle = chunk_mgr.chunks.find(lookup);
                     if (needle != chunk_mgr.chunks.end())
                     {
@@ -400,13 +455,20 @@ void Game::plant_trees(
             chunk->update_mesh();
         }
 
-        // TODO: Calculate player speed based on delta_time
-        //player.curr_speed = KC::PLAYER_SPEED_FACTOR * (frame_duration / (float)second_as_nano);
-
         apply_physics();
         process_events(settings, camera);
         camera.calculate_view_matrix();
         render_frame(chunk_mgr, camera, mvp, shaders, skybox);
+
+        //auto now = std::chrono::high_resolution_clock::now();
+        //delta_time = std::chrono::duration<float, std::milli>(now - prev_frame).count();
+
+        //prev_frame = frame_begin;
+
+        //if (delta_time < 60)
+        //{
+        //    std::this_thread::sleep_for(std::chrono::milliseconds(60 - (int)delta_time));
+        //}
     }
 }
 
@@ -545,6 +607,7 @@ void Game::process_events(Settings &settings, Camera &camera)
     if (magnitude > 0.0f)
     {
         lac_normalize_vec3(v_velocity, v_velocity);
+        //lac_multiply_vec3(v_velocity, v_velocity, delta_time * 0.05);
         lac_multiply_vec3(v_velocity, v_velocity, KC::PLAYER_SPEED_FACTOR);
         lac_add_vec3(camera.v_eye, camera.v_eye, v_velocity);
     }
@@ -634,6 +697,4 @@ void Game::render_frame(
 
     // Update FPS thread
     frames_elapsed++;
-
-    //usleep(50000);
 }

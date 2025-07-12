@@ -371,7 +371,7 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative_to_current(
         parent_chunk_location[0] -= 2;
     }
 
-    auto lookup = std::make_shared<Chunk>(Chunk(parent_chunk_location));
+    auto lookup = std::make_shared<Chunk>(parent_chunk_location);
     auto needle = chunks.find(lookup);
     if (needle == chunks.end())
     {
