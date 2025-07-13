@@ -194,8 +194,7 @@ Result ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 bloc
  * @param[in/out] chunk The chunk in which the tree will be planted
  * @param[in] root_location The location relative to __chunk__'s location at which the tree will be planted
  */
-std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual>
-ChunkManager::plant_tree(
+ChunkSet ChunkManager::plant_tree(
     std::shared_ptr<Chunk> &chunk,
     const BlockFactory &block_factory,
     const PerlinNoise &pn,
@@ -297,8 +296,8 @@ ChunkManager::plant_tree(
 void ChunkManager::update_mesh()
 {
     bool chunk_update_pending = std::any_of(
-        chunks.begin(),
-        chunks.end(),
+        GCL.begin(),
+        GCL.end(),
         [&](const std::shared_ptr<Chunk> &chunk)
         {
             return chunk->update_pending;
@@ -308,12 +307,16 @@ void ChunkManager::update_mesh()
     if (chunk_update_pending)
     {
         terrain_mesh.vertices.clear();
-        for (auto &chunk : chunks)
+        for (auto &chunk : GCL)
         {
             chunk->update_pending = false;
             if (!chunk->vertices.empty())
             {
-                terrain_mesh.vertices.insert(terrain_mesh.vertices.end(), chunk->vertices.begin(), chunk->vertices.end());
+                terrain_mesh.vertices.insert(
+                    terrain_mesh.vertices.end(),
+                    chunk->vertices.begin(),
+                    chunk->vertices.end()
+                );
             }
         }
 
@@ -372,13 +375,13 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative_to_current(
     }
 
     auto lookup = std::make_shared<Chunk>(parent_chunk_location);
-    auto needle = chunks.find(lookup);
-    if (needle == chunks.end())
+    auto needle = GCL.find(lookup);
+    if (needle == GCL.end())
     {
         // Create new chunk
         ChunkFactory chunk_factory;
         auto new_chunk = chunk_factory.make_chunk(block_factory, pn, parent_chunk_location);
-        chunks.insert(new_chunk);
+        GCL.insert(new_chunk);
         add_block(new_chunk, block_factory, type, actual_block_location, false);
 
         // TODO: move elsewhere

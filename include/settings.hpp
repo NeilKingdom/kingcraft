@@ -21,6 +21,7 @@ public:
     size_t render_distance = 8;
 
     unsigned long seed = 12345UL;
+    float tgt_fps = 60.0f;
     bool is_running = true;
 
     // Special member functions

@@ -12,13 +12,15 @@ enum Result
     SUCCESS
 };
 
+typedef std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual> ChunkSet;
+
 class ChunkManager
 {
 public:
-    Mesh<BlockVertex> terrain_mesh; // Mesh that encapsulates all interactable blocks
+    ChunkSet GCL; // Global Chunk List (list of chunks actively loaded in memory)
     std::vector<std::shared_ptr<Chunk>> chunk_cache; // Cache of chunks that player has edited
-    std::vector<std::array<float, 2>> chunk_col_coords; // List of chunk column (x, y) coordinates that are visible within the camera's frustum
-    std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual> chunks; // Hash set of chunks that are actively loaded in memory
+    std::vector<std::array<float, 2>> chunk_coords_2D{};
+    Mesh<BlockVertex> terrain_mesh; // Mesh that encapsulates all interactable blocks
 
     // Special member functions
     ChunkManager(const ChunkManager &chunk_mgr) = delete;
@@ -38,7 +40,7 @@ public:
     Result remove_block(std::shared_ptr<Chunk> &chunk, const vec3 block_location) const;
     //std::optional<std::shared_ptr<Chunk>> get_chunk(const Block &block) const;
     //std::optional<std::shared_ptr<Chunk>> get_chunk(const std::shared_ptr<Chunk> &chunk) const;
-    std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual> plant_tree(
+    ChunkSet plant_tree(
         std::shared_ptr<Chunk> &chunk,
         const BlockFactory &block_factory,
         const PerlinNoise &pn,

@@ -33,24 +33,30 @@ private:
 
     // General
     void generate_terrain(
-        Settings &settings,
         ChunkManager &chunk_mgr,
-        Camera &camera,
         ChunkFactory &chunk_factory,
         BlockFactory &block_factory,
-        Mvp &mvp,
-        KCShaders &shaders,
-        SkyBox &skybox
+        Frustum2D &frustum,
+        Settings &settings
     );
     void plant_trees(
+        ChunkManager &chunk_mgr,
+        BlockFactory &block_factory,
         Camera &camera,
-        const BlockFactory &block_factory,
         Mvp &mvp,
         KCShaders &shaders,
-        SkyBox &skybox
+        SkyBox &skybox,
+        Settings &settings
     );
     void apply_physics();
-    void process_events(Settings &settings, Camera &camera);
-    void render_frame(ChunkManager &chunk_mgr, Camera &camera, Mvp &mvp, KCShaders &shaders, SkyBox &skybox);
+    void process_events(Camera &camera, Settings &settings);
+    void render_frame(
+        ChunkManager &chunk_mgr,
+        Camera &camera,
+        Mvp &mvp,
+        KCShaders &shaders,
+        SkyBox &skybox,
+        Settings &settings
+    );
     void cleanup();
 };

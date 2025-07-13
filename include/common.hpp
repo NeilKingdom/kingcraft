@@ -2,24 +2,25 @@
 
 // C++ APIs
 #include <iostream>
-#include <fstream>
 #include <memory>
+#include <fstream>
 #include <string>
-#include <iterator>
-#include <unordered_set>
 #include <algorithm>
-#include <vector>
 #include <array>
+#include <vector>
+#include <unordered_set>
 #include <set>
 #include <map>
+#include <queue>
 #include <tuple>
+#include <iterator>
 #include <optional>
 #include <limits>
 #include <filesystem>
 #include <chrono>
 #include <random>
-#include <atomic>
 #include <thread>
+#include <atomic>
 
 // C APIs
 #include <cmath>
@@ -80,5 +81,5 @@ enum BlockFace : uint8_t
 };
 
 typedef unsigned ID;
-extern std::atomic<unsigned> frames_elapsed;
+extern std::atomic<unsigned> fps;
 extern float avg_chunk_proc_time;

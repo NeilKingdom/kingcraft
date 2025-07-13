@@ -31,8 +31,7 @@ namespace KC
         while (settings.is_running)
         {
             std::this_thread::sleep_for(std::chrono::seconds(1));
-            int fps = frames_elapsed.exchange(0);
-            std::cout << "FPS: " << fps << std::endl;
+            std::cout << "FPS: " << fps.exchange(0) << std::endl;
         }
     }
 }
