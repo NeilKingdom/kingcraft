@@ -10,9 +10,20 @@
 
 std::atomic<unsigned> fps = std::atomic<unsigned>(0);
 
-static auto sec_as_millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1));
 static std::queue<std::array<float, 3>> chunk_queue;
-float avg_chunk_proc_time = 0.0f;
+
+struct PlantResume
+{
+    std::vector<std::array<float, 2>>::iterator it;
+    ssize_t x;
+    ssize_t y;
+};
+
+static bool terrain_finished = false;
+static PlantResume resume = {
+    .x = 0,
+    .y = 0
+};
 
 struct V3Int
 {
@@ -124,7 +135,6 @@ Game::Game()
     /*** Variable declarations ***/
 
     Camera camera;
-    Frustum2D frustum;
     Mvp mvp = Mvp(camera);
 
     BlockFactory block_factory;
@@ -196,10 +206,16 @@ Game::Game()
     {
         process_events(camera, settings);
         camera.calculate_view_matrix();
-        frustum = camera.get_frustum2D(settings.render_distance);
-        generate_terrain(chunk_mgr, chunk_factory, block_factory, frustum, settings);
-        //plant_trees(chunk_mgr, block_factory, camera, mvp, shaders, skybox, settings);
+        if (!terrain_finished)
+        {
+            generate_terrain(chunk_mgr, chunk_factory, block_factory, camera, settings);
+        }
+        else
+        {
+            plant_trees(chunk_mgr, block_factory, camera, mvp, shaders, skybox, settings);
+        }
         apply_physics();
+
         render_frame(chunk_mgr, camera, mvp, shaders, skybox, settings);
 
 //#ifdef DEBUG
@@ -280,7 +296,7 @@ void Game::generate_terrain(
     ChunkManager &chunk_mgr,
     ChunkFactory &chunk_factory,
     BlockFactory &block_factory,
-    Frustum2D &frustum,
+    Camera &camera,
     Settings &settings
 )
 {
@@ -288,10 +304,13 @@ void Game::generate_terrain(
     auto &chunk_coords_2D = chunk_mgr.chunk_coords_2D;
     auto chunk_coords_3D = std::unordered_set<V3Int>{};
 
-    float time_remaining;
+    float duration_ms;
+    const float tgt_fps_ms = KC::SEC_AS_MS.count() / settings.tgt_fps;
+
     auto start = std::chrono::high_resolution_clock::now();
 
     // 1. Obtain viewing frustum bounds
+    Frustum2D frustum = camera.get_frustum2D(settings.render_distance);
     ssize_t min_x = std::min(std::min(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
     ssize_t min_y = std::min(std::min(frustum.v_eye[1], frustum.v_left[1]), frustum.v_right[1]);
     ssize_t max_x = std::max(std::max(frustum.v_eye[0], frustum.v_left[0]), frustum.v_right[0]);
@@ -328,6 +347,8 @@ void Game::generate_terrain(
         }
     }
 
+    resume.it = chunk_coords_2D.begin();
+
     // 5. Optional: Sort chunk positions by distance relative to player
     std::sort(
         chunk_coords_2D.begin(),
@@ -361,6 +382,7 @@ void Game::generate_terrain(
     {
         if (chunk_queue.empty())
         {
+            terrain_finished = true;
             break;
         }
 
@@ -376,10 +398,9 @@ void Game::generate_terrain(
         }
 
         auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float, std::milli> duration = end - start;
-        time_remaining = (sec_as_millis.count() / settings.tgt_fps) - duration.count();
+        duration_ms = std::chrono::duration<float, std::milli>(end - start).count();
     }
-    while (time_remaining >= avg_chunk_proc_time);
+    while (duration_ms < tgt_fps_ms);
 }
 
 /**
@@ -397,52 +418,69 @@ void Game::plant_trees(
     Settings &settings
 )
 {
-    ChunkSet defered_list{};
+    ChunkSet deferred_list{};
     ssize_t chunk_size = settings.chunk_size;
     auto &chunk_coords_2D = chunk_mgr.chunk_coords_2D;
 
-    for (auto it = chunk_coords_2D.begin(); it != chunk_coords_2D.end(); ++it)
-    {
-        defered_list.clear();
+    //ssize_t x = 0;
+    //ssize_t y = 0;
 
-        for (ssize_t y = 0; y < chunk_size; ++y)
+    float duration_ms;
+    const float tgt_fps_ms = KC::SEC_AS_MS.count() / settings.tgt_fps;
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    //auto it = chunk_coords_2D.begin();
+    while (resume.it != chunk_coords_2D.end())
+    {
+        for (; resume.y < chunk_size; ++resume.y)
         {
-            for (ssize_t x = 0; x < chunk_size; ++x)
+            for (; resume.x < chunk_size; ++resume.x)
             {
                 float z = pn.octave_perlin(
-                    -(it->at(0) * chunk_size) + x,
-                     (it->at(1) * chunk_size) + y,
+                    -(resume.it->at(0) * chunk_size) + resume.x,
+                     (resume.it->at(1) * chunk_size) + resume.y,
                      0.8f, 0.05f, 3,
                      KC::SEA_LEVEL, KC::SEA_LEVEL + (chunk_size * 3)
                 );
 
-                vec3 root_location = { (float)x, (float)y, (float)((ssize_t)z % chunk_size) };
-                vec3 chunk_location = { (float)it->at(0), (float)it->at(1), (float)((ssize_t)(z / chunk_size)) };
+                vec3 root_location = { (float)resume.x, (float)resume.y, (float)((ssize_t)z % chunk_size) };
+                vec3 chunk_location = { (float)resume.it->at(0), (float)resume.it->at(1), (float)((ssize_t)(z / chunk_size)) };
 
-                const unsigned rand_threshold = 576; // The higher, the less probable
+                const unsigned rand_threshold = 576;
                 if (fnv1a_hash(chunk_location, root_location) % rand_threshold == 0)
                 {
                     auto lookup = std::make_shared<Chunk>(chunk_location);
                     auto needle = chunk_mgr.GCL.find(lookup);
                     if (needle != chunk_mgr.GCL.end())
                     {
-                        std::shared_ptr<Chunk> tmp_chunk = *needle;
-                        auto defered = chunk_mgr.plant_tree(tmp_chunk, block_factory, pn, root_location);
-                        defered_list.insert(defered.begin(), defered.end());
+                        std::shared_ptr<Chunk> mut_copy = *needle;
+                        auto deferred = chunk_mgr.plant_tree(mut_copy, block_factory, pn, root_location);
+                        deferred_list.insert(deferred.begin(), deferred.end());
                     }
                 }
+
+                auto end = std::chrono::high_resolution_clock::now();
+                duration_ms = std::chrono::duration<float, std::milli>(end - start).count();
+                if (duration_ms >= tgt_fps_ms)
+                {
+                    goto finish;
+                }
             }
+            resume.x = 0;
         }
 
-        for (auto &chunk : defered_list)
-        {
-            chunk->update_mesh();
-        }
+        resume.x = 0;
+        resume.y = 0;
+        resume.it++;
+    }
 
-        apply_physics();
-        process_events(camera, settings);
-        camera.calculate_view_matrix();
-        render_frame(chunk_mgr, camera, mvp, shaders, skybox, settings);
+    terrain_finished = false;
+
+finish:
+    for (auto &chunk : deferred_list)
+    {
+        chunk->update_mesh();
     }
 }
 

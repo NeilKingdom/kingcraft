@@ -36,7 +36,7 @@ private:
         ChunkManager &chunk_mgr,
         ChunkFactory &chunk_factory,
         BlockFactory &block_factory,
-        Frustum2D &frustum,
+        Camera &camera,
         Settings &settings
     );
     void plant_trees(

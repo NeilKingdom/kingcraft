@@ -142,8 +142,6 @@ Result ChunkManager::add_block(
         }
     }
 
-    //chunk->update_mesh();
-
     // TODO: Add chunk to cache if not already present
 
     return Result::SUCCESS;
@@ -166,29 +164,6 @@ Result ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 bloc
 }
 
 /**
- * @brief Optionally returns the chunk at the location specified by __location__ if it exists.
- * @since 13-02-2025
- * @param location A vec3 that specifies the location of the chunk to return; measured in units of blocks
- * @returns The chunk at location __location__ if it exists, otherwise returns std::nullopt
- */
-//std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk(const Block &block) const
-//{
-//    return std::nullopt;
-//}
-
-/**
- * @brief Optionally returns the chunk at the location specified by __location__ if it exists.
- * @since 13-02-2025
- * @param location A vec3 that specifies the location of the chunk to return; measured in units of chunks
- * @returns The chunk at location __location__ if it exists, otherwise returns std::nullopt
- */
-//std::optional<std::shared_ptr<Chunk>> ChunkManager::get_chunk(const std::shared_ptr<Chunk> &chunk) const
-//{
-//    auto it = chunks.find(chunk);
-//    return (it == chunks.end()) ? std::nullopt : std::make_optional(chunk);
-//}
-
-/**
  * @brief Plants a tree at the location specified by __root_location__ (+1 unit in the z direction).
  * @since 13-02-2025
  * @param[in/out] chunk The chunk in which the tree will be planted
@@ -201,7 +176,7 @@ ChunkSet ChunkManager::plant_tree(
     const vec3 root_location
 )
 {
-    auto defered_list = std::unordered_set<std::shared_ptr<Chunk>, ChunkHash, ChunkEqual>{ chunk };
+    auto deferred_list = ChunkSet{ chunk };
 
     // Trunk
     for (int i = 1; i <= 6; ++i)
@@ -209,8 +184,8 @@ ChunkSet ChunkManager::plant_tree(
         vec3 block_location = { root_location[0], root_location[1], root_location[2] + i };
         if (add_block(chunk, block_factory, BlockType::WOOD, block_location, true) == Result::OOB)
         {
-            auto defered = add_block_relative_to_current(block_factory, pn, BlockType::WOOD, chunk->location, block_location);
-            defered_list.insert(defered);
+            auto deferred = add_block_relative(block_factory, pn, BlockType::WOOD, chunk->location, block_location);
+            deferred_list.insert(deferred);
         }
     }
 
@@ -227,14 +202,14 @@ ChunkSet ChunkManager::plant_tree(
             vec3 block_location1 = { root_location[0] + x, root_location[1] + y, root_location[2] + 4 };
             if (add_block(chunk, block_factory, BlockType::LEAVES, block_location1, true) == Result::OOB)
             {
-                auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location1);
-                defered_list.insert(defered);
+                auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location1);
+                deferred_list.insert(deferred);
             }
             vec3 block_location2 = { root_location[0] + x, root_location[1] + y, root_location[2] + 5 };
             if (add_block(chunk, block_factory, BlockType::LEAVES, block_location2, true) == Result::OOB)
             {
-                auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location2);
-                defered_list.insert(defered);
+                auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location2);
+                deferred_list.insert(deferred);
             }
         }
     }
@@ -252,8 +227,8 @@ ChunkSet ChunkManager::plant_tree(
             vec3 block_location = { root_location[0] + x, root_location[1] + y, root_location[2] + 6 };
             if (add_block(chunk, block_factory, BlockType::LEAVES, block_location, true) == Result::OOB)
             {
-                auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location);
-                defered_list.insert(defered);
+                auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location);
+                deferred_list.insert(deferred);
             }
         }
     }
@@ -262,35 +237,35 @@ ChunkSet ChunkManager::plant_tree(
     vec3 block_location1 = { root_location[0] + 0, root_location[1] + 0, root_location[2] + 7 };
     if (add_block(chunk, block_factory, BlockType::LEAVES, block_location1, true) == Result::OOB)
     {
-        auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location1);
-        defered_list.insert(defered);
+        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location1);
+        deferred_list.insert(deferred);
     }
     vec3 block_location2 = { root_location[0] + 1, root_location[1] + 0, root_location[2] + 7 };
     if (add_block(chunk, block_factory, BlockType::LEAVES, block_location2, true) == Result::OOB)
     {
-        auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location2);
-        defered_list.insert(defered);
+        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location2);
+        deferred_list.insert(deferred);
     }
     vec3 block_location3 = { root_location[0] - 1, root_location[1] + 0, root_location[2] + 7 };
     if (add_block(chunk, block_factory, BlockType::LEAVES, block_location3, true) == Result::OOB)
     {
-        auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location3);
-        defered_list.insert(defered);
+        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location3);
+        deferred_list.insert(deferred);
     }
     vec3 block_location4 = { root_location[0] + 0, root_location[1] + 1, root_location[2] + 7 };
     if (add_block(chunk, block_factory, BlockType::LEAVES, block_location4, true) == Result::OOB)
     {
-        auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location4);
-        defered_list.insert(defered);
+        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location4);
+        deferred_list.insert(deferred);
     }
     vec3 block_location5 = { root_location[0] + 0, root_location[1] - 1, root_location[2] + 7 };
     if (add_block(chunk, block_factory, BlockType::LEAVES, block_location5, true) == Result::OOB)
     {
-        auto defered = add_block_relative_to_current(block_factory, pn, BlockType::LEAVES, chunk->location, block_location5);
-        defered_list.insert(defered);
+        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location5);
+        deferred_list.insert(deferred);
     }
 
-    return defered_list;
+    return deferred_list;
 }
 
 void ChunkManager::update_mesh()
@@ -342,7 +317,7 @@ void ChunkManager::update_mesh()
  * @param[in] block_location Location of the block to be placed, relative to the current chunk, as a vec3
  * @param[in] type The type of block that will be created
  */
-std::shared_ptr<Chunk> ChunkManager::add_block_relative_to_current(
+std::shared_ptr<Chunk> ChunkManager::add_block_relative(
     const BlockFactory &block_factory,
     const PerlinNoise &pn,
     const BlockType type,
@@ -376,7 +351,14 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative_to_current(
 
     auto lookup = std::make_shared<Chunk>(parent_chunk_location);
     auto needle = GCL.find(lookup);
-    if (needle == GCL.end())
+    if (needle != GCL.end())
+    {
+        // Use existing chunk
+        std::shared_ptr<Chunk> mut_copy = *needle;
+        add_block(mut_copy, block_factory, type, actual_block_location, false);
+        return mut_copy;
+    }
+    else
     {
         // Create new chunk
         ChunkFactory chunk_factory;
@@ -396,12 +378,5 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative_to_current(
         //}
 
         return new_chunk;
-    }
-    else
-    {
-        // Use existing chunk
-        std::shared_ptr<Chunk> chunk = *needle;
-        add_block(chunk, block_factory, type, actual_block_location, false);
-        return chunk;
     }
 }

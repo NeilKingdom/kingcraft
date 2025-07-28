@@ -1,5 +1,6 @@
-obj
 kingcraft
-compile_flags.txt
-TODO.md
+obj
 test
+TODO.md
+compile_commands.json
+.cache

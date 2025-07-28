@@ -131,11 +131,6 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(
     }
 
     chunk->update_mesh();
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<float, std::milli> duration = end - start;
-    avg_chunk_proc_time = (avg_chunk_proc_time + duration.count()) / 2.0f;
-
     return chunk;
 }
 

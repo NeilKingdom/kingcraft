@@ -38,8 +38,6 @@ public:
         const bool overwrite
     ) const;
     Result remove_block(std::shared_ptr<Chunk> &chunk, const vec3 block_location) const;
-    //std::optional<std::shared_ptr<Chunk>> get_chunk(const Block &block) const;
-    //std::optional<std::shared_ptr<Chunk>> get_chunk(const std::shared_ptr<Chunk> &chunk) const;
     ChunkSet plant_tree(
         std::shared_ptr<Chunk> &chunk,
         const BlockFactory &block_factory,
@@ -53,7 +51,7 @@ private:
     ChunkManager();
 
     // General
-    std::shared_ptr<Chunk> add_block_relative_to_current(
+    std::shared_ptr<Chunk> add_block_relative(
         const BlockFactory &block_factory,
         const PerlinNoise &pn,
         const BlockType type,

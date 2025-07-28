@@ -22,6 +22,7 @@ public:
 
     unsigned long seed = 12345UL;
     float tgt_fps = 60.0f;
+    bool cap_fps = true;
     bool is_running = true;
 
     // Special member functions

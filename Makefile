@@ -20,7 +20,11 @@ LDFLAGS += -L$(IMGUI)/bin -l:imgui.a -llac -limc -lX11 -lGL -lGLEW
 BIN := kingcraft
 
 # Default goal
-all: $(BIN)
+all: prebuild $(BIN)
+
+# Pre-build actions
+prebuild:
+	mkdir -p $(OBJ_DIR)
 
 # Remove object files and binaries
 clean:
@@ -37,4 +41,4 @@ $(BIN): $(OBJS)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $< -c -o $@ $(CCFLAGS) $(LDFLAGS)
 
-.PHONY: clean all rebuild imgui
+.PHONY: clean all prebuild rebuild
