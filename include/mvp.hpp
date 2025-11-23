@@ -3,8 +3,9 @@
 #include "common.hpp"
 #include "camera.hpp"
 
-struct Mvp
+class Mvp
 {
+public:
     mat4 m_model;
     std::shared_ptr<std::array<float, 16>> m_view;
     mat4 m_proj;

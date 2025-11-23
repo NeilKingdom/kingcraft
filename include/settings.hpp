@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "window.hpp"
 
 #include "../res/vendor/imgui/include/imgui.h"
 #include "../res/vendor/imgui/include/imgui_impl_opengl3.h"
@@ -17,8 +18,8 @@ public:
     float znear  = 1.0f;
     float zfar   = 1000.0f;
 
-    ssize_t chunk_size = 16;
-    size_t render_distance = 8;
+    // Render distance (in chunks)
+    size_t render_distance = 4;
 
     unsigned long seed = 12345UL;
     float tgt_fps = 60.0f;
@@ -40,7 +41,4 @@ public:
 private:
     // Special member functions
     Settings() = default;
-
-    // General
-    void draw_minimap(KCWindow &win, Camera &camera, const float zoom = 1.0f);
 };

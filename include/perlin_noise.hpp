@@ -6,10 +6,11 @@ class PerlinNoise
 {
 public:
     // Special member functions
-    PerlinNoise();
     ~PerlinNoise() = default;
 
     // General
+    static PerlinNoise &get_instance();
+
     float perlin(const float x, const float y, const float z) const;
     float octave_perlin(
         const float x,
@@ -22,7 +23,10 @@ public:
     ) const;
 
 private:
-    std::vector<int> m_permutations_table;
+    std::vector<int> permutations_table;
+
+    // Special member functions
+    PerlinNoise();
 
     // General member functions
     static float gradient(const int hash, const float x, const float y, const float z);

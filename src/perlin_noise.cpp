@@ -49,16 +49,22 @@ inline float PerlinNoise::fade(const float t)
  */
 PerlinNoise::PerlinNoise()
 {
-	m_permutations_table.resize(256);
-    for (size_t i = 0; i < m_permutations_table.size(); ++i)
+	permutations_table.resize(256);
+    for (size_t i = 0; i < permutations_table.size(); ++i)
     {
-        m_permutations_table[i] = random() % 256;
+        permutations_table[i] = random() % 256;
     }
-	m_permutations_table.insert(
-        m_permutations_table.end(),
-        m_permutations_table.begin(),
-        m_permutations_table.end()
+	permutations_table.insert(
+        permutations_table.end(),
+        permutations_table.begin(),
+        permutations_table.end()
     );
+}
+
+PerlinNoise &PerlinNoise::get_instance()
+{
+    static PerlinNoise pn;
+    return pn;
 }
 
 /**
@@ -91,33 +97,33 @@ float PerlinNoise::perlin(const float x, const float y, const float z) const
 	float w = fade(_z);
 
 	// Hash coordinates of the 8 cube corners
-	int A  = m_permutations_table[X]     + Y;
-	int AA = m_permutations_table[A]     + Z;
-	int AB = m_permutations_table[A + 1] + Z;
-	int B  = m_permutations_table[X + 1] + Y;
-	int BA = m_permutations_table[B]     + Z;
-	int BB = m_permutations_table[B + 1] + Z;
+	int A  = permutations_table[X]     + Y;
+	int AA = permutations_table[A]     + Z;
+	int AB = permutations_table[A + 1] + Z;
+	int B  = permutations_table[X + 1] + Y;
+	int BA = permutations_table[B]     + Z;
+	int BB = permutations_table[B + 1] + Z;
 
 	// Add blended results from 8 corners of cube
 	float noise = lerp(
         w, lerp(
             v, lerp(
-                u, gradient(m_permutations_table[AA], _x, _y, _z),
-                gradient(m_permutations_table[BA], _x - 1, _y, _z)
+                u, gradient(permutations_table[AA], _x, _y, _z),
+                gradient(permutations_table[BA], _x - 1, _y, _z)
             ),
             lerp(
-                u, gradient(m_permutations_table[AB], _x, _y - 1, _z),
-                gradient(m_permutations_table[BB], _x - 1, _y - 1, _z)
+                u, gradient(permutations_table[AB], _x, _y - 1, _z),
+                gradient(permutations_table[BB], _x - 1, _y - 1, _z)
             )
         ),
         lerp(
             v, lerp(
-                u, gradient(m_permutations_table[AA + 1], _x, _y, _z - 1),
-                gradient(m_permutations_table[BA + 1], _x - 1, _y, _z - 1)
+                u, gradient(permutations_table[AA + 1], _x, _y, _z - 1),
+                gradient(permutations_table[BA + 1], _x - 1, _y, _z - 1)
             ),
             lerp(
-                u, gradient(m_permutations_table[AB + 1], _x, _y - 1, _z - 1),
-                gradient(m_permutations_table[BB + 1], _x - 1, _y - 1, _z - 1)
+                u, gradient(permutations_table[AB + 1], _x, _y - 1, _z - 1),
+                gradient(permutations_table[BB + 1], _x - 1, _y - 1, _z - 1)
             )
         )
     );
@@ -160,8 +166,9 @@ float PerlinNoise::octave_perlin(
         freq *= 2.0f;
     }
 
-    noise /= max_amp;
-    noise = (noise * (hi - lo) / 2.0f) + ((hi + lo) / 2.0f);
-    return noise;
+    noise /= max_amp; // Normalize to -1..1
+    noise = (noise + 1.0f) * 0.5f; // Normalize to 0..1
+    noise = noise * float(hi - lo) + float(lo); // Scale to lo..hi
+    return floorf(noise);
 }
 

@@ -59,15 +59,25 @@ void Camera::calculate_view_matrix()
  * @param[in] win A reference to the application's window
  * @param[in] pointer_pos The current (x, y) position of the mouse pointer relative to the parent window
  */
-void Camera::update_rotation_from_pointer(const KCWindow &win, const vec2 pointer_pos)
+void Camera::update_rotation_from_pointer(const KCWindow &win)
 {
-    float center_x = (float)win.xwa.width / 2.0f;
-    float center_y = (float)win.xwa.height / 2.0f;
+    // Cursor position
+    float ptr_x = win.xev.xmotion.x;
+    float ptr_y = win.xev.xmotion.y;
+
+    // Screen width/height
+    float screen_w = win.xwa.width;
+    float screen_h = win.xwa.height;
+
+    // Screen center
+    float center_x = screen_w / 2.0f;
+    float center_y = screen_h / 2.0f;
 
     // Normalized mouse pointer position deltas
-    float norm_dx = (center_x - pointer_pos[0]) / (float)win.xwa.width;
-    float norm_dy = (center_y - pointer_pos[1]) / (float)win.xwa.height;
+    float norm_dx = (center_x - ptr_x) / screen_w;
+    float norm_dy = (center_y - ptr_y) / screen_h;
 
+    // TODO: Multiply by delta time to smooth
     // Convert from pixel space to degrees
     camera_yaw += norm_dx * 180.0f * KC::CAMERA_SPEED_FACTOR;
     camera_pitch += norm_dy * 180.0f * KC::CAMERA_SPEED_FACTOR;
@@ -75,80 +85,6 @@ void Camera::update_rotation_from_pointer(const KCWindow &win, const vec2 pointe
 
     // Warp cursor back to center of screen
     XWarpPointer(win.dpy, None, win.win, 0, 0, 0, 0, (int)center_x, (int)center_y);
-}
-
-/**
- * @brief Returns a Frustum2D object which represents the vertices that makeup the camera's viewing frustum.
- *
- * Frustum:
- *
- *       w_half
- *      <------->
- *  v_B _________________ v_C
- *      \       |       /
- *       \      |      /
- *        \     |     /
- *         \    |    /
- *          \  v_LD /
- *           \  ^  /
- *            \ | /
- *             \|/
- *             v_A
- *
- * @since 09-10-2024
- * @param[in] render_distance The distance (in chunks) that the frustum should cover
- * @returns A Frustum2D object which represents the space that should not be culled when rendering chunks
- */
-Frustum2D Camera::get_frustum2D(const size_t render_distance) const
-{
-    Settings &settings = Settings::get_instance();
-    ssize_t chunk_size = settings.chunk_size;
-
-    const float fov = settings.fov + 30;
-    const float w_half = std::tanf(lac_deg_to_rad(fov / 2.0f)) * render_distance;
-
-    vec2 tmp = {};
-    vec2 v_A = { -v_eye[0] / chunk_size, v_eye[1] / chunk_size };
-
-    vec2 v_LD = { v_look_dir[0], -v_look_dir[1] };
-    // TODO: Why does this need normalizing if we're doing it in calculate_view_matrix?
-    lac_normalize_vec2(v_LD, v_LD);
-    lac_multiply_vec2(v_LD, v_LD, render_distance);
-    lac_add_vec2(v_LD, v_LD, v_A);
-
-    lac_subtract_vec2(tmp, v_A, v_LD);
-
-    vec2 v_B = { -tmp[1], tmp[0] };
-    lac_normalize_vec2(v_B, v_B);
-    lac_multiply_vec2(v_B, v_B, w_half);
-    lac_add_vec2(v_B, v_B, v_LD);
-
-    vec2 v_C = { tmp[1], -tmp[0] };
-    lac_normalize_vec2(v_C, v_C);
-    lac_multiply_vec2(v_C, v_C, w_half);
-    lac_add_vec2(v_C, v_C, v_LD);
-
-    // TODO: Streamline this. Wasteful considering we already have v_LD above
-
-    // Move all points a little bit behind the camera's actual position
-    const float scalar = 2.0f;
-    vec2 v_LD_tmp = { v_look_dir[0], -v_look_dir[1] };
-    lac_normalize_vec2(v_LD_tmp, v_LD_tmp);
-
-    v_A[0] -= v_LD_tmp[0] * scalar;
-    v_A[1] -= v_LD_tmp[1] * scalar;
-
-    v_B[0] -= v_LD_tmp[0] * scalar;
-    v_B[1] -= v_LD_tmp[1] * scalar;
-
-    v_C[0] -= v_LD_tmp[0] * scalar;
-    v_C[1] -= v_LD_tmp[1] * scalar;
-
-    return Frustum2D{
-        std::array<float, 2>{ v_A[0], v_A[1] },
-        std::array<float, 2>{ v_B[0], v_B[1] },
-        std::array<float, 2>{ v_C[0], v_C[1] }
-    };
 }
 
 //std::optional<Block> Camera::cast_ray(

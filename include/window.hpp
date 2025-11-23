@@ -1,36 +1,51 @@
 #pragma once
 
 #include "common.hpp"
-#include "shader.hpp"
 
-struct KCShaders
+// X11
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/keysymdef.h>
+#include <X11/Xcursor/Xcursor.h>
+#include <X11/cursorfont.h>
+
+// Game window (right now only X11 is supported)
+struct KCWindow
 {
-    Shader block;
-    Shader skybox;
+    Display                *dpy;    // The X11 connection
+    Window                  win;    // The application's parent window
+    XVisualInfo            *xvi;    // Struct containing additional info about the window
+    XWindowAttributes       xwa;    // Struct containing the window's attributes
+    XEvent                  xev;    // Stores the event type of the most recently received event
+    GLXFBConfig       fb_config;    // Frame buffer configuration returned from gfx card
+
+    struct KCCursor
+    {
+        Cursor cursor;
+        Pixmap pixmap;
+    } cur;                          // Custom cursor
 };
 
-static bool query_pointer_location = true;
+enum KeyAction : uint64_t
+{
+    PLYR_FWD      = (1 << 0),
+    PLYR_BACK     = (1 << 1),
+    PLYR_LEFT     = (1 << 2),
+    PLYR_RIGHT    = (1 << 3),
+    PLYR_UP       = (1 << 4),
+    PLYR_DOWN     = (1 << 5),
+    EXIT_GAME     = (1 << 6),
+};
 static uint64_t key_mask = 0;
 
-enum KeyLabel : uint64_t
-{
-    KEY_MOVE_FORWARD  = (1 << 0),
-    KEY_MOVE_BACKWARD = (1 << 1),
-    KEY_MOVE_LEFT     = (1 << 2),
-    KEY_MOVE_RIGHT    = (1 << 3),
-    KEY_MOVE_UP       = (1 << 4),
-    KEY_MOVE_DOWN     = (1 << 5),
-    KEY_EXIT_GAME     = (1 << 6),
-};
-
-static auto key_binds = std::map<KeySym, KeyLabel>{
-    { XK_w,             KeyLabel::KEY_MOVE_FORWARD  },
-    { XK_s,             KeyLabel::KEY_MOVE_BACKWARD },
-    { XK_a,             KeyLabel::KEY_MOVE_LEFT     },
-    { XK_d,             KeyLabel::KEY_MOVE_RIGHT    },
-    { XK_space,         KeyLabel::KEY_MOVE_UP       },
-    { XK_BackSpace,     KeyLabel::KEY_MOVE_DOWN     },
-    { XK_q,             KeyLabel::KEY_EXIT_GAME     }
+static auto key_binds = std::map<KeySym, KeyAction>{
+    { XK_w,             KeyAction::PLYR_FWD   },
+    { XK_s,             KeyAction::PLYR_BACK  },
+    { XK_a,             KeyAction::PLYR_LEFT  },
+    { XK_d,             KeyAction::PLYR_RIGHT },
+    { XK_space,         KeyAction::PLYR_UP    },
+    { XK_BackSpace,     KeyAction::PLYR_DOWN  },
+    { XK_q,             KeyAction::EXIT_GAME  }
 };
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(
@@ -43,10 +58,11 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(
 
 // Forward function declarations
 
-GLXFBConfig create_window(
-    KCWindow &win,
+// TODO: I'd like to return window instead of passing by param
+void create_window(
+    KCWindow &kc_win,
     const std::string win_name,
     const size_t win_width,
     const size_t win_height
 );
-GLXContext create_opengl_context(KCWindow &win, const GLXFBConfig &fb_config);
+GLXContext create_opengl_context(KCWindow &win);

@@ -14,6 +14,7 @@ namespace KC
     static constexpr vec3 v_up    = { 0.0f, 0.0f, 1.0f };
 
     // General constants
+    static constexpr unsigned CHUNK_SIZE = 16;
     static constexpr unsigned CUBE_FACES = 6;
     static constexpr unsigned TEX_ATLAS_NCOLS = 16;
     static constexpr auto SEC_AS_MS = duration_cast<milliseconds>(seconds(1));

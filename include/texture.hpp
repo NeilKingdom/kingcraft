@@ -1,7 +1,7 @@
 #pragma once
 
-#include <png_parser.h>
 #include "common.hpp"
+#include <png_parser.h>
 
 class Texture
 {

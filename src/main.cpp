@@ -13,5 +13,6 @@ int main()
     {
         Game game;
     }
+
     return EXIT_SUCCESS;
 }

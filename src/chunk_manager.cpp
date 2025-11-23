@@ -66,33 +66,31 @@ ChunkManager &ChunkManager::get_instance()
  */
 Result ChunkManager::add_block(
     std::shared_ptr<Chunk> &chunk,
-    const BlockFactory &block_factory,
     const BlockType type,
     const vec3 block_location,
     const bool overwrite
 ) const
 {
-    Settings &settings = Settings::get_instance();
-    ssize_t chunk_size = settings.chunk_size;
+    BlockFactory &block_factory = BlockFactory::get_instance();
 
-    if (block_location[0] < 0 || block_location[0] >= chunk_size ||
-        block_location[1] < 0 || block_location[1] >= chunk_size ||
-        block_location[2] < 0 || block_location[2] >= chunk_size)
+    if (block_location[0] < 0 || block_location[0] >= KC::CHUNK_SIZE ||
+        block_location[1] < 0 || block_location[1] >= KC::CHUNK_SIZE ||
+        block_location[2] < 0 || block_location[2] >= KC::CHUNK_SIZE)
     {
         return Result::OOB;
     }
 
-    if (!overwrite && chunk->blocks[block_location[2]][block_location[1]][block_location[0]].type != BlockType::AIR)
+    Block &block = chunk->blocks[block_location[2]][block_location[1]][block_location[0]];
+    if (!overwrite && block.type != BlockType::AIR)
     {
         return Result::FAILURE;
     }
 
     vec3 world_location = {
-        -(chunk->location[0] * chunk_size) + block_location[0],
-         (chunk->location[1] * chunk_size) + block_location[1],
-         (chunk->location[2] * chunk_size) + block_location[2]
+         (chunk->location[0] * KC::CHUNK_SIZE) + block_location[0],
+         (chunk->location[1] * KC::CHUNK_SIZE) + block_location[1],
+         (chunk->location[2] * KC::CHUNK_SIZE) + block_location[2]
     };
-    Block &block = chunk->blocks[block_location[2]][block_location[1]][block_location[0]];
     block = block_factory.make_block(type, ALL, world_location);
 
     // Remove faces from block and its neighbors
@@ -105,7 +103,7 @@ Result ChunkManager::add_block(
             UNSET_BIT(chunk->blocks[block_location[2]][block_location[1]][block_location[0] - 1].faces, BACK);
             UNSET_BIT(block.faces, FRONT);
         }
-        if (block_location[0] < (chunk_size - 1) &&
+        if (block_location[0] < (KC::CHUNK_SIZE - 1) &&
             chunk->blocks[block_location[2]][block_location[1]][block_location[0] + 1].type != BlockType::AIR &&
             chunk->blocks[block_location[2]][block_location[1]][block_location[0] + 1].type != BlockType::LEAVES)
         {
@@ -119,7 +117,7 @@ Result ChunkManager::add_block(
             UNSET_BIT(chunk->blocks[block_location[2]][block_location[1] - 1][block_location[0]].faces, RIGHT);
             UNSET_BIT(block.faces, LEFT);
         }
-        if (block_location[1] < (chunk_size - 1) &&
+        if (block_location[1] < (KC::CHUNK_SIZE - 1) &&
             chunk->blocks[block_location[2]][block_location[1] + 1][block_location[0]].type != BlockType::AIR &&
             chunk->blocks[block_location[2]][block_location[1] + 1][block_location[0]].type != BlockType::LEAVES)
         {
@@ -133,7 +131,7 @@ Result ChunkManager::add_block(
             UNSET_BIT(chunk->blocks[block_location[2] - 1][block_location[1]][block_location[0]].faces, TOP);
             UNSET_BIT(block.faces, BOTTOM);
         }
-        if (block_location[2] < (chunk_size - 1) &&
+        if (block_location[2] < (KC::CHUNK_SIZE - 1) &&
             chunk->blocks[block_location[2] + 1][block_location[1]][block_location[0]].type != BlockType::AIR &&
             chunk->blocks[block_location[2] + 1][block_location[1]][block_location[0]].type != BlockType::LEAVES)
         {
@@ -141,8 +139,6 @@ Result ChunkManager::add_block(
             UNSET_BIT(block.faces, TOP);
         }
     }
-
-    // TODO: Add chunk to cache if not already present
 
     return Result::SUCCESS;
 }
@@ -156,7 +152,8 @@ Result ChunkManager::add_block(
  */
 Result ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 block_location) const
 {
-    chunk->blocks[block_location[2]][block_location[1]][block_location[0]].type = BlockType::AIR;
+    Block &block = chunk->blocks[block_location[2]][block_location[1]][block_location[0]];
+    block = Block();
 
     // TODO: Regenerate neighboring block faces
 
@@ -169,22 +166,17 @@ Result ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 bloc
  * @param[in/out] chunk The chunk in which the tree will be planted
  * @param[in] root_location The location relative to __chunk__'s location at which the tree will be planted
  */
-ChunkSet ChunkManager::plant_tree(
-    std::shared_ptr<Chunk> &chunk,
-    const BlockFactory &block_factory,
-    const PerlinNoise &pn,
-    const vec3 root_location
-)
+ChunkSet ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root_location)
 {
-    auto deferred_list = ChunkSet{ chunk };
+    auto deferred_list = ChunkSet{};
 
     // Trunk
     for (int i = 1; i <= 6; ++i)
     {
         vec3 block_location = { root_location[0], root_location[1], root_location[2] + i };
-        if (add_block(chunk, block_factory, BlockType::WOOD, block_location, true) == Result::OOB)
+        if (add_block(chunk, BlockType::WOOD, block_location, true) == Result::OOB)
         {
-            auto deferred = add_block_relative(block_factory, pn, BlockType::WOOD, chunk->location, block_location);
+            auto deferred = add_block_relative(BlockType::WOOD, chunk->location, block_location);
             deferred_list.insert(deferred);
         }
     }
@@ -200,15 +192,15 @@ ChunkSet ChunkManager::plant_tree(
             }
 
             vec3 block_location1 = { root_location[0] + x, root_location[1] + y, root_location[2] + 4 };
-            if (add_block(chunk, block_factory, BlockType::LEAVES, block_location1, true) == Result::OOB)
+            if (add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
             {
-                auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location1);
+                auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location1);
                 deferred_list.insert(deferred);
             }
             vec3 block_location2 = { root_location[0] + x, root_location[1] + y, root_location[2] + 5 };
-            if (add_block(chunk, block_factory, BlockType::LEAVES, block_location2, true) == Result::OOB)
+            if (add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
             {
-                auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location2);
+                auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location2);
                 deferred_list.insert(deferred);
             }
         }
@@ -225,9 +217,9 @@ ChunkSet ChunkManager::plant_tree(
             }
 
             vec3 block_location = { root_location[0] + x, root_location[1] + y, root_location[2] + 6 };
-            if (add_block(chunk, block_factory, BlockType::LEAVES, block_location, true) == Result::OOB)
+            if (add_block(chunk, BlockType::LEAVES, block_location, true) == Result::OOB)
             {
-                auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location);
+                auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location);
                 deferred_list.insert(deferred);
             }
         }
@@ -235,33 +227,33 @@ ChunkSet ChunkManager::plant_tree(
 
     // Leaves (second 3x3 layer is plus-shaped)
     vec3 block_location1 = { root_location[0] + 0, root_location[1] + 0, root_location[2] + 7 };
-    if (add_block(chunk, block_factory, BlockType::LEAVES, block_location1, true) == Result::OOB)
+    if (add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location1);
+        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location1);
         deferred_list.insert(deferred);
     }
     vec3 block_location2 = { root_location[0] + 1, root_location[1] + 0, root_location[2] + 7 };
-    if (add_block(chunk, block_factory, BlockType::LEAVES, block_location2, true) == Result::OOB)
+    if (add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location2);
+        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location2);
         deferred_list.insert(deferred);
     }
     vec3 block_location3 = { root_location[0] - 1, root_location[1] + 0, root_location[2] + 7 };
-    if (add_block(chunk, block_factory, BlockType::LEAVES, block_location3, true) == Result::OOB)
+    if (add_block(chunk, BlockType::LEAVES, block_location3, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location3);
+        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location3);
         deferred_list.insert(deferred);
     }
     vec3 block_location4 = { root_location[0] + 0, root_location[1] + 1, root_location[2] + 7 };
-    if (add_block(chunk, block_factory, BlockType::LEAVES, block_location4, true) == Result::OOB)
+    if (add_block(chunk, BlockType::LEAVES, block_location4, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location4);
+        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location4);
         deferred_list.insert(deferred);
     }
     vec3 block_location5 = { root_location[0] + 0, root_location[1] - 1, root_location[2] + 7 };
-    if (add_block(chunk, block_factory, BlockType::LEAVES, block_location5, true) == Result::OOB)
+    if (add_block(chunk, BlockType::LEAVES, block_location5, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(block_factory, pn, BlockType::LEAVES, chunk->location, block_location5);
+        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location5);
         deferred_list.insert(deferred);
     }
 
@@ -270,6 +262,7 @@ ChunkSet ChunkManager::plant_tree(
 
 void ChunkManager::update_mesh()
 {
+    // Check if any chunks have been modified
     bool chunk_update_pending = std::any_of(
         GCL.begin(),
         GCL.end(),
@@ -299,7 +292,7 @@ void ChunkManager::update_mesh()
         glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
         glBufferData(
             GL_ARRAY_BUFFER,
-            terrain_mesh.vertices.size() * sizeof(BlockVertex),
+            terrain_mesh.vertices.size() * sizeof(VPosTex),
             terrain_mesh.vertices.data(),
             GL_STATIC_DRAW
         );
@@ -318,65 +311,39 @@ void ChunkManager::update_mesh()
  * @param[in] type The type of block that will be created
  */
 std::shared_ptr<Chunk> ChunkManager::add_block_relative(
-    const BlockFactory &block_factory,
-    const PerlinNoise &pn,
     const BlockType type,
     const vec3 chunk_location,
     const vec3 block_location
 )
 {
-    Settings &settings = Settings::get_instance();
-    ssize_t chunk_size = settings.chunk_size;
+    ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
-    vec3 parent_chunk_location{};
+    vec3 actual_chunk_location{};
     vec3 actual_block_location{};
 
-    parent_chunk_location[0] = std::floorf(((chunk_location[0] * chunk_size) + block_location[0]) / (float)chunk_size);
-    parent_chunk_location[1] = std::floorf(((chunk_location[1] * chunk_size) + block_location[1]) / (float)chunk_size);
-    parent_chunk_location[2] = std::floorf(((chunk_location[2] * chunk_size) + block_location[2]) / (float)chunk_size);
+    actual_chunk_location[0] = std::floorf(((chunk_location[0] * KC::CHUNK_SIZE) + block_location[0]) / KC::CHUNK_SIZE);
+    actual_chunk_location[1] = std::floorf(((chunk_location[1] * KC::CHUNK_SIZE) + block_location[1]) / KC::CHUNK_SIZE);
+    actual_chunk_location[2] = std::floorf(((chunk_location[2] * KC::CHUNK_SIZE) + block_location[2]) / KC::CHUNK_SIZE);
 
-    actual_block_location[0] = (float)(((int)block_location[0] % chunk_size + chunk_size) % chunk_size);
-    actual_block_location[1] = (float)(((int)block_location[1] % chunk_size + chunk_size) % chunk_size);
-    actual_block_location[2] = (float)(((int)block_location[2] % chunk_size + chunk_size) % chunk_size);
+    actual_block_location[0] = (((int)block_location[0] % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+    actual_block_location[1] = (((int)block_location[1] % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+    actual_block_location[2] = (((int)block_location[2] % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
 
-    // Spent waaaaaaay too much time figuring this edge case out. No clue why it works ¯\_(ツ)_/¯
-    if (block_location[0] < 0.0f)
-    {
-        parent_chunk_location[0] += 2;
-    }
-    else if (block_location[0] >= 16.0f)
-    {
-        parent_chunk_location[0] -= 2;
-    }
-
-    auto lookup = std::make_shared<Chunk>(parent_chunk_location);
+    auto lookup = std::make_shared<Chunk>(actual_chunk_location);
     auto needle = GCL.find(lookup);
     if (needle != GCL.end())
     {
         // Use existing chunk
-        std::shared_ptr<Chunk> mut_copy = *needle;
-        add_block(mut_copy, block_factory, type, actual_block_location, false);
-        return mut_copy;
+        std::shared_ptr<Chunk> mut_ref = *needle;
+        add_block(mut_ref, type, actual_block_location, false);
+        return mut_ref;
     }
     else
     {
         // Create new chunk
-        ChunkFactory chunk_factory;
-        auto new_chunk = chunk_factory.make_chunk(block_factory, pn, parent_chunk_location);
+        auto new_chunk = chunk_factory.make_chunk(actual_chunk_location);
+        add_block(new_chunk, type, actual_block_location, false);
         GCL.insert(new_chunk);
-        add_block(new_chunk, block_factory, type, actual_block_location, false);
-
-        // TODO: move elsewhere
-        // Generate the remaining chunks in the column
-        //ssize_t base_biome_height = KC::SEA_LEVEL / chunk_size;
-        //for (ssize_t i = base_biome_height; i < new_chunk->location[2]; ++i)
-        //{
-        //    vec3 tmp_chunk_location = { parent_chunk_location[0], parent_chunk_location[1], (float)i };
-        //    auto tmp_chunk = chunk_factory.make_chunk(block_factory, pn, tmp_chunk_location);
-        //    tmp_chunk->update_mesh();
-        //    chunks.insert(tmp_chunk);
-        //}
-
         return new_chunk;
     }
 }

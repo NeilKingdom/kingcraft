@@ -9,12 +9,12 @@ class SkyBox
 {
 public:
     ID id;
-    Mesh<SkyboxVertex> mesh;
+    Mesh<VPos> mesh;
 
     // Special member functions
     SkyBox() = delete;
     SkyBox(
-        const std::array<std::filesystem::path, 6> tex_paths,
+        const std::array<std::filesystem::path, KC::CUBE_FACES> tex_paths,
         const unsigned min_filter,
         const unsigned mag_filter,
         const bool make_mipmap = false

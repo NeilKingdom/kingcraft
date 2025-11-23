@@ -12,7 +12,7 @@
 #include "player.hpp"
 #include "perlin_noise.hpp"
 #include "mvp.hpp"
-#include "helpers.hpp"
+#include "utils.hpp"
 
 class Game
 {
@@ -27,36 +27,17 @@ private:
     GLXContext glx; // OpenGL Context
     KCWindow kc_win; // KingCraft window
     KCWindow imgui_win; // ImGui window
-    Player player; // Player instance
-    PerlinNoise pn; // Perlin noise instance
     std::thread fps_thread; // Thread for tracking game FPS
 
+    // TODO: Not a fan of having these here...
+    Shader block_shader;
+    Shader skybox_shader;
+
     // General
-    void generate_terrain(
-        ChunkManager &chunk_mgr,
-        ChunkFactory &chunk_factory,
-        BlockFactory &block_factory,
-        Camera &camera,
-        Settings &settings
-    );
-    void plant_trees(
-        ChunkManager &chunk_mgr,
-        BlockFactory &block_factory,
-        Camera &camera,
-        Mvp &mvp,
-        KCShaders &shaders,
-        SkyBox &skybox,
-        Settings &settings
-    );
+    void generate_terrain(Camera &camera);
+    ChunkSet plant_trees(std::shared_ptr<Chunk> &chunk);
     void apply_physics();
-    void process_events(Camera &camera, Settings &settings);
-    void render_frame(
-        ChunkManager &chunk_mgr,
-        Camera &camera,
-        Mvp &mvp,
-        KCShaders &shaders,
-        SkyBox &skybox,
-        Settings &settings
-    );
+    void process_events(Camera &camera);
+    void render_frame(Camera &camera, Mvp &mvp, SkyBox &skybox);
     void cleanup();
 };

@@ -1,7 +1,7 @@
 #include "skybox.hpp"
 
 SkyBox::SkyBox(
-    const std::array<std::filesystem::path, 6> tex_paths,
+    const std::array<std::filesystem::path, KC::CUBE_FACES> tex_paths,
     const unsigned min_filter,
     const unsigned mag_filter,
     const bool make_mipmap
@@ -62,54 +62,54 @@ SkyBox::SkyBox(
     lac_multiply_vec4_mat4(v7, v7, m_scale);
 
     // Static mesh coordinates
-    std::array<SkyboxVertex, 36> vertices = {
+    std::array<VPos, 36> vertices = {
         // Right
-        v3[0], v3[1], v3[2],
-        v7[0], v7[1], v7[2],
-        v1[0], v1[1], v1[2],
-        v5[0], v5[1], v5[2],
-        v1[0], v1[1], v1[2],
-        v7[0], v7[1], v7[2],
+        VPos{ v3[0], v3[1], v3[2] },
+        VPos{ v7[0], v7[1], v7[2] },
+        VPos{ v1[0], v1[1], v1[2] },
+        VPos{ v5[0], v5[1], v5[2] },
+        VPos{ v1[0], v1[1], v1[2] },
+        VPos{ v7[0], v7[1], v7[2] },
 
         // Left
-        v6[0], v6[1], v6[2],
-        v2[0], v2[1], v2[2],
-        v4[0], v4[1], v4[2],
-        v0[0], v0[1], v0[2],
-        v4[0], v4[1], v4[2],
-        v2[0], v2[1], v2[2],
+        VPos{ v6[0], v6[1], v6[2] },
+        VPos{ v2[0], v2[1], v2[2] },
+        VPos{ v4[0], v4[1], v4[2] },
+        VPos{ v0[0], v0[1], v0[2] },
+        VPos{ v4[0], v4[1], v4[2] },
+        VPos{ v2[0], v2[1], v2[2] },
 
         // Back
-        v2[0], v2[1], v2[2],
-        v3[0], v3[1], v3[2],
-        v0[0], v0[1], v0[2],
-        v1[0], v1[1], v1[2],
-        v0[0], v0[1], v0[2],
-        v3[0], v3[1], v3[2],
+        VPos{ v2[0], v2[1], v2[2] },
+        VPos{ v3[0], v3[1], v3[2] },
+        VPos{ v0[0], v0[1], v0[2] },
+        VPos{ v1[0], v1[1], v1[2] },
+        VPos{ v0[0], v0[1], v0[2] },
+        VPos{ v3[0], v3[1], v3[2] },
 
         // Front
-        v7[0], v7[1], v7[2],
-        v6[0], v6[1], v6[2],
-        v5[0], v5[1], v5[2],
-        v4[0], v4[1], v4[2],
-        v5[0], v5[1], v5[2],
-        v6[0], v6[1], v6[2],
+        VPos{ v7[0], v7[1], v7[2] },
+        VPos{ v6[0], v6[1], v6[2] },
+        VPos{ v5[0], v5[1], v5[2] },
+        VPos{ v4[0], v4[1], v4[2] },
+        VPos{ v5[0], v5[1], v5[2] },
+        VPos{ v6[0], v6[1], v6[2] },
 
         // Bottom
-        v6[0], v6[1], v6[2],
-        v3[0], v3[1], v3[2],
-        v2[0], v2[1], v2[2],
-        v3[0], v3[1], v3[2],
-        v6[0], v6[1], v6[2],
-        v7[0], v7[1], v7[2],
+        VPos{ v6[0], v6[1], v6[2] },
+        VPos{ v3[0], v3[1], v3[2] },
+        VPos{ v2[0], v2[1], v2[2] },
+        VPos{ v3[0], v3[1], v3[2] },
+        VPos{ v6[0], v6[1], v6[2] },
+        VPos{ v7[0], v7[1], v7[2] },
 
         // Top
-        v0[0], v0[1], v0[2],
-        v1[0], v1[1], v1[2],
-        v4[0], v4[1], v4[2],
-        v5[0], v5[1], v5[2],
-        v4[0], v4[1], v4[2],
-        v1[0], v1[1], v1[2]
+        VPos{ v0[0], v0[1], v0[2] },
+        VPos{ v1[0], v1[1], v1[2] },
+        VPos{ v4[0], v4[1], v4[2] },
+        VPos{ v5[0], v5[1], v5[2] },
+        VPos{ v4[0], v4[1], v4[2] },
+        VPos{ v1[0], v1[1], v1[2] }
     };
 
     mesh.vertices.assign(vertices.begin(), vertices.end());
@@ -120,7 +120,7 @@ SkyBox::SkyBox(
     glBindVertexArray(mesh.vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(SkyboxVertex), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(VPos), vertices.data(), GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 

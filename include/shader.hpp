@@ -8,7 +8,7 @@ public:
     ID id;
 
     // Special member functions
-    Shader() = delete;
+    Shader() = default;
     Shader(const std::filesystem::path vertex_path, const std::filesystem::path fragment_path);
     ~Shader();
 

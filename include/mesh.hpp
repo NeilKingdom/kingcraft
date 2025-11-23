@@ -2,7 +2,14 @@
 
 #include "common.hpp"
 
-struct BlockVertex
+struct VPos
+{
+    float x;
+    float y;
+    float z;
+};
+
+struct VPosTex
 {
     float x;
     float y;
@@ -11,11 +18,17 @@ struct BlockVertex
     float v;
 };
 
-struct SkyboxVertex
+struct VPosColTex
 {
     float x;
     float y;
     float z;
+    float r;
+    float g;
+    float b;
+    float a;
+    float u;
+    float v;
 };
 
 template <typename T>
