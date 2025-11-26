@@ -6,6 +6,8 @@ class PerlinNoise
 {
 public:
     // Special member functions
+    PerlinNoise(const PerlinNoise &pn) = delete;
+    PerlinNoise &operator=(const PerlinNoise &pn) = delete;
     ~PerlinNoise() = default;
 
     // General

@@ -11,6 +11,7 @@ class Chunk
 public:
     vec3 location;
     bool update_pending;
+    std::weak_ptr<Chunk> tree_ref;
     std::vector<VPosTex> vertices;
     std::vector<std::vector<uint8_t>> block_heights;
     std::vector<std::vector<std::vector<Block>>> blocks;

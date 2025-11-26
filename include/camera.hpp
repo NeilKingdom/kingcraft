@@ -19,6 +19,7 @@ public:
     // General
     void calculate_view_matrix();
     void update_rotation_from_pointer(const KCWindow &win);
+    bool is_chunk_in_visible_radius(const vec2 chunk_location) const;
     //std::optional<Block> cast_ray(const std::vector<std::shared_ptr<Chunk>> &chunks, const unsigned n_iters) const;
 
 private:

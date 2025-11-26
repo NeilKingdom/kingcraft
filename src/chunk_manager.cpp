@@ -166,9 +166,9 @@ Result ChunkManager::remove_block(std::shared_ptr<Chunk> &chunk, const vec3 bloc
  * @param[in/out] chunk The chunk in which the tree will be planted
  * @param[in] root_location The location relative to __chunk__'s location at which the tree will be planted
  */
-ChunkSet ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root_location)
+ChunkMap ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root_location)
 {
-    auto deferred_list = ChunkSet{};
+    auto deferred_list = ChunkMap{};
 
     // Trunk
     for (int i = 1; i <= 6; ++i)
@@ -176,7 +176,7 @@ ChunkSet ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root
         vec3 block_location = { root_location[0], root_location[1], root_location[2] + i };
         if (add_block(chunk, BlockType::WOOD, block_location, true) == Result::OOB)
         {
-            auto deferred = add_block_relative(BlockType::WOOD, chunk->location, block_location);
+            auto deferred = add_block_relative(chunk, BlockType::WOOD, block_location);
             deferred_list.insert(deferred);
         }
     }
@@ -194,13 +194,13 @@ ChunkSet ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root
             vec3 block_location1 = { root_location[0] + x, root_location[1] + y, root_location[2] + 4 };
             if (add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
             {
-                auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location1);
+                auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location1);
                 deferred_list.insert(deferred);
             }
             vec3 block_location2 = { root_location[0] + x, root_location[1] + y, root_location[2] + 5 };
             if (add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
             {
-                auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location2);
+                auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location2);
                 deferred_list.insert(deferred);
             }
         }
@@ -219,7 +219,7 @@ ChunkSet ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root
             vec3 block_location = { root_location[0] + x, root_location[1] + y, root_location[2] + 6 };
             if (add_block(chunk, BlockType::LEAVES, block_location, true) == Result::OOB)
             {
-                auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location);
+                auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location);
                 deferred_list.insert(deferred);
             }
         }
@@ -229,32 +229,65 @@ ChunkSet ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root
     vec3 block_location1 = { root_location[0] + 0, root_location[1] + 0, root_location[2] + 7 };
     if (add_block(chunk, BlockType::LEAVES, block_location1, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location1);
+        auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location1);
         deferred_list.insert(deferred);
     }
     vec3 block_location2 = { root_location[0] + 1, root_location[1] + 0, root_location[2] + 7 };
     if (add_block(chunk, BlockType::LEAVES, block_location2, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location2);
+        auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location2);
         deferred_list.insert(deferred);
     }
     vec3 block_location3 = { root_location[0] - 1, root_location[1] + 0, root_location[2] + 7 };
     if (add_block(chunk, BlockType::LEAVES, block_location3, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location3);
+        auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location3);
         deferred_list.insert(deferred);
     }
     vec3 block_location4 = { root_location[0] + 0, root_location[1] + 1, root_location[2] + 7 };
     if (add_block(chunk, BlockType::LEAVES, block_location4, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location4);
+        auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location4);
         deferred_list.insert(deferred);
     }
     vec3 block_location5 = { root_location[0] + 0, root_location[1] - 1, root_location[2] + 7 };
     if (add_block(chunk, BlockType::LEAVES, block_location5, true) == Result::OOB)
     {
-        auto deferred = add_block_relative(BlockType::LEAVES, chunk->location, block_location5);
+        auto deferred = add_block_relative(chunk, BlockType::LEAVES, block_location5);
         deferred_list.insert(deferred);
+    }
+
+    return deferred_list;
+}
+
+/**
+ * @brief Plants trees within the visible frustum after terrain has been generated.
+ *
+ * TODO: Params
+ */
+ChunkMap ChunkManager::plant_trees(std::shared_ptr<Chunk> &chunk)
+{
+    auto deferred_list = ChunkMap{};
+    const unsigned rand_threshold = 576;
+
+    for (ssize_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
+    {
+        for (ssize_t x = 0, _x = 1; x < KC::CHUNK_SIZE; ++x, ++_x)
+        {
+            ssize_t z_offset = chunk->block_heights[_y][_x] / KC::CHUNK_SIZE;
+            if (z_offset != chunk->location[2])
+            {
+                continue;
+            }
+
+            ssize_t z = chunk->block_heights[_y][_x] % KC::CHUNK_SIZE;
+            vec3 root_location = { (float)x, (float)y, (float)z };
+            if (fnv1a_hash(chunk->location, root_location) % rand_threshold == 0)
+            {
+                auto deferred = plant_tree(chunk, root_location);
+                deferred_list.insert(deferred.begin(), deferred.end());
+            }
+        }
     }
 
     return deferred_list;
@@ -266,16 +299,16 @@ void ChunkManager::update_mesh()
     bool chunk_update_pending = std::any_of(
         GCL.begin(),
         GCL.end(),
-        [&](const std::shared_ptr<Chunk> &chunk)
+        [&](const auto &kv_pair)
         {
-            return chunk->update_pending;
+            return kv_pair.second->update_pending;
         }
     );
 
     if (chunk_update_pending)
     {
         terrain_mesh.vertices.clear();
-        for (auto &chunk : GCL)
+        for (auto &chunk : GCL.values())
         {
             chunk->update_pending = false;
             if (!chunk->vertices.empty())
@@ -311,8 +344,8 @@ void ChunkManager::update_mesh()
  * @param[in] type The type of block that will be created
  */
 std::shared_ptr<Chunk> ChunkManager::add_block_relative(
+    std::shared_ptr<Chunk> &chunk,
     const BlockType type,
-    const vec3 chunk_location,
     const vec3 block_location
 )
 {
@@ -321,28 +354,27 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative(
     vec3 actual_chunk_location{};
     vec3 actual_block_location{};
 
-    actual_chunk_location[0] = std::floorf(((chunk_location[0] * KC::CHUNK_SIZE) + block_location[0]) / KC::CHUNK_SIZE);
-    actual_chunk_location[1] = std::floorf(((chunk_location[1] * KC::CHUNK_SIZE) + block_location[1]) / KC::CHUNK_SIZE);
-    actual_chunk_location[2] = std::floorf(((chunk_location[2] * KC::CHUNK_SIZE) + block_location[2]) / KC::CHUNK_SIZE);
+    actual_chunk_location[0] = std::floorf(((chunk->location[0] * KC::CHUNK_SIZE) + block_location[0]) / KC::CHUNK_SIZE);
+    actual_chunk_location[1] = std::floorf(((chunk->location[1] * KC::CHUNK_SIZE) + block_location[1]) / KC::CHUNK_SIZE);
+    actual_chunk_location[2] = std::floorf(((chunk->location[2] * KC::CHUNK_SIZE) + block_location[2]) / KC::CHUNK_SIZE);
 
     actual_block_location[0] = (((int)block_location[0] % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
     actual_block_location[1] = (((int)block_location[1] % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
     actual_block_location[2] = (((int)block_location[2] % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
 
-    auto lookup = std::make_shared<Chunk>(actual_chunk_location);
-    auto needle = GCL.find(lookup);
-    if (needle != GCL.end())
+    auto needle = GCL.find(actual_chunk_location);
+    if (needle != nullptr)
     {
         // Use existing chunk
-        std::shared_ptr<Chunk> mut_ref = *needle;
-        add_block(mut_ref, type, actual_block_location, false);
-        return mut_ref;
+        add_block(needle, type, actual_block_location, false);
+        return needle;
     }
     else
     {
         // Create new chunk
         auto new_chunk = chunk_factory.make_chunk(actual_chunk_location);
         add_block(new_chunk, type, actual_block_location, false);
+        new_chunk->tree_ref = chunk;
         GCL.insert(new_chunk);
         return new_chunk;
     }

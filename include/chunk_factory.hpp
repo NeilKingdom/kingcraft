@@ -10,6 +10,8 @@ class ChunkFactory
 {
 public:
     // Special member functions
+    ChunkFactory(const ChunkFactory &chunk_factory) = delete;
+    ChunkFactory &operator=(const ChunkFactory &chunk_factory) = delete;
     ~ChunkFactory() = default;
 
     // General

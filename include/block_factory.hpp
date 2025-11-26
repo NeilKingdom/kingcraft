@@ -10,6 +10,8 @@ class BlockFactory
 {
 public:
     // Special member functions
+    BlockFactory(const BlockFactory &chunk_factory) = delete;
+    BlockFactory &operator=(const BlockFactory &chunk_factory) = delete;
     ~BlockFactory() = default;
 
     // General

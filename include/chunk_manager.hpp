@@ -3,7 +3,7 @@
 #include "common.hpp"
 #include "settings.hpp"
 #include "chunk_factory.hpp"
-#include "chunk_set.hpp"
+#include "chunk_map.hpp"
 
 // TODO: Don't like
 enum Result
@@ -17,9 +17,8 @@ enum Result
 class ChunkManager
 {
 public:
-    ChunkSet GCL; // Global Chunk List (list of chunks actively loaded in memory)
-    ChunkSet chunk_cache; // List of chunks that player has edited
-    //std::vector<std::array<float, 2>> chunk_coords_2D{};
+    ChunkMap GCL; // Global Chunk List (list of chunks actively loaded in memory)
+    ChunkMap chunk_cache; // List of chunks that player has edited
     Mesh<VPosTex> terrain_mesh; // Mesh that encapsulates all interactable blocks
 
     // Special member functions
@@ -37,7 +36,9 @@ public:
         const bool overwrite
     ) const;
     Result remove_block(std::shared_ptr<Chunk> &chunk, const vec3 block_location) const;
-    ChunkSet plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root_location);
+    ChunkMap plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root_location);
+    // TODO: Add likeliness as default param
+    ChunkMap plant_trees(std::shared_ptr<Chunk> &chunk);
     void update_mesh();
 
 private:
@@ -46,8 +47,8 @@ private:
 
     // General
     std::shared_ptr<Chunk> add_block_relative(
+        std::shared_ptr<Chunk> &chunk,
         const BlockType type,
-        const vec3 chunk_location,
         const vec3 block_location
     );
 };

@@ -31,5 +31,6 @@ float sample_biome_height(const vec2 point)
         point[0], point[1], 0.0f,
         biome.scale,
         biome.octaves,
-        biome.lo, biome.hi);
+        biome.lo, biome.hi
+    );
 }

@@ -12,44 +12,7 @@ std::atomic<unsigned> fps = std::atomic<unsigned>(0);
 static float delta_time_ms;
 static bool query_pointer_location = true;
 
-struct V3Int
-{
-    int x;
-    int y;
-    int z;
-
-    bool operator==(const V3Int &v) const
-    {
-        return x == v.x && y == v.y && z == v.z;
-    }
-};
-
-namespace std
-{
-    template <>
-    struct hash<V3Int>
-    {
-        size_t operator()(const V3Int &v) const
-        {
-            return ((hash<int>()(v.x) ^ (hash<int>()(v.y) << 1)) >> 1) ^ (hash<int>()(v.z) << 1);
-        }
-    };
-}
-
-static std::queue<std::array<float, 3>> chunk_queue;
-
-static bool is_chunk_in_visible_radius(
-    const vec2 chunk_location,
-    const Camera &camera
-) {
-    Settings &settings = Settings::get_instance();
-
-    float a = chunk_location[0] - floorf(camera.v_eye[0] / KC::CHUNK_SIZE);
-    float b = chunk_location[1] - floorf(camera.v_eye[1] / KC::CHUNK_SIZE);
-    float c = sqrtf((a * a) + (b * b));
-
-    return c < settings.render_distance;
-}
+static std::queue<ChunkMapKey> chunk_queue;
 
 static void fps_callback()
 {
@@ -125,15 +88,13 @@ Game::Game()
 
     Camera camera;
     Mvp mvp = Mvp(camera);
-
     Settings &settings = Settings::get_instance();
 
     /*** Enable/disable OpenGL options ***/
 
     // Enable debug logging
-#if 0
-//#ifdef DEBUG
-    glEnable(GL_DEBUG_OUTPUT);
+#ifdef DEBUG
+    //glEnable(GL_DEBUG_OUTPUT);
     if (glDebugMessageCallback)
     {
         glDebugMessageCallback(debug_callback, nullptr);
@@ -281,10 +242,7 @@ void Game::generate_terrain(Camera &camera)
     ChunkManager &chunk_mgr = ChunkManager::get_instance();
     ChunkFactory &chunk_factory = ChunkFactory::get_instance();
 
-    //auto &chunk_coords_2D = chunk_mgr.chunk_coords_2D;
-    auto deferred_list = ChunkSet{};
-    //auto loaded_chunk_positions = std::unordered_set<V3Int>{};
-
+    auto deferred_list = ChunkMap{};
     float duration_ms;
     const float tgt_fps_ms = KC::SEC_AS_MS.count() / settings.tgt_fps;
 
@@ -302,24 +260,17 @@ void Game::generate_terrain(Camera &camera)
     };
 
     // 2. Unload chunks that are no longer visible
-    std::erase_if(chunk_mgr.GCL, [&](const std::shared_ptr<Chunk> &chunk)
-        {
-            return !is_chunk_in_visible_radius(
-                vec2{ chunk->location[0], chunk->location[1] },
-                camera
-            );
-        }
-    );
+    std::erase_if(chunk_mgr.GCL.map, [&](const auto &kv_pair)
+    {
+        const auto &chunk = kv_pair.second;
 
-    // 3. Gather 3D coordinates for chunks that are still loaded
-    //for (const auto &chunk : chunk_mgr.GCL)
-    //{
-    //    loaded_chunk_positions.insert(V3Int{
-    //        (int)(chunk->location[0]),
-    //        (int)(chunk->location[1]),
-    //        (int)(chunk->location[2]),
-    //    });
-    //}
+        if (!chunk->tree_ref.expired())
+        {
+            return false;
+        }
+
+        return !camera.is_chunk_in_visible_radius(vec2{ chunk->location[0], chunk->location[1] });
+    });
 
     // 4. Optional (but recommended): Sort chunk positions by distance relative to player
     //std::sort(
@@ -343,17 +294,10 @@ void Game::generate_terrain(Camera &camera)
         {
             for (int x = top_left[0]; x < btm_right[0]; ++x)
             {
-                auto chunk_location = std::array<float, 3>{ (float)x, (float)y, (float)z };
-                if (!std::any_of(
-                    chunk_mgr.GCL.begin(),
-                    chunk_mgr.GCL.end(),
-                    [&](const std::shared_ptr<Chunk> &chunk)
-                    {
-                        return V3_EQ(chunk_location, chunk->location);
-                    }
-                ))
+                vec3 chunk_location = { (float)x, (float)y, (float)z };
+                if (!chunk_mgr.GCL.contains(chunk_location))
                 {
-                    chunk_queue.push(chunk_location);
+                    chunk_queue.push(ChunkMapKey(chunk_location));
                 }
             }
         }
@@ -370,79 +314,34 @@ void Game::generate_terrain(Camera &camera)
         auto next = chunk_queue.front();
         chunk_queue.pop();
 
-        if (is_chunk_in_visible_radius(vec2{ next[0], next[1] }, camera) &&
-            !std::any_of(
-                chunk_mgr.GCL.begin(),
-                chunk_mgr.GCL.end(),
-                [&](const std::shared_ptr<Chunk> &chunk)
-                {
-                    return V3_EQ(next, chunk->location);
-                }
-            )
+        vec3 chunk_location = { next.key[0], next.key[1], next.key[2] };
+        if (camera.is_chunk_in_visible_radius(chunk_location)
+            && !chunk_mgr.GCL.contains(chunk_location)
         )
         {
-            vec3 chunk_location = { next[0], next[1], next[2] };
-            std::shared_ptr<Chunk> chunk = chunk_factory.make_chunk(chunk_location);
             deferred_list.clear();
+            auto chunk = chunk_factory.make_chunk(chunk_location);
             deferred_list.insert(chunk);
 
+            // TODO: Improve
             // Don't plant trees if outside biome bounds
             if (chunk->location[2] >= 8 && chunk->location[2] <= 10)
             {
-                auto tmp = plant_trees(chunk);
+                auto tmp = chunk_mgr.plant_trees(chunk);
                 deferred_list.insert(tmp.begin(), tmp.end());
             }
 
-            for (const auto &_chunk : deferred_list)
+            for (const auto &_chunk : deferred_list.values())
             {
                 _chunk->update_mesh();
             }
-            auto result = chunk_mgr.GCL.insert(chunk);
-            if (!result.second)
-            {
-                std::cerr << "Got here" << std::endl;
-            }
+            chunk_mgr.GCL.insert(chunk);
         }
 
         auto end = std::chrono::high_resolution_clock::now();
         duration_ms = std::chrono::duration<float, std::milli>(end - start).count();
     }
     while (duration_ms < tgt_fps_ms);
-}
-
-/**
- * @brief Plants trees within the visible frustum after terrain has been generated.
- *
- * TODO: Params
- */
-ChunkSet Game::plant_trees(std::shared_ptr<Chunk> &chunk)
-{
-    ChunkManager &chunk_mgr = ChunkManager::get_instance();
-
-    auto deferred_list = ChunkSet{};
-    const unsigned rand_threshold = 576;
-
-    for (ssize_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
-    {
-        for (ssize_t x = 0, _x = 1; x < KC::CHUNK_SIZE; ++x, ++_x)
-        {
-            ssize_t z_offset = chunk->block_heights[_y][_x] / KC::CHUNK_SIZE;
-            if (z_offset != chunk->location[2])
-            {
-                continue;
-            }
-
-            ssize_t z = chunk->block_heights[_y][_x] % KC::CHUNK_SIZE;
-            vec3 root_location = { (float)x, (float)y, (float)z };
-            if (fnv1a_hash(chunk->location, root_location) % rand_threshold == 0)
-            {
-                auto tmp = chunk_mgr.plant_tree(chunk, root_location);
-                deferred_list.insert(tmp.begin(), tmp.end());
-            }
-        }
-    }
-
-    return deferred_list;
 }
 
 void Game::apply_physics()

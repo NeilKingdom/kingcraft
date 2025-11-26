@@ -19,7 +19,7 @@ public:
     float zfar   = 1000.0f;
 
     // Render distance (in chunks)
-    size_t render_distance = 4;
+    size_t render_distance = 10;
 
     unsigned long seed = 12345UL;
     float tgt_fps = 60.0f;
@@ -27,9 +27,9 @@ public:
     bool is_running = true;
 
     // Special member functions
-    ~Settings() = default;
     Settings(const Settings &game) = delete;
     Settings &operator=(const Settings &game) = delete;
+    ~Settings() = default;
 
     // General
     static Settings &get_instance();

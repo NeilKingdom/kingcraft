@@ -24,7 +24,6 @@ ChunkFactory &ChunkFactory::get_instance()
 std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 chunk_location) const
 {
     BlockFactory &block_factory = BlockFactory::get_instance();
-
     auto chunk = std::make_shared<Chunk>(chunk_location);
 
     struct BlockData

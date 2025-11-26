@@ -35,7 +35,6 @@ private:
 
     // General
     void generate_terrain(Camera &camera);
-    ChunkSet plant_trees(std::shared_ptr<Chunk> &chunk);
     void apply_physics();
     void process_events(Camera &camera);
     void render_frame(Camera &camera, Mvp &mvp, SkyBox &skybox);

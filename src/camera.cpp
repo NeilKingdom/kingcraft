@@ -87,6 +87,18 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
     XWarpPointer(win.dpy, None, win.win, 0, 0, 0, 0, (int)center_x, (int)center_y);
 }
 
+bool Camera::is_chunk_in_visible_radius(const vec2 chunk_location) const
+{
+    Settings &settings = Settings::get_instance();
+
+    float a = chunk_location[0] - std::floorf(v_eye[0] / KC::CHUNK_SIZE);
+    float b = chunk_location[1] - std::floorf(v_eye[1] / KC::CHUNK_SIZE);
+    float c = std::sqrtf((a * a) + (b * b));
+
+    return c < settings.render_distance;
+}
+
+
 //std::optional<Block> Camera::cast_ray(
 //    const std::vector<std::shared_ptr<Chunk>> &chunks,
 //    const unsigned n_iters

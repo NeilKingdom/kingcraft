@@ -9,7 +9,10 @@
 #include "chunk.hpp"
 
 Chunk::Chunk() :
-    update_pending(false), vertices{}
+    location{},
+    update_pending(false),
+    tree_ref(),
+    vertices{}
 {
     block_heights.resize(
         KC::CHUNK_SIZE + 2,
@@ -25,7 +28,9 @@ Chunk::Chunk() :
 }
 
 Chunk::Chunk(const vec3 location) :
-    update_pending(false), vertices{}
+    update_pending(false),
+    tree_ref(),
+    vertices{}
 {
     std::memcpy(this->location, location, sizeof(vec3));
     block_heights.resize(
