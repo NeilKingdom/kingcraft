@@ -3,7 +3,7 @@
 #include "common.hpp"
 #include "constants.hpp"
 #include "settings.hpp"
-#include "chunk.hpp"
+#include "chunk_manager.hpp"
 
 class Camera
 {
@@ -20,7 +20,7 @@ public:
     void calculate_view_matrix();
     void update_rotation_from_pointer(const KCWindow &win);
     bool is_chunk_in_visible_radius(const vec2 chunk_location) const;
-    //std::optional<Block> cast_ray(const std::vector<std::shared_ptr<Chunk>> &chunks, const unsigned n_iters) const;
+    std::optional<Block> cast_ray(const uint8_t n_iters = 5) const;
 
 private:
     float camera_yaw;   // Rotation about the z axis

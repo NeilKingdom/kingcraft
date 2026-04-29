@@ -61,23 +61,23 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 chunk_location) const
 
                 // Determine block types
                 // TODO: Add other block types at different z values
-                if (x == 0)
-                {
-                    block_data.type = BlockType::SAND;
-                }
-                else if (y == 0)
-                {
-                    block_data.type = BlockType::STONE;
-                }
-                else
-                {
+                //if (x == 0)
+                //{
+                //    block_data.type = BlockType::SAND;
+                //}
+                //else if (y == 0)
+                //{
+                //    block_data.type = BlockType::STONE;
+                //}
+                //else
+                //{
                     block_data.type = BlockType::GRASS;
-                }
+                //}
 
-                if (x == 1 && y == 1)
-                {
-                    block_data.type = BlockType::DIRT;
-                }
+                //if (x == 1 && y == 1)
+                //{
+                //    block_data.type = BlockType::DIRT;
+                //}
 
                 block_data.faces = 0;
 

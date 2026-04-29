@@ -99,7 +99,7 @@ public:
     std::shared_ptr<Chunk> find(const vec3 &chunk_location) const
     {
         auto needle = map.find(ChunkMapKey(chunk_location));
-        return needle == map.end() ? nullptr : needle->second;
+        return (needle == map.end()) ? nullptr : needle->second;
     }
 
     bool contains(const vec3 &chunk_location) const

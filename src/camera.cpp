@@ -99,55 +99,52 @@ bool Camera::is_chunk_in_visible_radius(const vec2 chunk_location) const
 }
 
 
-//std::optional<Block> Camera::cast_ray(
-//    const std::vector<std::shared_ptr<Chunk>> &chunks,
-//    const unsigned n_iters
-//) const
-//{
-//    GameState &game = GameState::get_instance();
-//    ssize_t chunk_size = game.chunk_size;
-//
-//    vec3 v_ray = { v_look_dir[0], v_look_dir[1], v_look_dir[2] };
-//
-//    vec3 chunk_location = {
-//        std::floorf(v_eye[0] / chunk_size),
-//        std::floorf(v_eye[1] / chunk_size),
-//        std::floorf(v_eye[2] / chunk_size)
-//    };
-//
-//    for (unsigned i = 0; i < n_iters; ++i)
-//    {
-//        // March ray
-//        lac_normalize_vec3(v_ray, v_ray);
-//        for (unsigned j = 0; j < n_iters; ++j)
-//        {
-//            lac_add_vec3(v_ray, v_ray, v_ray);
-//            v_ray[0] = std::floorf(v_ray[0]);
-//            v_ray[1] = std::floorf(v_ray[1]);
-//            v_ray[2] = std::floorf(v_ray[2]);
-//        }
-//
-//        // Check for block
-//        Chunk needle = Chunk();
-//        std::memcpy(needle.location, chunk_location, sizeof(vec3));
-//
-//        for (auto chunk : chunks)
-//        {
-//            if (*chunk.get() == needle)
-//            {
-//                Block &block = chunk.get()->blocks[v_ray[0]][v_ray[1]][v_ray[2]];
-//                if (block.type != BlockType::AIR)
-//                {
-//                    std::cout << "Looking at "
-//                        << "x: " << v_ray[0] << ", "
-//                        << "y: " << v_ray[1] << ", "
-//                        << "z: " << v_ray[2]
-//                        << std::endl;
-//                    return block;
-//                }
-//            }
-//        }
-//    }
-//
-//    return std::nullopt;
-//}
+std::optional<Block> Camera::cast_ray(const uint8_t n_iters) const
+{
+    ChunkManager& chunk_mgr = ChunkManager::get_instance();
+
+    vec3 v_step = { v_look_dir[0], v_look_dir[1], v_look_dir[2] };
+    vec3 v_ray = { v_eye[0], v_eye[1], v_eye[2] };
+
+    for (uint8_t i = 0; i < n_iters; ++i)
+    {
+        lac_add_vec3(v_ray, v_ray, v_step);
+
+        float wx = std::floorf(v_ray[0]);
+        float wy = std::floorf(v_ray[1]);
+        float wz = std::floorf(v_ray[2]);
+
+        int cx = std::floorf(wx / KC::CHUNK_SIZE);
+        int cy = std::floorf(wy / KC::CHUNK_SIZE);
+        int cz = std::floorf(wz / KC::CHUNK_SIZE);
+
+        int bx = (((int)wx % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+        int by = (((int)wy % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+        int bz = (((int)wz % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+
+        auto chunk = chunk_mgr.GCL.find({ (float)cx, (float)cy, (float)cz });
+        if (chunk == nullptr)
+        {
+            std::cout << "nullptr" << std::endl;
+            return std::nullopt;
+        }
+
+        std::cout << "Step " << i + 1 << std::endl;
+        std::cout << "(" << v_step[0] << "," << v_step[1] << "," << v_step[2] << ")" << std::endl;
+        std::cout << "(" << v_ray[0] << "," << v_ray[1] << "," << v_ray[2] << ")" << std::endl;
+        std::cout << "(" << wx << "," << wy << "," << wz << ")" << std::endl;
+        std::cout << "(" << cx << "," << cy << "," << cz << ")" << std::endl;
+        std::cout << "(" << bx << "," << by << "," << bz << ")" << std::endl;
+
+        Block& block = chunk->blocks[bz][by][bx];
+        if (block.type != BlockType::AIR)
+        {
+            std::cout << "Block type: " << (int)block.type << std::endl;
+            block.type = BlockType::STONE;
+            chunk->update_mesh();
+            return block;
+        }
+    }
+
+    return std::nullopt;
+}

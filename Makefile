@@ -1,14 +1,14 @@
 CC = g++
 PROFILE ?= DEBUG
 
-CCFLAGS_DEBUG = -DDEBUG -O0 -ggdb -fno-builtin
-CCFLAGS_RELEASE = -Ofast
+CCFLAGS_DEBUG := -DDEBUG -O0 -ggdb -fno-builtin
+CCFLAGS_RELEASE := -Ofast
 
-SRC_DIR = src
-OBJ_DIR = obj
-INC_DIR = include
+SRC_DIR := src
+OBJ_DIR := obj
+INC_DIR := include
 
-IMGUI = res/vendor/imgui
+IMGUI := res/vendor/imgui
 
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 DEPS := $(wildcard $(INC_DIR)/*.hpp)
@@ -24,7 +24,7 @@ all: prebuild $(BIN)
 
 # Pre-build actions
 prebuild:
-	mkdir -p $(OBJ_DIR)
+	@mkdir -p $(OBJ_DIR)
 
 # Remove object files and binaries
 clean:
@@ -35,10 +35,10 @@ rebuild: clean all
 
 # Make the binary
 $(BIN): $(OBJS)
-	$(CC) $^ -o $@ $(CCFLAGS) $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 # Intermediate objects
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CC) $< -c -o $@ $(CCFLAGS) $(LDFLAGS)
+	$(CC) $(CCFLAGS) -c $< -o $@
 
 .PHONY: clean all prebuild rebuild

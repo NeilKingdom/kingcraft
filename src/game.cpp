@@ -124,7 +124,7 @@ Game::Game()
 
     /*** Create texture atlas ***/
 
-    const std::filesystem::path tex_atlas_path("res/textures/texture_atlas_debug.png");
+    const std::filesystem::path tex_atlas_path("res/textures/texture_atlas.png");
     Texture texture_atlas = Texture(tex_atlas_path, GL_NEAREST, GL_NEAREST);
 
     /*** Create skybox ***/
@@ -272,7 +272,7 @@ void Game::generate_terrain(Camera &camera)
         return !camera.is_chunk_in_visible_radius(vec2{ chunk->location[0], chunk->location[1] });
     });
 
-    // 4. Optional (but recommended): Sort chunk positions by distance relative to player
+    // 3. Optional (but recommended): Sort chunk positions by distance relative to player
     //std::sort(
     //    chunk_coords_2D.begin(),
     //    chunk_coords_2D.end(),
@@ -287,7 +287,7 @@ void Game::generate_terrain(Camera &camera)
     //);
 
     // TODO: Gather z coordinate based on biome (min, max) chunk height
-    // 6. Queue new chunks that need to be loaded
+    // 4. Queue new chunks that need to be loaded
     for (int z = 8; z <= 10; ++z)
     {
         for (int y = top_left[1]; y < btm_right[1]; ++y)
@@ -303,7 +303,7 @@ void Game::generate_terrain(Camera &camera)
         }
     }
 
-    // 7. Generate as many chunks as possible given target FPS (minimum one chunk)
+    // 5. Generate as many chunks as possible given target FPS (minimum one chunk)
     do
     {
         if (chunk_queue.empty())
@@ -428,6 +428,7 @@ void Game::process_events(Camera &camera)
             // Mouse button was released
             case ButtonRelease:
             {
+                camera.cast_ray();
                 break;
             }
             default:
