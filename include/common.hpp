@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <array>
 #include <vector>
-#include <set>
-#include <unordered_set>
 #include <map>
+#include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 #include <tuple>
 #include <ranges>
@@ -38,6 +38,11 @@
 #include <GL/glx.h>  // X11-specific OpenGL APIs
 
 // liblac
-#include <transforms.h>
+#include "/home/neil/devel/projects/quikmafs/lib/quikmafs.h"
 
 typedef unsigned ID;
+
+struct UV {
+    float u;
+    float v;
+};

@@ -6,9 +6,9 @@
 class Mvp
 {
 public:
-    mat4 m_model;
-    std::shared_ptr<std::array<float, 16>> m_view;
-    mat4 m_proj;
+    Mat4_t m_model;
+    std::shared_ptr<Mat4_t> m_view;
+    Mat4_t m_proj;
 
     /**
      * @brief Default constructor for MVP struct.

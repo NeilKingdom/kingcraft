@@ -24,4 +24,4 @@ extern Biome plains_biome;
 extern Biome mount_biome;
 extern Biome ocean_biome;
 
-float sample_biome_height(const vec2 point);
+float sample_biome_height(const Vec2_t point);

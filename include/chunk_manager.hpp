@@ -32,11 +32,11 @@ public:
     Result add_block(
         std::shared_ptr<Chunk> &chunk,
         const BlockType type,
-        const vec3 block_location,
+        const Vec3_t block_location,
         const bool overwrite
     ) const;
-    Result remove_block(std::shared_ptr<Chunk> &chunk, const vec3 block_location) const;
-    ChunkMap plant_tree(std::shared_ptr<Chunk> &chunk, const vec3 root_location);
+    Result remove_block(std::shared_ptr<Chunk> &chunk, const Vec3_t block_location) const;
+    ChunkMap plant_tree(std::shared_ptr<Chunk> &chunk, const Vec3_t root_location);
     // TODO: Add likeliness as default param
     ChunkMap plant_trees(std::shared_ptr<Chunk> &chunk);
     void update_mesh();
@@ -49,6 +49,6 @@ private:
     std::shared_ptr<Chunk> add_block_relative(
         std::shared_ptr<Chunk> &chunk,
         const BlockType type,
-        const vec3 block_location
+        const Vec3_t block_location
     );
 };

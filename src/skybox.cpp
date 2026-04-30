@@ -7,7 +7,6 @@ SkyBox::SkyBox(
     const bool make_mipmap
 )
 {
-    mat4 m_scale = {};
     PngHndl_t *png_hndl = nullptr;
     Pixmap_t *pixmap = nullptr;
 
@@ -40,76 +39,76 @@ SkyBox::SkyBox(
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    vec4 v0 = { -0.5f, -0.5f,  0.5f, 1.0f };
-    vec4 v1 = { -0.5f,  0.5f,  0.5f, 1.0f };
-    vec4 v2 = { -0.5f, -0.5f, -0.5f, 1.0f };
-    vec4 v3 = { -0.5f,  0.5f, -0.5f, 1.0f };
-    vec4 v4 = {  0.5f, -0.5f,  0.5f, 1.0f };
-    vec4 v5 = {  0.5f,  0.5f,  0.5f, 1.0f };
-    vec4 v6 = {  0.5f, -0.5f, -0.5f, 1.0f };
-    vec4 v7 = {  0.5f,  0.5f, -0.5f, 1.0f };
+    Vec4_t v0 = { .v = { -0.5f, -0.5f,  0.5f, 1.0f }};
+    Vec4_t v1 = { .v = { -0.5f,  0.5f,  0.5f, 1.0f }};
+    Vec4_t v2 = { .v = { -0.5f, -0.5f, -0.5f, 1.0f }};
+    Vec4_t v3 = { .v = { -0.5f,  0.5f, -0.5f, 1.0f }};
+    Vec4_t v4 = { .v = {  0.5f, -0.5f,  0.5f, 1.0f }};
+    Vec4_t v5 = { .v = {  0.5f,  0.5f,  0.5f, 1.0f }};
+    Vec4_t v6 = { .v = {  0.5f, -0.5f, -0.5f, 1.0f }};
+    Vec4_t v7 = { .v = {  0.5f,  0.5f, -0.5f, 1.0f }};
 
     // Scale skybox
-    lac_get_scalar_mat4(m_scale, 200.0f, 200.0f, 200.0f);
+    Mat4_t m_scale = qm_m4_scale(200.0f, 200.0f, 200.0f);
 
-    lac_multiply_vec4_mat4(v0, v0, m_scale);
-    lac_multiply_vec4_mat4(v1, v1, m_scale);
-    lac_multiply_vec4_mat4(v2, v2, m_scale);
-    lac_multiply_vec4_mat4(v3, v3, m_scale);
-    lac_multiply_vec4_mat4(v4, v4, m_scale);
-    lac_multiply_vec4_mat4(v5, v5, m_scale);
-    lac_multiply_vec4_mat4(v6, v6, m_scale);
-    lac_multiply_vec4_mat4(v7, v7, m_scale);
+    v0 = qm_m4_v4_mul(m_scale, v0);
+    v1 = qm_m4_v4_mul(m_scale, v1);
+    v2 = qm_m4_v4_mul(m_scale, v2);
+    v3 = qm_m4_v4_mul(m_scale, v3);
+    v4 = qm_m4_v4_mul(m_scale, v4);
+    v5 = qm_m4_v4_mul(m_scale, v5);
+    v6 = qm_m4_v4_mul(m_scale, v6);
+    v7 = qm_m4_v4_mul(m_scale, v7);
 
     // Static mesh coordinates
     std::array<VPos, 36> vertices = {
         // Right
-        VPos{ v3[0], v3[1], v3[2] },
-        VPos{ v7[0], v7[1], v7[2] },
-        VPos{ v1[0], v1[1], v1[2] },
-        VPos{ v5[0], v5[1], v5[2] },
-        VPos{ v1[0], v1[1], v1[2] },
-        VPos{ v7[0], v7[1], v7[2] },
+        VPos{ v3.x, v3.y, v3.z },
+        VPos{ v7.x, v7.y, v7.z },
+        VPos{ v1.x, v1.y, v1.z },
+        VPos{ v5.x, v5.y, v5.z },
+        VPos{ v1.x, v1.y, v1.z },
+        VPos{ v7.x, v7.y, v7.z },
 
         // Left
-        VPos{ v6[0], v6[1], v6[2] },
-        VPos{ v2[0], v2[1], v2[2] },
-        VPos{ v4[0], v4[1], v4[2] },
-        VPos{ v0[0], v0[1], v0[2] },
-        VPos{ v4[0], v4[1], v4[2] },
-        VPos{ v2[0], v2[1], v2[2] },
+        VPos{ v6.x, v6.y, v6.z },
+        VPos{ v2.x, v2.y, v2.z },
+        VPos{ v4.x, v4.y, v4.z },
+        VPos{ v0.x, v0.y, v0.z },
+        VPos{ v4.x, v4.y, v4.z },
+        VPos{ v2.x, v2.y, v2.z },
 
         // Back
-        VPos{ v2[0], v2[1], v2[2] },
-        VPos{ v3[0], v3[1], v3[2] },
-        VPos{ v0[0], v0[1], v0[2] },
-        VPos{ v1[0], v1[1], v1[2] },
-        VPos{ v0[0], v0[1], v0[2] },
-        VPos{ v3[0], v3[1], v3[2] },
+        VPos{ v2.x, v2.y, v2.z },
+        VPos{ v3.x, v3.y, v3.z },
+        VPos{ v0.x, v0.y, v0.z },
+        VPos{ v1.x, v1.y, v1.z },
+        VPos{ v0.x, v0.y, v0.z },
+        VPos{ v3.x, v3.y, v3.z },
 
         // Front
-        VPos{ v7[0], v7[1], v7[2] },
-        VPos{ v6[0], v6[1], v6[2] },
-        VPos{ v5[0], v5[1], v5[2] },
-        VPos{ v4[0], v4[1], v4[2] },
-        VPos{ v5[0], v5[1], v5[2] },
-        VPos{ v6[0], v6[1], v6[2] },
+        VPos{ v7.x, v7.y, v7.z },
+        VPos{ v6.x, v6.y, v6.z },
+        VPos{ v5.x, v5.y, v5.z },
+        VPos{ v4.x, v4.y, v4.z },
+        VPos{ v5.x, v5.y, v5.z },
+        VPos{ v6.x, v6.y, v6.z },
 
         // Bottom
-        VPos{ v6[0], v6[1], v6[2] },
-        VPos{ v3[0], v3[1], v3[2] },
-        VPos{ v2[0], v2[1], v2[2] },
-        VPos{ v3[0], v3[1], v3[2] },
-        VPos{ v6[0], v6[1], v6[2] },
-        VPos{ v7[0], v7[1], v7[2] },
+        VPos{ v6.x, v6.y, v6.z },
+        VPos{ v3.x, v3.y, v3.z },
+        VPos{ v2.x, v2.y, v2.z },
+        VPos{ v3.x, v3.y, v3.z },
+        VPos{ v6.x, v6.y, v6.z },
+        VPos{ v7.x, v7.y, v7.z },
 
         // Top
-        VPos{ v0[0], v0[1], v0[2] },
-        VPos{ v1[0], v1[1], v1[2] },
-        VPos{ v4[0], v4[1], v4[2] },
-        VPos{ v5[0], v5[1], v5[2] },
-        VPos{ v4[0], v4[1], v4[2] },
-        VPos{ v1[0], v1[1], v1[2] }
+        VPos{ v0.x, v0.y, v0.z },
+        VPos{ v1.x, v1.y, v1.z },
+        VPos{ v4.x, v4.y, v4.z },
+        VPos{ v5.x, v5.y, v5.z },
+        VPos{ v4.x, v4.y, v4.z },
+        VPos{ v1.x, v1.y, v1.z }
     };
 
     mesh.vertices.assign(vertices.begin(), vertices.end());

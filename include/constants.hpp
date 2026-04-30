@@ -2,16 +2,16 @@
 
 #include <chrono>
 #include <stdint.h>
-#include "transforms.h"
+#include "/home/neil/devel/projects/quikmafs/lib/quikmafs.h"
 
 namespace KC
 {
     using namespace std::chrono;
 
     // KC coordinate system directional unit vectors
-    static constexpr vec3 v_fwd   = { 1.0f, 0.0f, 0.0f };
-    static constexpr vec3 v_right = { 0.0f, 1.0f, 0.0f };
-    static constexpr vec3 v_up    = { 0.0f, 0.0f, 1.0f };
+    static constexpr Vec3_t v_fwd   = { .v = { 1.0f, 0.0f, 0.0f }};
+    static constexpr Vec3_t v_right = { .v = { 0.0f, 1.0f, 0.0f }};
+    static constexpr Vec3_t v_up    = { .v = { 0.0f, 0.0f, 1.0f }};
 
     // General constants
     static constexpr unsigned CHUNK_SIZE = 16;

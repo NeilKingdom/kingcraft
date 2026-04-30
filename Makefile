@@ -15,7 +15,7 @@ DEPS := $(wildcard $(INC_DIR)/*.hpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I$(IMGUI)/include -std=c++20 -Wall -Wextra
-LDFLAGS += -L$(IMGUI)/bin -l:imgui.a -llac -limc -lX11 -lGL -lGLEW
+LDFLAGS += -L$(IMGUI)/bin -l:imgui.a -limc -lX11 -lGL -lGLEW
 
 BIN := kingcraft
 

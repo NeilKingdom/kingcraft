@@ -36,11 +36,11 @@ BlockFactory &BlockFactory::get_instance()
  * @param[in] type The block type that we are retrieving UV coordinates for
  * @returns Optionally returns a tuple of UV coordinates for the top, sides, and bottom of the block, respectively
  */
-std::optional<std::tuple<UvCoords, UvCoords, UvCoords>>
+std::optional<std::tuple<UV, UV, UV>>
 BlockFactory::get_uv_coords(const BlockType type) const
 {
     float tx_offset, ty_offset;
-    UvCoords uv_top, uv_sides, uv_bottom;
+    UV uv_top, uv_sides, uv_bottom;
 
     switch (type)
     {
@@ -49,63 +49,63 @@ BlockFactory::get_uv_coords(const BlockType type) const
             tx_offset = 2.0f;
 
             // Top + Sides + Bottom
-            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.u = uv_sides.u = uv_bottom.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.v = uv_sides.v = uv_bottom.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::GRASS:
             ty_offset = 0.0f;
 
             // Top
             tx_offset = 0.0f;
-            uv_top[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Sides
             tx_offset = 1.0f;
-            uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_sides[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_sides.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_sides.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Bottom
             tx_offset = 2.0f;
-            uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_bottom.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_bottom.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::WOOD:
             ty_offset = 0.0f;
 
             // Top + Bottom
             tx_offset = 3.0f;
-            uv_top[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.u = uv_bottom.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.v = uv_bottom.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
 
             // Sides
             tx_offset = 4.0f;
-            uv_sides[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_sides[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_sides.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_sides.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::LEAVES:
             ty_offset = 0.0f;
             tx_offset = 5.0f;
 
             // Top + Sides + Bottom
-            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.u = uv_sides.u = uv_bottom.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.v = uv_sides.v = uv_bottom.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::SAND:
             ty_offset = 1.0f;
             tx_offset = 0.0f;
 
             // Top + Sides + Bottom
-            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.u = uv_sides.u = uv_bottom.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.v = uv_sides.v = uv_bottom.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         case BlockType::STONE:
             ty_offset = 1.0f;
             tx_offset = 1.0f;
 
             // Top + Sides + Bottom
-            uv_top[0] = uv_sides[0] = uv_bottom[0] = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
-            uv_top[1] = uv_sides[1] = uv_bottom[1] = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.u = uv_sides.u = uv_bottom.u = tx_offset / (float)KC::TEX_ATLAS_NCOLS;
+            uv_top.v = uv_sides.v = uv_bottom.v = ty_offset / (float)KC::TEX_ATLAS_NCOLS;
             break;
         default:
             return std::nullopt;
@@ -125,7 +125,7 @@ BlockFactory::get_uv_coords(const BlockType type) const
 Block BlockFactory::make_block(
     const BlockType type,
     const uint8_t faces,
-    const vec3 world_location
+    const Vec3_t world_location
 ) const
 {
     if (faces == 0 || type == BlockType::AIR)
@@ -137,17 +137,17 @@ Block BlockFactory::make_block(
 
     // UV coordinates
     constexpr float uv_pad = 0.005f;
-    constexpr float uw = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
-    constexpr float vh = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
+    constexpr float tw = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
+    constexpr float th = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
 
     // TODO: Something breaks when invalid block type specified...
     auto uv = uv_cache.at(type).value_or(
-        std::make_tuple(UvCoords{}, UvCoords{}, UvCoords{})
+        std::make_tuple(UV{}, UV{}, UV{})
     );
 
-    UvCoords uv_top    = std::get<0>(uv);
-    UvCoords uv_sides  = std::get<1>(uv);
-    UvCoords uv_bottom = std::get<2>(uv);
+    UV uv_top    = std::get<0>(uv);
+    UV uv_sides  = std::get<1>(uv);
+    UV uv_bottom = std::get<2>(uv);
 
     /*
      * Vertex positions
@@ -159,67 +159,67 @@ Block BlockFactory::make_block(
      * |/   |/
      * 2----3
      */
-    vec3 v0 = { -0.5f + world_location[0], -0.5f + world_location[1],  0.5f + world_location[2] };
-    vec3 v1 = { -0.5f + world_location[0],  0.5f + world_location[1],  0.5f + world_location[2] };
-    vec3 v2 = { -0.5f + world_location[0], -0.5f + world_location[1], -0.5f + world_location[2] };
-    vec3 v3 = { -0.5f + world_location[0],  0.5f + world_location[1], -0.5f + world_location[2] };
-    vec3 v4 = {  0.5f + world_location[0], -0.5f + world_location[1],  0.5f + world_location[2] };
-    vec3 v5 = {  0.5f + world_location[0],  0.5f + world_location[1],  0.5f + world_location[2] };
-    vec3 v6 = {  0.5f + world_location[0], -0.5f + world_location[1], -0.5f + world_location[2] };
-    vec3 v7 = {  0.5f + world_location[0],  0.5f + world_location[1], -0.5f + world_location[2] };
+    Vec3_t v0 = { .v = { -0.5f + world_location.x, -0.5f + world_location.y,  0.5f + world_location.z }};
+    Vec3_t v1 = { .v = { -0.5f + world_location.x,  0.5f + world_location.y,  0.5f + world_location.z }};
+    Vec3_t v2 = { .v = { -0.5f + world_location.x, -0.5f + world_location.y, -0.5f + world_location.z }};
+    Vec3_t v3 = { .v = { -0.5f + world_location.x,  0.5f + world_location.y, -0.5f + world_location.z }};
+    Vec3_t v4 = { .v = {  0.5f + world_location.x, -0.5f + world_location.y,  0.5f + world_location.z }};
+    Vec3_t v5 = { .v = {  0.5f + world_location.x,  0.5f + world_location.y,  0.5f + world_location.z }};
+    Vec3_t v6 = { .v = {  0.5f + world_location.x, -0.5f + world_location.y, -0.5f + world_location.z }};
+    Vec3_t v7 = { .v = {  0.5f + world_location.x,  0.5f + world_location.y, -0.5f + world_location.z }};
 
     block.right_face = {
-        VPosTex{ v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v7[0], v7[1], v7[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v3[0], v3[1], v3[2], uv_sides[0] + uv_pad, uv_sides[1] + vh },
-        VPosTex{ v7[0], v7[1], v7[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v1[0], v1[1], v1[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v5[0], v5[1], v5[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad }
+        VPosTex{ v1.x, v1.y, v1.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v7.x, v7.y, v7.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v3.x, v3.y, v3.z, uv_sides.u + uv_pad, uv_sides.v + th },
+        VPosTex{ v7.x, v7.y, v7.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v1.x, v1.y, v1.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v5.x, v5.y, v5.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
     };
 
     block.left_face = {
-        VPosTex{ v4[0], v4[1], v4[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v2[0], v2[1], v2[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v6[0], v6[1], v6[2], uv_sides[0] + uv_pad, uv_sides[1] + vh },
-        VPosTex{ v2[0], v2[1], v2[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v4[0], v4[1], v4[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v0[0], v0[1], v0[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad }
+        VPosTex{ v4.x, v4.y, v4.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v2.x, v2.y, v2.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v6.x, v6.y, v6.z, uv_sides.u + uv_pad, uv_sides.v + th },
+        VPosTex{ v2.x, v2.y, v2.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v4.x, v4.y, v4.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v0.x, v0.y, v0.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
     };
 
     block.front_face = {
-        VPosTex{ v0[0], v0[1], v0[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v3[0], v3[1], v3[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v2[0], v2[1], v2[2], uv_sides[0] + uv_pad, uv_sides[1] + vh },
-        VPosTex{ v3[0], v3[1], v3[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v0[0], v0[1], v0[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v1[0], v1[1], v1[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad }
+        VPosTex{ v0.x, v0.y, v0.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v3.x, v3.y, v3.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v2.x, v2.y, v2.z, uv_sides.u + uv_pad, uv_sides.v + th },
+        VPosTex{ v3.x, v3.y, v3.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v0.x, v0.y, v0.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v1.x, v1.y, v1.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
     };
 
     block.back_face = {
-        VPosTex{ v5[0], v5[1], v5[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v6[0], v6[1], v6[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v7[0], v7[1], v7[2], uv_sides[0] + uv_pad, uv_sides[1] + vh },
-        VPosTex{ v6[0], v6[1], v6[2], uv_sides[0] + uw,     uv_sides[1] + vh },
-        VPosTex{ v5[0], v5[1], v5[2], uv_sides[0] + uv_pad, uv_sides[1] + uv_pad },
-        VPosTex{ v4[0], v4[1], v4[2], uv_sides[0] + uw,     uv_sides[1] + uv_pad }
+        VPosTex{ v5.x, v5.y, v5.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v6.x, v6.y, v6.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v7.x, v7.y, v7.z, uv_sides.u + uv_pad, uv_sides.v + th },
+        VPosTex{ v6.x, v6.y, v6.z, uv_sides.u + tw,     uv_sides.v + th },
+        VPosTex{ v5.x, v5.y, v5.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
+        VPosTex{ v4.x, v4.y, v4.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
     };
 
     block.bottom_face = {
-        VPosTex{ v2[0], v2[1], v2[2], uv_bottom[0] + uv_pad, uv_bottom[1] + vh },
-        VPosTex{ v3[0], v3[1], v3[2], uv_bottom[0] + uw,     uv_bottom[1] + vh },
-        VPosTex{ v6[0], v6[1], v6[2], uv_bottom[0] + uv_pad, uv_bottom[1] + uv_pad },
-        VPosTex{ v7[0], v7[1], v7[2], uv_bottom[0] + uw,     uv_bottom[1] + uv_pad },
-        VPosTex{ v6[0], v6[1], v6[2], uv_bottom[0] + uv_pad, uv_bottom[1] + uv_pad },
-        VPosTex{ v3[0], v3[1], v3[2], uv_bottom[0] + uw,     uv_bottom[1] + vh }
+        VPosTex{ v2.x, v2.y, v2.z, uv_bottom.u + uv_pad, uv_bottom.v + th },
+        VPosTex{ v3.x, v3.y, v3.z, uv_bottom.u + tw,     uv_bottom.v + th },
+        VPosTex{ v6.x, v6.y, v6.z, uv_bottom.u + uv_pad, uv_bottom.v + uv_pad },
+        VPosTex{ v7.x, v7.y, v7.z, uv_bottom.u + tw,     uv_bottom.v + uv_pad },
+        VPosTex{ v6.x, v6.y, v6.z, uv_bottom.u + uv_pad, uv_bottom.v + uv_pad },
+        VPosTex{ v3.x, v3.y, v3.z, uv_bottom.u + tw,     uv_bottom.v + th }
     };
 
     block.top_face = {
-        VPosTex{ v4[0], v4[1], v4[2], uv_top[0] + uv_pad, uv_top[1] + uv_pad },
-        VPosTex{ v1[0], v1[1], v1[2], uv_top[0] + uw,     uv_top[1] + vh },
-        VPosTex{ v0[0], v0[1], v0[2], uv_top[0] + uv_pad, uv_top[1] + vh },
-        VPosTex{ v1[0], v1[1], v1[2], uv_top[0] + uw,     uv_top[1] + vh },
-        VPosTex{ v4[0], v4[1], v4[2], uv_top[0] + uv_pad, uv_top[1] + uv_pad },
-        VPosTex{ v5[0], v5[1], v5[2], uv_top[0] + uw,     uv_top[1] + uv_pad }
+        VPosTex{ v4.x, v4.y, v4.z, uv_top.u + uv_pad, uv_top.v + uv_pad },
+        VPosTex{ v1.x, v1.y, v1.z, uv_top.u + tw,     uv_top.v + th },
+        VPosTex{ v0.x, v0.y, v0.z, uv_top.u + uv_pad, uv_top.v + th },
+        VPosTex{ v1.x, v1.y, v1.z, uv_top.u + tw,     uv_top.v + th },
+        VPosTex{ v4.x, v4.y, v4.z, uv_top.u + uv_pad, uv_top.v + uv_pad },
+        VPosTex{ v5.x, v5.y, v5.z, uv_top.u + tw,     uv_top.v + uv_pad }
     };
 
     return block;

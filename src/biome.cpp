@@ -21,14 +21,14 @@ Biome ocean_biome = {
     .hi = KC::SEA_LEVEL
 };
 
-float sample_biome_height(const vec2 point)
+float sample_biome_height(const Vec2_t point)
 {
     PerlinNoise &pn = PerlinNoise::get_instance();
 
     // TODO: point grabs biome from biome map, then that dictates which biome to select for sampling
     Biome biome = plains_biome;
     return pn.octave_perlin(
-        point[0], point[1], 0.0f,
+        point.x, point.y, 0.0f,
         biome.scale,
         biome.octaves,
         biome.lo, biome.hi

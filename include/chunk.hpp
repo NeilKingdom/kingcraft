@@ -9,7 +9,7 @@
 class Chunk
 {
 public:
-    vec3 location;
+    Vec3_t location;
     bool update_pending;
     std::weak_ptr<Chunk> tree_ref;
     std::vector<VPosTex> vertices;
@@ -18,7 +18,7 @@ public:
 
     // Special member functions
     Chunk();
-    Chunk(const vec3 location);
+    Chunk(const Vec3_t location);
     ~Chunk() = default;
 
     // General

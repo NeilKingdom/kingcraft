@@ -89,6 +89,7 @@ Game::Game()
     Camera camera;
     Mvp mvp = Mvp(camera);
     Settings &settings = Settings::get_instance();
+    ChunkManager &chunk_mgr = ChunkManager::get_instance();
 
     /*** Enable/disable OpenGL options ***/
 
@@ -157,6 +158,7 @@ Game::Game()
         generate_terrain(camera);
         apply_physics();
 
+        chunk_mgr.update_mesh();
         render_frame(camera, mvp, skybox);
 
 //#ifdef DEBUG
@@ -249,15 +251,15 @@ void Game::generate_terrain(Camera &camera)
     auto start = std::chrono::high_resolution_clock::now();
 
     // 1. Obtain visible chunk area
-    vec2 top_left = {
-        floorf(camera.v_eye[0] / KC::CHUNK_SIZE) - settings.render_distance,
-        floorf(camera.v_eye[1] / KC::CHUNK_SIZE) - settings.render_distance
-    };
+    Vec2_t top_left = { .v = {
+        floorf(camera.v_eye.x / KC::CHUNK_SIZE) - settings.render_distance,
+        floorf(camera.v_eye.y / KC::CHUNK_SIZE) - settings.render_distance
+    }};
 
-    vec2 btm_right = {
-        floorf(camera.v_eye[0] / KC::CHUNK_SIZE) + settings.render_distance,
-        floorf(camera.v_eye[1] / KC::CHUNK_SIZE) + settings.render_distance
-    };
+    Vec2_t btm_right = { .v = {
+        floorf(camera.v_eye.x / KC::CHUNK_SIZE) + settings.render_distance,
+        floorf(camera.v_eye.y / KC::CHUNK_SIZE) + settings.render_distance
+    }};
 
     // 2. Unload chunks that are no longer visible
     std::erase_if(chunk_mgr.GCL.map, [&](const auto &kv_pair)
@@ -269,7 +271,7 @@ void Game::generate_terrain(Camera &camera)
             return false;
         }
 
-        return !camera.is_chunk_in_visible_radius(vec2{ chunk->location[0], chunk->location[1] });
+        return !camera.is_chunk_in_visible_radius(chunk->location);
     });
 
     // 3. Optional (but recommended): Sort chunk positions by distance relative to player
@@ -290,11 +292,11 @@ void Game::generate_terrain(Camera &camera)
     // 4. Queue new chunks that need to be loaded
     for (int z = 8; z <= 10; ++z)
     {
-        for (int y = top_left[1]; y < btm_right[1]; ++y)
+        for (int y = top_left.y; y < btm_right.y; ++y)
         {
-            for (int x = top_left[0]; x < btm_right[0]; ++x)
+            for (int x = top_left.x; x < btm_right.x; ++x)
             {
-                vec3 chunk_location = { (float)x, (float)y, (float)z };
+                Vec3_t chunk_location = { .v = { (float)x, (float)y, (float)z }};
                 if (!chunk_mgr.GCL.contains(chunk_location))
                 {
                     chunk_queue.push(ChunkMapKey(chunk_location));
@@ -314,7 +316,7 @@ void Game::generate_terrain(Camera &camera)
         auto next = chunk_queue.front();
         chunk_queue.pop();
 
-        vec3 chunk_location = { next.key[0], next.key[1], next.key[2] };
+        Vec3_t chunk_location = next.key;
         if (camera.is_chunk_in_visible_radius(chunk_location)
             && !chunk_mgr.GCL.contains(chunk_location)
         )
@@ -325,7 +327,7 @@ void Game::generate_terrain(Camera &camera)
 
             // TODO: Improve
             // Don't plant trees if outside biome bounds
-            if (chunk->location[2] >= 8 && chunk->location[2] <= 10)
+            if (chunk->location.z >= 8 && chunk->location.z <= 10)
             {
                 auto tmp = chunk_mgr.plant_trees(chunk);
                 deferred_list.insert(tmp.begin(), tmp.end());
@@ -439,45 +441,41 @@ void Game::process_events(Camera &camera)
     }
 
     // Update player movement
-    float magnitude = 0.0f;
-    vec3 v_velocity = {};
-    vec3 v_right = {};
-    vec3 v_fwd = { camera.v_look_dir[0], camera.v_look_dir[1], camera.v_look_dir[2] };
-
-    lac_calc_cross_prod(v_right, KC::v_up, v_fwd);
-    lac_normalize_vec3(v_right, v_right);
+    Vec3_t v_fwd = camera.v_look_dir;
+    Vec3_t v_right = qm_v3_norm(qm_v3_cross(KC::v_up, v_fwd));
+    Vec3_t v_velocity = {};
 
     if (IS_BIT_SET(key_mask, KeyAction::PLYR_FWD))
     {
-        lac_subtract_vec3(v_velocity, v_velocity, v_fwd);
+        v_velocity = qm_v3_add(v_velocity, v_fwd);
     }
     if (IS_BIT_SET(key_mask, KeyAction::PLYR_BACK))
     {
-        lac_add_vec3(v_velocity, v_velocity, v_fwd);
+        v_velocity = qm_v3_sub(v_velocity, v_fwd);
     }
     if (IS_BIT_SET(key_mask, KeyAction::PLYR_LEFT))
     {
-        lac_subtract_vec3(v_velocity, v_velocity, v_right);
+        v_velocity = qm_v3_add(v_velocity, v_right);
     }
     if (IS_BIT_SET(key_mask, KeyAction::PLYR_RIGHT))
     {
-        lac_add_vec3(v_velocity, v_velocity, v_right);
-    }
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_DOWN))
-    {
-        lac_subtract_vec3(v_velocity, v_velocity, KC::v_up);
+        v_velocity = qm_v3_sub(v_velocity, v_right);
     }
     if (IS_BIT_SET(key_mask, KeyAction::PLYR_UP))
     {
-        lac_add_vec3(v_velocity, v_velocity, KC::v_up);
+        v_velocity = qm_v3_add(v_velocity, KC::v_up);
+    }
+    if (IS_BIT_SET(key_mask, KeyAction::PLYR_DOWN))
+    {
+        v_velocity = qm_v3_sub(v_velocity, KC::v_up);
     }
 
-    lac_calc_magnitude_vec4(&magnitude, v_velocity);
-    if (magnitude > 0.0f)
+    float magnitude = qm_v3_len(v_velocity);
+    if (magnitude > 1e-8f)
     {
-        lac_normalize_vec3(v_velocity, v_velocity);
-        lac_multiply_vec3(v_velocity, v_velocity, delta_time_ms * 0.05);
-        lac_add_vec3(camera.v_eye, camera.v_eye, v_velocity);
+        v_velocity = qm_v3_norm(v_velocity);
+        v_velocity = qm_v3_scale(v_velocity, delta_time_ms * 0.05f);
+        camera.v_eye = qm_v3_add(camera.v_eye, v_velocity);
     }
 }
 
@@ -495,54 +493,55 @@ void Game::render_frame(Camera &camera, Mvp &mvp, SkyBox &skybox)
     glClearColor(1.0f, 1.0, 1.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Render block data
+    /*** Render terrain ***/
 
     block_shader.bind();
 
-    // Model matrix (translate to world space)
-    lac_get_translation_mat4(mvp.m_model, 0.0f, 0.0f, 0.0f);
+    // Model
+    mvp.m_model = qm_m4_ident;
     u_model = glGetUniformLocation(block_shader.id, "model");
-    glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
+    glUniformMatrix4fv(u_model, 1, GL_TRUE, (float*)mvp.m_model.m);
 
-    // View matrix (translate to view space)
+    // View
     u_view = glGetUniformLocation(block_shader.id, "view");
-    glUniformMatrix4fv(u_view, 1, GL_TRUE, mvp.m_view->data());
+    glUniformMatrix4fv(u_view, 1, GL_TRUE, (float*)mvp.m_view->m);
 
-    // Projection matrix (translate to projection space)
-    lac_get_projection_mat4(
-        mvp.m_proj,
+    // Projection
+    mvp.m_proj = qm_m4_projection(
         settings.aspect,
         settings.fov,
         settings.znear,
         settings.zfar
     );
     u_proj = glGetUniformLocation(block_shader.id, "proj");
-    glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
+    glUniformMatrix4fv(u_proj, 1, GL_TRUE, (float*)mvp.m_proj.m);
 
+    // Issue draw call
     glBindVertexArray(chunk_mgr.terrain_mesh.vao);
-    chunk_mgr.update_mesh();
     glDrawArrays(GL_TRIANGLES, 0, chunk_mgr.terrain_mesh.vertices.size());
     glBindVertexArray(0);
 
     block_shader.unbind();
 
-    // Render skybox
+    /*** Render skybox ***/
 
     glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+
     skybox_shader.bind();
 
-    // Model matrix (translate to world space)
-    lac_get_translation_mat4(mvp.m_model, camera.v_eye[0], camera.v_eye[1], camera.v_eye[2]);
+    // Model
+    mvp.m_model = qm_m4_translate(camera.v_eye.x, camera.v_eye.y, camera.v_eye.z);
     u_model = glGetUniformLocation(skybox_shader.id, "model");
-    glUniformMatrix4fv(u_model, 1, GL_TRUE, mvp.m_model);
+    glUniformMatrix4fv(u_model, 1, GL_TRUE, (float*)mvp.m_model.m);
 
-    // View matrix (translate to view space)
+    // View
     u_view = glGetUniformLocation(skybox_shader.id, "view");
-    glUniformMatrix4fv(u_view, 1, GL_TRUE, mvp.m_view->data());
+    glUniformMatrix4fv(u_view, 1, GL_TRUE, (float*)mvp.m_view->m);
 
-    // Projection matrix (translate to projection space)
+    // Projection
     u_proj = glGetUniformLocation(skybox_shader.id, "proj");
-    glUniformMatrix4fv(u_proj, 1, GL_TRUE, mvp.m_proj);
+    glUniformMatrix4fv(u_proj, 1, GL_TRUE, (float*)mvp.m_proj.m);
 
     // Issue draw call
     glBindVertexArray(skybox.mesh.vao);
@@ -550,6 +549,8 @@ void Game::render_frame(Camera &camera, Mvp &mvp, SkyBox &skybox)
     glBindVertexArray(0);
 
     skybox_shader.unbind();
+
+    glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);
 
     // Blit

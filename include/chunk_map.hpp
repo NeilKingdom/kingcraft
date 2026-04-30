@@ -5,19 +5,19 @@
 
 struct ChunkMapKey
 {
-    vec3 key;
+    Vec3_t key;
 
     ChunkMapKey() = default;
-    ChunkMapKey(const vec3 &chunk_location)
+    ChunkMapKey(const Vec3_t &chunk_location)
     {
-        key[0] = chunk_location[0];
-        key[1] = chunk_location[1];
-        key[2] = chunk_location[2];
+        this->key = chunk_location;
     }
 
     bool operator==(const ChunkMapKey &chunk_key) const
     {
-        return V3_EQ(this->key, chunk_key.key);
+        return this->key.x == chunk_key.key.x
+            && this->key.y == chunk_key.key.y
+            && this->key.z == chunk_key.key.z;
     }
 };
 
@@ -30,7 +30,7 @@ struct ChunkMapHash
 
         for (int i = 0; i < 3; ++i)
         {
-            uint32_t bits = std::bit_cast<uint32_t>(chunk_key.key[i]);
+            uint32_t bits = std::bit_cast<uint32_t>(chunk_key.key.v[i]);
             hash ^= std::hash<uint32_t>{}(bits)
                  +  prime
                  + (hash << 6)
@@ -96,13 +96,13 @@ public:
         }
     }
 
-    std::shared_ptr<Chunk> find(const vec3 &chunk_location) const
+    std::shared_ptr<Chunk> find(const Vec3_t &chunk_location) const
     {
         auto needle = map.find(ChunkMapKey(chunk_location));
         return (needle == map.end()) ? nullptr : needle->second;
     }
 
-    bool contains(const vec3 &chunk_location) const
+    bool contains(const Vec3_t &chunk_location) const
     {
         return map.contains(ChunkMapKey(chunk_location));
     }

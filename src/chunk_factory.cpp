@@ -21,7 +21,7 @@ ChunkFactory &ChunkFactory::get_instance()
  * @param[in] chunk_location A vec3 which determines the offset of the chunk relative to the world origin
  * @returns The constructed Chunk object
  */
-std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 chunk_location) const
+std::shared_ptr<Chunk> ChunkFactory::make_chunk(const Vec3_t chunk_location) const
 {
     BlockFactory &block_factory = BlockFactory::get_instance();
     auto chunk = std::make_shared<Chunk>(chunk_location);
@@ -38,16 +38,16 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 chunk_location) const
         for (ssize_t x = -1; x < KC::CHUNK_SIZE + 1; ++x)
         {
             chunk->block_heights[y + 1][x + 1] = sample_biome_height(
-                vec2{
-                    (chunk_location[0] * KC::CHUNK_SIZE) + x,
-                    (chunk_location[1] * KC::CHUNK_SIZE) + y
-                }
+                Vec2_t{ .v = {
+                    (chunk_location.x * KC::CHUNK_SIZE) + x,
+                    (chunk_location.y * KC::CHUNK_SIZE) + y
+                }}
             );
         }
     }
 
     // Determine block types and visible faces
-    for (ssize_t z = 0, _z = (chunk_location[2] * KC::CHUNK_SIZE); z < KC::CHUNK_SIZE; ++z, ++_z)
+    for (ssize_t z = 0, _z = (chunk_location.z * KC::CHUNK_SIZE); z < KC::CHUNK_SIZE; ++z, ++_z)
     {
         for (ssize_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
         {
@@ -117,11 +117,11 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const vec3 chunk_location) const
                     block_data.faces |= RIGHT;
                 }
 
-                vec3 world_location = {
-                     (chunk_location[0] * KC::CHUNK_SIZE) + x,
-                     (chunk_location[1] * KC::CHUNK_SIZE) + y,
-                     (chunk_location[2] * KC::CHUNK_SIZE) + z
-                };
+                Vec3_t world_location = { .v = {
+                     (chunk_location.x * KC::CHUNK_SIZE) + x,
+                     (chunk_location.y * KC::CHUNK_SIZE) + y,
+                     (chunk_location.z * KC::CHUNK_SIZE) + z
+                }};
 
                 // Construct block
                 chunk->blocks[z][y][x] = block_factory.make_block(

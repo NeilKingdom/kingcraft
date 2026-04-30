@@ -27,12 +27,12 @@ Chunk::Chunk() :
     );
 }
 
-Chunk::Chunk(const vec3 location) :
+Chunk::Chunk(const Vec3_t location) :
     update_pending(false),
     tree_ref(),
     vertices{}
 {
-    std::memcpy(this->location, location, sizeof(vec3));
+    this->location = location;
     block_heights.resize(
         KC::CHUNK_SIZE + 2,
         std::vector<uint8_t>(KC::CHUNK_SIZE + 2)
@@ -55,7 +55,9 @@ Chunk::Chunk(const vec3 location) :
  */
 bool Chunk::operator==(const Chunk &chunk) const
 {
-    return V3_EQ(this->location, chunk.location);
+    return this->location.x == chunk.location.x
+        && this->location.y == chunk.location.y
+        && this->location.z == chunk.location.z;
 }
 
 /**
