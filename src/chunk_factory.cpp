@@ -26,10 +26,10 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const Vec3_t chunk_location) con
     BlockFactory &block_factory = BlockFactory::get_instance();
     auto chunk = std::make_shared<Chunk>(chunk_location);
 
-    struct BlockData
+    struct
     {
-        uint8_t faces;
-        BlockType type;
+        BlockType type = BlockType::AIR;
+        uint8_t faces = 0;
     } block_data;
 
     // Calculate block heights
@@ -47,11 +47,11 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const Vec3_t chunk_location) con
     }
 
     // Determine block types and visible faces
-    for (ssize_t z = 0, _z = (chunk_location.z * KC::CHUNK_SIZE); z < KC::CHUNK_SIZE; ++z, ++_z)
+    for (size_t z = 0, _z = (chunk_location.z * KC::CHUNK_SIZE); z < KC::CHUNK_SIZE; ++z, ++_z)
     {
-        for (ssize_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
+        for (size_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
         {
-            for (ssize_t x = 0, _x = 1; x < KC::CHUNK_SIZE; ++x, ++_x)
+            for (size_t x = 0, _x = 1; x < KC::CHUNK_SIZE; ++x, ++_x)
             {
                 // Air blocks can be skipped
                 if (_z > chunk->block_heights[_y][_x])
@@ -61,24 +61,7 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const Vec3_t chunk_location) con
 
                 // Determine block types
                 // TODO: Add other block types at different z values
-                //if (x == 0)
-                //{
-                //    block_data.type = BlockType::SAND;
-                //}
-                //else if (y == 0)
-                //{
-                //    block_data.type = BlockType::STONE;
-                //}
-                //else
-                //{
-                    block_data.type = BlockType::GRASS;
-                //}
-
-                //if (x == 1 && y == 1)
-                //{
-                //    block_data.type = BlockType::DIRT;
-                //}
-
+                block_data.type = BlockType::GRASS;
                 block_data.faces = 0;
 
                 // Bottom
@@ -86,31 +69,26 @@ std::shared_ptr<Chunk> ChunkFactory::make_chunk(const Vec3_t chunk_location) con
                 {
                     block_data.faces |= BOTTOM;
                 }
-
                 // Top
                 if (_z == chunk->block_heights[_y][_x])
                 {
                     block_data.faces |= TOP;
                 }
-
                 // Front
                 if (_z > chunk->block_heights[_y][_x - 1])
                 {
                     block_data.faces |= FRONT;
                 }
-
                 // Back
                 if (_z > chunk->block_heights[_y][_x + 1])
                 {
                     block_data.faces |= BACK;
                 }
-
                 // Left
                 if (_z > chunk->block_heights[_y - 1][_x])
                 {
                     block_data.faces |= LEFT;
                 }
-
                 // Right
                 if (_z > chunk->block_heights[_y + 1][_x])
                 {

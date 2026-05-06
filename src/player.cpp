@@ -1,7 +1,12 @@
 #include "player.hpp"
 
 Player::Player() :
-    curr_speed(KC::PLAYER_SPEED_FACTOR)
+    v_vel{},
+    curr_move_mode(MovementMode::WALKING)
+{}
+
+Player &Player::get_instance()
 {
-    curr_move_mode = MovementMode::WALKING;
+    static Player player;
+    return player;
 }

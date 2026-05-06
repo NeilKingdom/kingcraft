@@ -26,7 +26,7 @@ float PerlinNoise::gradient(const int hash, const float x, const float y, const 
  * @param[in] b The ending value used for the interpolation
  * @returns The value that corresponds to the interpolated distance __t__ which lies between values __a__ and __b__
  */
-inline float PerlinNoise::lerp(const float t, const float a, const float b)
+float PerlinNoise::lerp(const float t, const float a, const float b)
 {
     return (b - a) * t + a;
 }
@@ -37,7 +37,7 @@ inline float PerlinNoise::lerp(const float t, const float a, const float b)
  * @param[in] t A normalized value between 0 and 1 representing the distance between two points
  * @returns A value between 0 and 1 which represents the smoothed value of t
  */
-inline float PerlinNoise::fade(const float t)
+float PerlinNoise::fade(const float t)
 {
     return t * t * t * (t * (t * 6 - 15) + 10);
 }

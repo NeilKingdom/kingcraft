@@ -15,12 +15,12 @@
 BlockFactory::BlockFactory()
 {
     // Populate UV cache
-    uv_cache[BlockType::DIRT]       = get_uv_coords(BlockType::DIRT);
-    uv_cache[BlockType::GRASS]      = get_uv_coords(BlockType::GRASS);
-    uv_cache[BlockType::WOOD]       = get_uv_coords(BlockType::WOOD);
-    uv_cache[BlockType::LEAVES]     = get_uv_coords(BlockType::LEAVES);
-    uv_cache[BlockType::SAND]       = get_uv_coords(BlockType::SAND);
-    uv_cache[BlockType::STONE]      = get_uv_coords(BlockType::STONE);
+    this->uv_cache[BlockType::DIRT]       = get_uv_coords(BlockType::DIRT);
+    this->uv_cache[BlockType::GRASS]      = get_uv_coords(BlockType::GRASS);
+    this->uv_cache[BlockType::WOOD]       = get_uv_coords(BlockType::WOOD);
+    this->uv_cache[BlockType::LEAVES]     = get_uv_coords(BlockType::LEAVES);
+    this->uv_cache[BlockType::SAND]       = get_uv_coords(BlockType::SAND);
+    this->uv_cache[BlockType::STONE]      = get_uv_coords(BlockType::STONE);
     // TODO: Finish...
 }
 
@@ -141,10 +141,7 @@ Block BlockFactory::make_block(
     constexpr float th = (1.0f / KC::TEX_ATLAS_NCOLS) - uv_pad;
 
     // TODO: Something breaks when invalid block type specified...
-    auto uv = uv_cache.at(type).value_or(
-        std::make_tuple(UV{}, UV{}, UV{})
-    );
-
+    auto uv = this->uv_cache.at(type).value_or(std::make_tuple(UV{}, UV{}, UV{}));
     UV uv_top    = std::get<0>(uv);
     UV uv_sides  = std::get<1>(uv);
     UV uv_bottom = std::get<2>(uv);
@@ -169,57 +166,57 @@ Block BlockFactory::make_block(
     Vec3_t v7 = { .v = {  0.5f + world_location.x,  0.5f + world_location.y, -0.5f + world_location.z }};
 
     block.right_face = {
-        VPosTex{ v1.x, v1.y, v1.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v7.x, v7.y, v7.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v3.x, v3.y, v3.z, uv_sides.u + uv_pad, uv_sides.v + th },
-        VPosTex{ v7.x, v7.y, v7.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v1.x, v1.y, v1.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v5.x, v5.y, v5.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = { uv_sides.u + tw,     uv_sides.v + uv_pad }, .rgb = {}}
     };
 
     block.left_face = {
-        VPosTex{ v4.x, v4.y, v4.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v2.x, v2.y, v2.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v6.x, v6.y, v6.z, uv_sides.u + uv_pad, uv_sides.v + th },
-        VPosTex{ v2.x, v2.y, v2.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v4.x, v4.y, v4.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v0.x, v0.y, v0.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = { uv_sides.u + tw,     uv_sides.v + uv_pad }, .rgb = {}}
     };
 
     block.front_face = {
-        VPosTex{ v0.x, v0.y, v0.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v3.x, v3.y, v3.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v2.x, v2.y, v2.z, uv_sides.u + uv_pad, uv_sides.v + th },
-        VPosTex{ v3.x, v3.y, v3.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v0.x, v0.y, v0.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v1.x, v1.y, v1.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = { uv_sides.u + tw,     uv_sides.v + uv_pad }, .rgb = {}}
     };
 
     block.back_face = {
-        VPosTex{ v5.x, v5.y, v5.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v6.x, v6.y, v6.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v7.x, v7.y, v7.z, uv_sides.u + uv_pad, uv_sides.v + th },
-        VPosTex{ v6.x, v6.y, v6.z, uv_sides.u + tw,     uv_sides.v + th },
-        VPosTex{ v5.x, v5.y, v5.z, uv_sides.u + uv_pad, uv_sides.v + uv_pad },
-        VPosTex{ v4.x, v4.y, v4.z, uv_sides.u + tw,     uv_sides.v + uv_pad }
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = { uv_sides.u + tw,     uv_sides.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = { uv_sides.u + uv_pad, uv_sides.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = { uv_sides.u + tw,     uv_sides.v + uv_pad }, .rgb = {}}
     };
 
     block.bottom_face = {
-        VPosTex{ v2.x, v2.y, v2.z, uv_bottom.u + uv_pad, uv_bottom.v + th },
-        VPosTex{ v3.x, v3.y, v3.z, uv_bottom.u + tw,     uv_bottom.v + th },
-        VPosTex{ v6.x, v6.y, v6.z, uv_bottom.u + uv_pad, uv_bottom.v + uv_pad },
-        VPosTex{ v7.x, v7.y, v7.z, uv_bottom.u + tw,     uv_bottom.v + uv_pad },
-        VPosTex{ v6.x, v6.y, v6.z, uv_bottom.u + uv_pad, uv_bottom.v + uv_pad },
-        VPosTex{ v3.x, v3.y, v3.z, uv_bottom.u + tw,     uv_bottom.v + th }
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = { uv_bottom.u + uv_pad, uv_bottom.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = { uv_bottom.u + tw,     uv_bottom.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = { uv_bottom.u + uv_pad, uv_bottom.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = { uv_bottom.u + tw,     uv_bottom.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = { uv_bottom.u + uv_pad, uv_bottom.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = { uv_bottom.u + tw,     uv_bottom.v + th     }, .rgb = {}}
     };
 
     block.top_face = {
-        VPosTex{ v4.x, v4.y, v4.z, uv_top.u + uv_pad, uv_top.v + uv_pad },
-        VPosTex{ v1.x, v1.y, v1.z, uv_top.u + tw,     uv_top.v + th },
-        VPosTex{ v0.x, v0.y, v0.z, uv_top.u + uv_pad, uv_top.v + th },
-        VPosTex{ v1.x, v1.y, v1.z, uv_top.u + tw,     uv_top.v + th },
-        VPosTex{ v4.x, v4.y, v4.z, uv_top.u + uv_pad, uv_top.v + uv_pad },
-        VPosTex{ v5.x, v5.y, v5.z, uv_top.u + tw,     uv_top.v + uv_pad }
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = { uv_top.u + uv_pad, uv_top.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = { uv_top.u + tw,     uv_top.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = { uv_top.u + uv_pad, uv_top.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = { uv_top.u + tw,     uv_top.v + th     }, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = { uv_top.u + uv_pad, uv_top.v + uv_pad }, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = { uv_top.u + tw,     uv_top.v + uv_pad }, .rgb = {}}
     };
 
     return block;

@@ -13,13 +13,13 @@
  * @since 02-03-2024
  */
 Camera::Camera() :
-    v_eye{},
+    // TODO: Temporary debug height
+    v_eye{ .v = { 0.0f, 0.0f, KC::CHUNK_SIZE * 10 }},
     v_look_dir(KC::v_fwd),
+    m_view(std::make_shared<Mat4_t>(qm_m4_ident)),
     camera_yaw(0.0f),
     camera_pitch(0.0f)
-{
-    m_view = std::make_shared<Mat4_t>(qm_m4_ident);
-}
+{}
 
 /**
  * @brief Calculates the view matrix based on the look direction of the camera.
@@ -71,9 +71,9 @@ void Camera::update_rotation_from_pointer(const KCWindow &win)
 
     // TODO: Multiply by delta time to smooth
     // Convert from pixel space to degrees
-    camera_yaw += norm_dx * 180.0f * KC::CAMERA_SPEED_FACTOR;
-    camera_pitch -= norm_dy * 180.0f * KC::CAMERA_SPEED_FACTOR;
-    camera_pitch = std::clamp(camera_pitch, -89.0f, 89.0f);
+    this->camera_yaw   += norm_dx * 180.0f * KC::CAMERA_SPEED_FACTOR;
+    this->camera_pitch -= norm_dy * 180.0f * KC::CAMERA_SPEED_FACTOR;
+    this->camera_pitch  = std::clamp(camera_pitch, -89.0f, 89.0f);
 
     // Warp cursor back to center of screen
     XWarpPointer(win.dpy, None, win.win, 0, 0, 0, 0, (int)center_x, (int)center_y);
@@ -83,8 +83,8 @@ bool Camera::is_chunk_in_visible_radius(const Vec3_t chunk_location) const
 {
     Settings &settings = Settings::get_instance();
 
-    float a = chunk_location.x - std::floorf(v_eye.x / KC::CHUNK_SIZE);
-    float b = chunk_location.y - std::floorf(v_eye.y / KC::CHUNK_SIZE);
+    float a = chunk_location.x - std::floorf(this->v_eye.x / KC::CHUNK_SIZE);
+    float b = chunk_location.y - std::floorf(this->v_eye.y / KC::CHUNK_SIZE);
     float c = std::sqrtf((a * a) + (b * b));
 
     return c < settings.render_distance;
@@ -93,50 +93,5 @@ bool Camera::is_chunk_in_visible_radius(const Vec3_t chunk_location) const
 
 std::optional<Block> Camera::cast_ray(const uint8_t n_iters) const
 {
-    ChunkManager& chunk_mgr = ChunkManager::get_instance();
-
-    Vec3_t v_step = this->v_look_dir;
-    Vec3_t v_ray = this->v_eye;
-
-    for (uint8_t i = 0; i < n_iters; ++i)
-    {
-        v_ray = qm_v3_add(v_ray, v_step);
-
-        float wx = std::floorf(v_ray.x);
-        float wy = std::floorf(v_ray.y);
-        float wz = std::floorf(v_ray.z);
-
-        int cx = std::floorf(wx / KC::CHUNK_SIZE);
-        int cy = std::floorf(wy / KC::CHUNK_SIZE);
-        int cz = std::floorf(wz / KC::CHUNK_SIZE);
-
-        int bx = (((int)wx % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
-        int by = (((int)wy % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
-        int bz = (((int)wz % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
-
-        auto chunk = chunk_mgr.GCL.find((Vec3_t){ .v = { (float)cx, (float)cy, (float)cz }});
-        if (chunk == nullptr)
-        {
-            std::cout << "nullptr" << std::endl;
-            return std::nullopt;
-        }
-
-        std::cout << "Step " << i + 1 << std::endl;
-        std::cout << "(" << v_step.x << "," << v_step.y << "," << v_step.z << ")" << std::endl;
-        std::cout << "(" << v_ray.x << "," << v_ray.y << "," << v_ray.z << ")" << std::endl;
-        std::cout << "(" << wx << "," << wy << "," << wz << ")" << std::endl;
-        std::cout << "(" << cx << "," << cy << "," << cz << ")" << std::endl;
-        std::cout << "(" << bx << "," << by << "," << bz << ")" << std::endl;
-
-        Block& block = chunk->blocks[bz][by][bx];
-        if (block.type != BlockType::AIR)
-        {
-            std::cout << "Block type: " << (int)block.type << std::endl;
-            block.type = BlockType::STONE;
-            chunk->update_mesh();
-            return block;
-        }
-    }
-
     return std::nullopt;
 }

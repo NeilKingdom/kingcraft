@@ -5,47 +5,31 @@
 
 struct ChunkMapKey
 {
-    Vec3_t key;
+    int x, y, z;
 
-    ChunkMapKey() = default;
-    ChunkMapKey(const Vec3_t &chunk_location)
+    ChunkMapKey(const Vec3_t location)
     {
-        this->key = chunk_location;
+        x = (int)location.x;
+        y = (int)location.y;
+        z = (int)location.z;
     }
-
-    bool operator==(const ChunkMapKey &chunk_key) const
-    {
-        return this->key.x == chunk_key.key.x
-            && this->key.y == chunk_key.key.y
-            && this->key.z == chunk_key.key.z;
-    }
+    bool operator==(const ChunkMapKey &chunk_key) const = default;
 };
 
 struct ChunkMapHash
 {
     size_t operator()(const ChunkMapKey &chunk_key) const
     {
-        size_t hash = 0;
-        constexpr size_t prime = 0x9e3779b97f4a7c15ULL;
-
-        for (int i = 0; i < 3; ++i)
-        {
-            uint32_t bits = std::bit_cast<uint32_t>(chunk_key.key.v[i]);
-            hash ^= std::hash<uint32_t>{}(bits)
-                 +  prime
-                 + (hash << 6)
-                 + (hash >> 2);
-        }
-
-        return hash;
+        return (chunk_key.x * 73856093) ^
+               (chunk_key.y * 19349663) ^
+               (chunk_key.z * 83492791);
     }
 };
 
 class ChunkMap
 {
 public:
-    using Map = std::unordered_map<ChunkMapKey, std::shared_ptr<Chunk>, ChunkMapHash>;
-    Map map;
+    std::unordered_map<ChunkMapKey, std::shared_ptr<Chunk>, ChunkMapHash> map;
 
     auto begin()
     {
@@ -77,7 +61,7 @@ public:
         return map | std::views::values;
     }
 
-    auto clear()
+    void clear()
     {
         return map.clear();
     }

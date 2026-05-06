@@ -12,21 +12,23 @@
 
 ChunkManager::ChunkManager()
 {
-    glGenVertexArrays(1, &terrain_mesh.vao);
-    glBindVertexArray(terrain_mesh.vao);
+    glGenVertexArrays(1, &this->terrain_mesh.vao);
+    glBindVertexArray(this->terrain_mesh.vao);
 
-    glGenBuffers(1, &terrain_mesh.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
+    glGenBuffers(1, &this->terrain_mesh.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, this->terrain_mesh.vbo);
 
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // TODO: Color attribute
-
     // Texture attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    // Color attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -34,13 +36,13 @@ ChunkManager::ChunkManager()
 
 ChunkManager::~ChunkManager()
 {
-    if (glIsBuffer(terrain_mesh.vbo))
+    if (glIsBuffer(this->terrain_mesh.vbo))
     {
-        glDeleteBuffers(1, &terrain_mesh.vbo);
+        glDeleteBuffers(1, &this->terrain_mesh.vbo);
     }
-    if (glIsVertexArray(terrain_mesh.vao))
+    if (glIsVertexArray(this->terrain_mesh.vao))
     {
-        glDeleteVertexArrays(1, &terrain_mesh.vao);
+        glDeleteVertexArrays(1, &this->terrain_mesh.vao);
     }
 }
 
@@ -265,24 +267,28 @@ ChunkMap ChunkManager::plant_tree(std::shared_ptr<Chunk> &chunk, const Vec3_t ro
  *
  * TODO: Params
  */
-ChunkMap ChunkManager::plant_trees(std::shared_ptr<Chunk> &chunk)
+ChunkMap ChunkManager::plant_trees(std::shared_ptr<Chunk> &chunk, const float density)
 {
     auto deferred_list = ChunkMap{};
-    const unsigned rand_threshold = 576;
 
-    for (ssize_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
+    for (size_t y = 0, _y = 1; y < KC::CHUNK_SIZE; ++y, ++_y)
     {
-        for (ssize_t x = 0, _x = 1; x < KC::CHUNK_SIZE; ++x, ++_x)
+        for (size_t x = 0, _x = 1; x < KC::CHUNK_SIZE; ++x, ++_x)
         {
-            ssize_t z_offset = chunk->block_heights[_y][_x] / KC::CHUNK_SIZE;
-            if (z_offset != chunk->location.z)
+            size_t z_chunk = chunk->block_heights[_y][_x] / KC::CHUNK_SIZE;
+            if (z_chunk != chunk->location.z)
             {
                 continue;
             }
 
-            ssize_t z = chunk->block_heights[_y][_x] % KC::CHUNK_SIZE;
+            size_t z = chunk->block_heights[_y][_x] % KC::CHUNK_SIZE;
             Vec3_t root_location = { .v = { (float)x, (float)y, (float)z }};
-            if (fnv1a_hash(chunk->location, root_location) % rand_threshold == 0)
+
+            // Pseudo-random hash function determines if tree should be planted
+            uint32_t hash = world_hash(chunk->location, root_location);
+            float normalized = (float)hash / (float)UINT32_MAX;
+
+            if (normalized < density)
             {
                 auto deferred = plant_tree(chunk, root_location);
                 deferred_list.insert(deferred.begin(), deferred.end());
@@ -293,12 +299,12 @@ ChunkMap ChunkManager::plant_trees(std::shared_ptr<Chunk> &chunk)
     return deferred_list;
 }
 
-void ChunkManager::update_mesh()
+void ChunkManager::bind_terrain_mesh()
 {
     // Check if any chunks have been modified
     bool chunk_update_pending = std::any_of(
-        GCL.begin(),
-        GCL.end(),
+        this->GCL.begin(),
+        this->GCL.end(),
         [&](const auto &kv_pair)
         {
             return kv_pair.second->update_pending;
@@ -307,14 +313,14 @@ void ChunkManager::update_mesh()
 
     if (chunk_update_pending)
     {
-        terrain_mesh.vertices.clear();
-        for (auto &chunk : GCL.values())
+        this->terrain_mesh.vertices.clear();
+        for (auto &chunk : this->GCL.values())
         {
             chunk->update_pending = false;
             if (!chunk->vertices.empty())
             {
-                terrain_mesh.vertices.insert(
-                    terrain_mesh.vertices.end(),
+                this->terrain_mesh.vertices.insert(
+                    this->terrain_mesh.vertices.end(),
                     chunk->vertices.begin(),
                     chunk->vertices.end()
                 );
@@ -322,15 +328,31 @@ void ChunkManager::update_mesh()
         }
 
         // Bind mesh to VBO
-        glBindBuffer(GL_ARRAY_BUFFER, terrain_mesh.vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, this->terrain_mesh.vbo);
         glBufferData(
             GL_ARRAY_BUFFER,
-            terrain_mesh.vertices.size() * sizeof(VPosTex),
-            terrain_mesh.vertices.data(),
+            this->terrain_mesh.vertices.size() * sizeof(Vertex),
+            this->terrain_mesh.vertices.data(),
             GL_STATIC_DRAW
         );
-        glBindBuffer(0, terrain_mesh.vbo);
+        glBindBuffer(0, this->terrain_mesh.vbo);
     }
+}
+
+void ChunkManager::get_relative_locations(
+    const Vec3_t &chunk_location,
+    const Vec3_t &block_location,
+    Vec3_t &actual_chunk_location,
+    Vec3_t &actual_block_location
+) const
+{
+    actual_chunk_location.x = std::floorf(((chunk_location.x * KC::CHUNK_SIZE) + block_location.x) / KC::CHUNK_SIZE);
+    actual_chunk_location.y = std::floorf(((chunk_location.y * KC::CHUNK_SIZE) + block_location.y) / KC::CHUNK_SIZE);
+    actual_chunk_location.z = std::floorf(((chunk_location.z * KC::CHUNK_SIZE) + block_location.z) / KC::CHUNK_SIZE);
+
+    actual_block_location.x = (((int)block_location.x % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+    actual_block_location.y = (((int)block_location.y % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
+    actual_block_location.z = (((int)block_location.z % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
 }
 
 /**
@@ -353,16 +375,14 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative(
 
     Vec3_t actual_chunk_location{};
     Vec3_t actual_block_location{};
+    get_relative_locations(
+        chunk->location,
+        block_location,
+        actual_chunk_location,
+        actual_block_location
+    );
 
-    actual_chunk_location.x = std::floorf(((chunk->location.x * KC::CHUNK_SIZE) + block_location.x) / KC::CHUNK_SIZE);
-    actual_chunk_location.y = std::floorf(((chunk->location.y * KC::CHUNK_SIZE) + block_location.y) / KC::CHUNK_SIZE);
-    actual_chunk_location.z = std::floorf(((chunk->location.z * KC::CHUNK_SIZE) + block_location.z) / KC::CHUNK_SIZE);
-
-    actual_block_location.x = (((int)block_location.x % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
-    actual_block_location.y = (((int)block_location.y % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
-    actual_block_location.z = (((int)block_location.z % KC::CHUNK_SIZE) + KC::CHUNK_SIZE) % KC::CHUNK_SIZE;
-
-    auto needle = GCL.find(actual_chunk_location);
+    auto needle = this->GCL.find(actual_chunk_location);
     if (needle != nullptr)
     {
         // Use existing chunk
@@ -375,7 +395,7 @@ std::shared_ptr<Chunk> ChunkManager::add_block_relative(
         auto new_chunk = chunk_factory.make_chunk(actual_chunk_location);
         add_block(new_chunk, type, actual_block_location, false);
         new_chunk->tree_ref = chunk;
-        GCL.insert(new_chunk);
+        this->GCL.insert(new_chunk);
         return new_chunk;
     }
 }

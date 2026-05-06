@@ -22,11 +22,14 @@ public:
     ~Game() = default;
     Game(const Game &game) = delete;
     Game &operator=(const Game &game) = delete;
+    Game(Game &&game) = delete;
+    Game &operator=(Game &&game) = delete;
 
 private:
-    GLXContext glx; // OpenGL Context
-    KCWindow kc_win; // KingCraft window
-    KCWindow imgui_win; // ImGui window
+    // Member variables
+    GLXContext glx;         // OpenGL Context
+    KCWindow kc_win;        // KingCraft window
+    KCWindow imgui_win;     // ImGui window
     std::thread fps_thread; // Thread for tracking game FPS
 
     // TODO: Not a fan of having these here...
@@ -34,8 +37,8 @@ private:
     Shader skybox_shader;
 
     // General
-    void generate_terrain(Camera &camera);
-    void apply_physics();
+    void generate_terrain(Camera &camera, std::queue<ChunkMapKey> &chunk_queue);
+    void apply_physics(Camera &camera);
     void process_events(Camera &camera);
     void render_frame(Camera &camera, Mvp &mvp, SkyBox &skybox);
     void cleanup();

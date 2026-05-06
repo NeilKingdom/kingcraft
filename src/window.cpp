@@ -59,13 +59,14 @@ static bool _is_glx_extension_supported(const char *ext_list, const char *ext_na
  * @param[in] win_height The height of the new window
  * @returns The best available frame buffer configuration for the new window
  */
-void create_window(
-    KCWindow &kc_win,
+KCWindow create_window(
     const std::string win_name,
     const size_t win_width,
     const size_t win_height
 )
 {
+    KCWindow kc_win{};
+
     // Establish connection with X11 server
     kc_win.dpy = XOpenDisplay(NULL);
     if (kc_win.dpy == NULL)
@@ -194,6 +195,8 @@ void create_window(
     XFree(kc_win.xvi);
     XStoreName(kc_win.dpy, kc_win.win, win_name.c_str());
     XMapWindow(kc_win.dpy, kc_win.win);
+
+    return kc_win;
 }
 
 /**
@@ -213,7 +216,7 @@ GLXContext create_opengl_context(KCWindow &win)
         proc_name matches an existing ARB extension function, a function pointer to that extension
         function is returned.
     */
-    const unsigned char* proc_name = (const unsigned char*)"glXCreateContextAttribsARB";
+    const unsigned char *proc_name = (const unsigned char*)"glXCreateContextAttribsARB";
     glXCreateContextAttribsARBProc glx_create_context_attribs_arb =
         (glXCreateContextAttribsARBProc)glXGetProcAddressARB(proc_name);
 

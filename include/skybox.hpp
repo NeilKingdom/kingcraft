@@ -8,8 +8,9 @@
 class SkyBox
 {
 public:
+    // Member variables
     ID id;
-    Mesh<VPos> mesh;
+    Mesh mesh;
 
     // Special member functions
     SkyBox() = delete;
@@ -20,4 +21,8 @@ public:
         const bool make_mipmap = false
     );
     ~SkyBox();
+    SkyBox(const SkyBox &skybox) = delete;
+    SkyBox &operator=(const SkyBox &skybox) = delete;
+    SkyBox(SkyBox &&skybox) = delete;
+    SkyBox &operator=(SkyBox &&skybox) = delete;
 };

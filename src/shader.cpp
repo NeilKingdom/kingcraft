@@ -23,22 +23,26 @@ Shader::Shader(
     std::string vertex_src;
     std::string fragment_src;
 
+    // Stream contents of vertex shader
     ifs.open(std::filesystem::absolute(vertex_path));
     vertex_src = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
+    // Stream contents of fragment shader
     ifs.open(std::filesystem::absolute(fragment_path));
     fragment_src = std::string(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
     ifs.close();
 
-    id = glCreateProgram();
+    // Compile shaders
+    this->id = glCreateProgram();
     ID vs = compile(GL_VERTEX_SHADER, vertex_src);
     ID fs = compile(GL_FRAGMENT_SHADER, fragment_src);
 
-    glAttachShader(id, vs);
-    glAttachShader(id, fs);
-    glLinkProgram(id);
-    glValidateProgram(id);
+    // Link shaders to program
+    glAttachShader(this->id, vs);
+    glAttachShader(this->id, fs);
+    glLinkProgram(this->id);
+    glValidateProgram(this->id);
 
     glDeleteShader(vs);
     glDeleteShader(fs);
@@ -59,7 +63,7 @@ Shader::~Shader()
  */
 void Shader::bind() const
 {
-    glUseProgram(id);
+    glUseProgram(this->id);
 }
 
 /**

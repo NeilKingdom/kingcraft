@@ -28,13 +28,13 @@ struct KCWindow
 
 enum KeyAction : uint64_t
 {
-    PLYR_FWD      = (1 << 0),
-    PLYR_BACK     = (1 << 1),
-    PLYR_LEFT     = (1 << 2),
-    PLYR_RIGHT    = (1 << 3),
-    PLYR_UP       = (1 << 4),
-    PLYR_DOWN     = (1 << 5),
-    EXIT_GAME     = (1 << 6),
+    PLYR_FWD     = (1 << 0),
+    PLYR_BACK    = (1 << 1),
+    PLYR_LEFT    = (1 << 2),
+    PLYR_RIGHT   = (1 << 3),
+    PLYR_UP      = (1 << 4),
+    PLYR_DOWN    = (1 << 5),
+    EXIT_GAME    = (1 << 6),
 };
 static uint64_t key_mask = 0;
 
@@ -56,11 +56,8 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(
     const int *glx_attribs
 );
 
-// Forward function declarations
-
 // TODO: I'd like to return window instead of passing by param
-void create_window(
-    KCWindow &kc_win,
+KCWindow create_window(
     const std::string win_name,
     const size_t win_width,
     const size_t win_height

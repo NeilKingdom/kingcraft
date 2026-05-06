@@ -10,9 +10,10 @@ SkyBox::SkyBox(
     PngHndl_t *png_hndl = nullptr;
     Pixmap_t *pixmap = nullptr;
 
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+    glGenTextures(1, &this->id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->id);
 
+    // Generate texture for each face of the cube map
     for (auto i = tex_paths.begin(); i != tex_paths.end(); ++i)
     {
         png_hndl = imc_png_open(std::filesystem::absolute(*i).c_str());
@@ -33,109 +34,108 @@ SkyBox::SkyBox(
         imc_png_close(png_hndl);
     }
 
+    // Cube map parameters
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, mag_filter);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    Vec4_t v0 = { .v = { -0.5f, -0.5f,  0.5f, 1.0f }};
-    Vec4_t v1 = { .v = { -0.5f,  0.5f,  0.5f, 1.0f }};
-    Vec4_t v2 = { .v = { -0.5f, -0.5f, -0.5f, 1.0f }};
-    Vec4_t v3 = { .v = { -0.5f,  0.5f, -0.5f, 1.0f }};
-    Vec4_t v4 = { .v = {  0.5f, -0.5f,  0.5f, 1.0f }};
-    Vec4_t v5 = { .v = {  0.5f,  0.5f,  0.5f, 1.0f }};
-    Vec4_t v6 = { .v = {  0.5f, -0.5f, -0.5f, 1.0f }};
-    Vec4_t v7 = { .v = {  0.5f,  0.5f, -0.5f, 1.0f }};
+    // Define skybox vertices
+    const float scale = 200.0f;
+    Vec4_t v0 = { .v = { -0.5f * scale, -0.5f * scale,  0.5f * scale, 0.0f }};
+    Vec4_t v1 = { .v = { -0.5f * scale,  0.5f * scale,  0.5f * scale, 0.0f }};
+    Vec4_t v2 = { .v = { -0.5f * scale, -0.5f * scale, -0.5f * scale, 0.0f }};
+    Vec4_t v3 = { .v = { -0.5f * scale,  0.5f * scale, -0.5f * scale, 0.0f }};
+    Vec4_t v4 = { .v = {  0.5f * scale, -0.5f * scale,  0.5f * scale, 0.0f }};
+    Vec4_t v5 = { .v = {  0.5f * scale,  0.5f * scale,  0.5f * scale, 0.0f }};
+    Vec4_t v6 = { .v = {  0.5f * scale, -0.5f * scale, -0.5f * scale, 0.0f }};
+    Vec4_t v7 = { .v = {  0.5f * scale,  0.5f * scale, -0.5f * scale, 0.0f }};
 
-    // Scale skybox
-    Mat4_t m_scale = qm_m4_scale(200.0f, 200.0f, 200.0f);
-
-    v0 = qm_m4_v4_mul(m_scale, v0);
-    v1 = qm_m4_v4_mul(m_scale, v1);
-    v2 = qm_m4_v4_mul(m_scale, v2);
-    v3 = qm_m4_v4_mul(m_scale, v3);
-    v4 = qm_m4_v4_mul(m_scale, v4);
-    v5 = qm_m4_v4_mul(m_scale, v5);
-    v6 = qm_m4_v4_mul(m_scale, v6);
-    v7 = qm_m4_v4_mul(m_scale, v7);
-
-    // Static mesh coordinates
-    std::array<VPos, 36> vertices = {
+    this->mesh.vertices = {
         // Right
-        VPos{ v3.x, v3.y, v3.z },
-        VPos{ v7.x, v7.y, v7.z },
-        VPos{ v1.x, v1.y, v1.z },
-        VPos{ v5.x, v5.y, v5.z },
-        VPos{ v1.x, v1.y, v1.z },
-        VPos{ v7.x, v7.y, v7.z },
-
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = {}, .rgb = {}},
         // Left
-        VPos{ v6.x, v6.y, v6.z },
-        VPos{ v2.x, v2.y, v2.z },
-        VPos{ v4.x, v4.y, v4.z },
-        VPos{ v0.x, v0.y, v0.z },
-        VPos{ v4.x, v4.y, v4.z },
-        VPos{ v2.x, v2.y, v2.z },
-
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = {}, .rgb = {}},
         // Back
-        VPos{ v2.x, v2.y, v2.z },
-        VPos{ v3.x, v3.y, v3.z },
-        VPos{ v0.x, v0.y, v0.z },
-        VPos{ v1.x, v1.y, v1.z },
-        VPos{ v0.x, v0.y, v0.z },
-        VPos{ v3.x, v3.y, v3.z },
-
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = {}, .rgb = {}},
         // Front
-        VPos{ v7.x, v7.y, v7.z },
-        VPos{ v6.x, v6.y, v6.z },
-        VPos{ v5.x, v5.y, v5.z },
-        VPos{ v4.x, v4.y, v4.z },
-        VPos{ v5.x, v5.y, v5.z },
-        VPos{ v6.x, v6.y, v6.z },
-
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = {}, .rgb = {}},
         // Bottom
-        VPos{ v6.x, v6.y, v6.z },
-        VPos{ v3.x, v3.y, v3.z },
-        VPos{ v2.x, v2.y, v2.z },
-        VPos{ v3.x, v3.y, v3.z },
-        VPos{ v6.x, v6.y, v6.z },
-        VPos{ v7.x, v7.y, v7.z },
-
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v2.x, v2.y, v2.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v3.x, v3.y, v3.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v6.x, v6.y, v6.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v7.x, v7.y, v7.z }, .tex = {}, .rgb = {}},
         // Top
-        VPos{ v0.x, v0.y, v0.z },
-        VPos{ v1.x, v1.y, v1.z },
-        VPos{ v4.x, v4.y, v4.z },
-        VPos{ v5.x, v5.y, v5.z },
-        VPos{ v4.x, v4.y, v4.z },
-        VPos{ v1.x, v1.y, v1.z }
+        Vertex{ .pos = { v0.x, v0.y, v0.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v5.x, v5.y, v5.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v4.x, v4.y, v4.z }, .tex = {}, .rgb = {}},
+        Vertex{ .pos = { v1.x, v1.y, v1.z }, .tex = {}, .rgb = {}}
     };
 
-    mesh.vertices.assign(vertices.begin(), vertices.end());
+    glGenVertexArrays(1, &this->mesh.vao);
+    glBindVertexArray(this->mesh.vao);
 
-    glGenVertexArrays(1, &mesh.vao);
-    glGenBuffers(1, &mesh.vbo);
+    glGenBuffers(1, &this->mesh.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, this->mesh.vbo);
 
-    glBindVertexArray(mesh.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-
-    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(VPos), vertices.data(), GL_STATIC_DRAW);
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // Texture attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // Color attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    // Buffer data
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        this->mesh.vertices.size() * sizeof(Vertex),
+        this->mesh.vertices.data(),
+        GL_STATIC_DRAW
+    );
+
     glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 SkyBox::~SkyBox()
 {
-    glDeleteTextures(1, &id);
-    if (glIsBuffer(mesh.vbo))
+    glDeleteTextures(1, &this->id);
+    if (glIsBuffer(this->mesh.vbo))
     {
-        glDeleteBuffers(1, &mesh.vbo);
+        glDeleteBuffers(1, &this->mesh.vbo);
     }
-    if (glIsVertexArray(mesh.vao))
+    if (glIsVertexArray(this->mesh.vao))
     {
-        glDeleteVertexArrays(1, &mesh.vao);
+        glDeleteVertexArrays(1, &this->mesh.vao);
     }
 }

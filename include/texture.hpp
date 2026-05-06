@@ -6,6 +6,7 @@
 class Texture
 {
 public:
+    // Member variables
     ID id;
 
     // Special member functions
@@ -17,6 +18,10 @@ public:
         const bool make_mipmap = false
     );
     ~Texture();
+    Texture(const Texture &texture) = default;
+    Texture &operator=(const Texture &texture) = default;
+    Texture(Texture &&texture) = default;
+    Texture &operator=(Texture &&texture) = default;
 
     // General
     void bind() const;

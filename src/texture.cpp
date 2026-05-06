@@ -27,9 +27,10 @@ Texture::Texture(
     PngHndl_t *png_hndl = imc_png_open(std::filesystem::absolute(path).c_str());
     Pixmap_t *pixmap = imc_png_parse(png_hndl);
 
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    glGenTextures(1, &this->id);
+    glBindTexture(GL_TEXTURE_2D, this->id);
 
+    // Generate texture
     glTexImage2D(
         GL_TEXTURE_2D, 0, GL_RGBA,
         pixmap->width, pixmap->height,
@@ -45,6 +46,7 @@ Texture::Texture(
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
+    // Texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -57,7 +59,7 @@ Texture::Texture(
  */
 Texture::~Texture()
 {
-    glDeleteTextures(1, &id);
+    glDeleteTextures(1, &this->id);
 }
 
 /**
@@ -66,7 +68,7 @@ Texture::~Texture()
  */
 void Texture::bind() const
 {
-    glBindTexture(GL_TEXTURE_2D, id);
+    glBindTexture(GL_TEXTURE_2D, this->id);
 }
 
 /**

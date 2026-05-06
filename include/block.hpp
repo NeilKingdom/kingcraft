@@ -29,18 +29,22 @@ enum BlockFace : uint8_t
 class Block
 {
 public:
+    // Member variables
     BlockType type;
     uint8_t faces;
-
-    std::array<VPosTex, 6> top_face;
-    std::array<VPosTex, 6> bottom_face;
-    std::array<VPosTex, 6> right_face;
-    std::array<VPosTex, 6> left_face;
-    std::array<VPosTex, 6> front_face;
-    std::array<VPosTex, 6> back_face;
+    std::array<Vertex, 6> top_face;
+    std::array<Vertex, 6> bottom_face;
+    std::array<Vertex, 6> right_face;
+    std::array<Vertex, 6> left_face;
+    std::array<Vertex, 6> front_face;
+    std::array<Vertex, 6> back_face;
 
     // Special member functions
     Block();
     Block(const BlockType type, const uint8_t faces);
     ~Block() = default;
+    Block(const Block &block) = default;
+    Block &operator=(const Block &block) = default;
+    Block(Block &&block) = default;
+    Block &operator=(Block &&block) = default;
 };
