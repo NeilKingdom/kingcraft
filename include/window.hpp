@@ -36,7 +36,7 @@ enum KeyAction : uint64_t
     PLYR_DOWN    = (1 << 5),
     EXIT_GAME    = (1 << 6),
 };
-static uint64_t key_mask = 0;
+extern uint64_t key_mask;
 
 static auto key_binds = std::map<KeySym, KeyAction>{
     { XK_w,             KeyAction::PLYR_FWD   },

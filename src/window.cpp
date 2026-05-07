@@ -196,6 +196,9 @@ KCWindow create_window(
     XStoreName(kc_win.dpy, kc_win.win, win_name.c_str());
     XMapWindow(kc_win.dpy, kc_win.win);
 
+    // Turn off auto-repeat keys
+    XAutoRepeatOff(kc_win.dpy);
+
     return kc_win;
 }
 

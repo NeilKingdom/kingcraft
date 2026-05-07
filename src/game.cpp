@@ -8,6 +8,7 @@
 
 #include "game.hpp"
 
+uint64_t key_mask = 0;
 static bool query_pointer_location = true;
 static std::atomic<unsigned> fps = std::atomic<unsigned>(0);
 static float delta_time_ms;
@@ -220,6 +221,9 @@ void Game::cleanup()
     XDefineCursor(this->kc_win.dpy, XDefaultRootWindow(this->kc_win.dpy), default_cursor);
     XFreeCursor(this->kc_win.dpy, default_cursor);
 
+    // Turn auto-repeat keys back on
+    XAutoRepeatOn(kc_win.dpy);
+
     // Destroy window, colormap, and display
     XDestroyWindow(this->kc_win.dpy, this->kc_win.win);
     XFreeColormap(this->kc_win.dpy, this->kc_win.xwa.colormap);
@@ -428,10 +432,12 @@ static void resolve_axis(
                 {
                     case 0:
                     {
+                        // Collision with block in front
                         if (player.v_vel.x > 0)
                         {
                             v_eye.x = block_box.min.x - 0.5f - padding;
                         }
+                        // Collision with block behind
                         else if (player.v_vel.x < 0)
                         {
                             v_eye.x = block_box.max.x + 0.5f + padding;
@@ -440,10 +446,12 @@ static void resolve_axis(
                     }
                     case 1:
                     {
+                        // Collision with block to the right
                         if (player.v_vel.y > 0)
                         {
                             v_eye.y = block_box.min.y - 0.5f - padding;
                         }
+                        // Collision with block to the left
                         else if (player.v_vel.y < 0)
                         {
                             v_eye.y = block_box.max.y + 0.5f + padding;
@@ -455,13 +463,19 @@ static void resolve_axis(
                         float feet_offset = 1.5f;
                         float top_offset  = 0.5f;
 
+                        // Collision with ceiling
                         if (player.v_vel.z > 0)
                         {
                             v_eye.z = block_box.min.z - top_offset - padding;
                         }
+                        // Collision with ground
                         else if (player.v_vel.z < 0)
                         {
                             v_eye.z = block_box.max.z + feet_offset + padding;
+                            if (player.state == JumpState::JUMP_KEY_PRESS)
+                            {
+                                player.state = JumpState::RESET;
+                            }
                         }
                         break;
                     }
@@ -472,6 +486,25 @@ static void resolve_axis(
             }
         }
     }
+}
+
+static void apply_gravity()
+{
+    Player &player = Player::get_instance();
+
+    const float gravity_accel     = -30.0f;
+    const float terminal_velocity = -55.0f;
+    const float dt = delta_time_ms / 1000.0f;
+
+    player.v_jump.z += gravity_accel * dt;
+
+    // Clamp downwards velocity
+    if (player.v_jump.z < terminal_velocity)
+    {
+        player.v_jump.z = terminal_velocity;
+    }
+
+    player.v_vel.z = player.v_jump.z;
 }
 
 void Game::apply_physics(Camera &camera)
@@ -491,14 +524,18 @@ void Game::apply_physics(Camera &camera)
         return;
     }
 
+    apply_gravity();
+
+    const float dt = delta_time_ms / 1000.0f;
+
     // Resolve x-axis
-    camera.v_eye.x += player.v_vel.x;
+    camera.v_eye.x += player.v_vel.x * dt;
     resolve_axis(camera.v_eye, 0, needle);
     // Resolve y-axis
-    camera.v_eye.y += player.v_vel.y;
+    camera.v_eye.y += player.v_vel.y * dt;
     resolve_axis(camera.v_eye, 1, needle);
     // Resolve z-axis
-    camera.v_eye.z += player.v_vel.z;
+    camera.v_eye.z += player.v_vel.z * dt;
     resolve_axis(camera.v_eye, 2, needle);
 }
 
@@ -593,42 +630,7 @@ void Game::process_events(Camera &camera)
         }
     }
 
-    // Update player movement
-    Vec3_t v_fwd = camera.v_look_dir;
-    Vec3_t v_right = qm_v3_norm(qm_v3_cross(KC::v_up, v_fwd));
-    player.v_vel = {};
-
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_FWD))
-    {
-        player.v_vel = qm_v3_add(player.v_vel, v_fwd);
-    }
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_BACK))
-    {
-        player.v_vel = qm_v3_sub(player.v_vel, v_fwd);
-    }
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_LEFT))
-    {
-        player.v_vel = qm_v3_add(player.v_vel, v_right);
-    }
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_RIGHT))
-    {
-        player.v_vel = qm_v3_sub(player.v_vel, v_right);
-    }
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_UP))
-    {
-        player.v_vel = qm_v3_add(player.v_vel, KC::v_up);
-    }
-    if (IS_BIT_SET(key_mask, KeyAction::PLYR_DOWN))
-    {
-        player.v_vel = qm_v3_sub(player.v_vel, KC::v_up);
-    }
-
-    player.v_vel = qm_v3_norm(player.v_vel);
-    float magnitude = qm_v3_len(player.v_vel);
-    if (magnitude > 0.0f)
-    {
-        player.v_vel = qm_v3_scale(player.v_vel, delta_time_ms * KC::PLAYER_SPEED_FACTOR);
-    }
+    player.update_plyr_movement(camera);
 }
 
 /**

@@ -21,7 +21,7 @@ namespace KC
 
     // Normalized scaling factors
     static constexpr float CAMERA_SPEED_FACTOR = 0.5f;
-    static constexpr float PLAYER_SPEED_FACTOR = 0.01f;
+    static constexpr float PLAYER_SPEED_FACTOR = 7.0f;
 
     // Measurements (1 block => 1 unit of measurement)
     static constexpr unsigned PLAYER_HEIGHT = 2;
