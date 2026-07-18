@@ -8,20 +8,13 @@
 
 #include "game.hpp"
 
+// Globals
 uint64_t key_mask = 0;
-static bool query_pointer_location = true;
-static std::atomic<unsigned> fps = std::atomic<unsigned>(0);
-static float delta_time_ms;
 
-static void fps_callback()
-{
-    Settings &settings = Settings::get_instance();
-    while (settings.is_running)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "FPS: " << fps.exchange(0) << std::endl;
-    }
-}
+// Static
+static bool query_pointer_location = true;
+static float delta_time_ms;
+static auto fps = std::atomic<unsigned>(0);
 
 /**
  * @brief OpenGL callback for logging events.
@@ -70,7 +63,6 @@ Game::Game()
 
     this->kc_win = create_window("KingCraft", 1920, 1080);
     this->glx = create_opengl_context(this->kc_win);
-    glXMakeCurrent(this->kc_win.dpy, this->kc_win.win, this->glx);
 
 //#ifdef DEBUG
 #if 0
@@ -80,18 +72,14 @@ Game::Game()
 
     /*** Bind graphics drivers to OpenGL API specification ***/
 
-    // NOTE: Must be placed after a valid OpenGL context has been made current
+    glXMakeCurrent(this->kc_win.dpy, this->kc_win.win, this->glx);
     if (glewInit() != GLEW_OK)
     {
         std::cerr << "Failed to initialize GLEW" << std::endl;
-        exit(EXIT_FAILURE);
+        cleanup();
     }
 
-#ifdef DEBUG
-    std::cout << glGetString(GL_VERSION) << std::endl;
-#endif
-
-    /*** Enable/disable OpenGL options ***/
+    /*** OpenGL options ***/
 
     // Enable debug logging
 #if 0
@@ -119,41 +107,49 @@ Game::Game()
     // Enable wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    /*** Create shader program(s) ***/
+    /*** Create texture atlas ***/
+
+    Texture texture_atlas("res/textures/texture_atlas.png", GL_NEAREST, GL_NEAREST);
+
+    /*** Create skybox ***/
+
+    //auto skybox_tex_paths = std::array<std::filesystem::path, KC::CUBE_FACES>{
+    //    "res/textures/skybox_right.png",
+    //    "res/textures/skybox_left.png",
+    //    "res/textures/skybox_front.png",
+    //    "res/textures/skybox_back.png",
+    //    "res/textures/skybox_top.png",
+    //    "res/textures/skybox_bottom.png"
+    //};
+    auto skybox_tex_paths = std::array<std::filesystem::path, KC::CUBE_FACES>{};
+    std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
+    SkyBox skybox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
+
+    /*** Create shader programs ***/
 
     this->block_shader  = Shader("res/shader/block.vs", "res/shader/block.fs");
     this->skybox_shader = Shader("res/shader/skybox.vs", "res/shader/skybox.fs");
 
-    /*** Create texture atlas ***/
-
-    const std::filesystem::path tex_atlas_path("res/textures/texture_atlas.png");
-    Texture texture_atlas = Texture(tex_atlas_path, GL_NEAREST, GL_NEAREST);
-
-    /*** Create skybox ***/
-
-    auto skybox_tex_paths = std::array<std::filesystem::path, KC::CUBE_FACES>{
-        "res/textures/skybox_right.png",
-        "res/textures/skybox_left.png",
-        "res/textures/skybox_front.png",
-        "res/textures/skybox_back.png",
-        "res/textures/skybox_top.png",
-        "res/textures/skybox_bottom.png"
-    };
-    //auto skybox_tex_paths = std::array<std::filesystem::path, KC::CUBE_FACES>{};
-    //std::fill(skybox_tex_paths.begin(), skybox_tex_paths.end(), "res/textures/test_skybox.png");
-    SkyBox skybox = SkyBox(skybox_tex_paths, GL_LINEAR, GL_LINEAR);
-
     /*** Other setup ***/
 
+    // Set RNG seed
     srandom(settings.seed);
-    this->fps_thread = std::thread(fps_callback);
+
+    // Start thread for tracking FPS
+    this->fps_thread = std::thread([&]() {
+        while (settings.is_running)
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::cout << "FPS: " << fps.exchange(0) << std::endl;
+        }
+    });
 
     /*** Game loop ***/
 
     Camera camera;
-    Mvp mvp = Mvp(camera);
+    Mvp mvp(camera);
+    std::queue<ChunkMapKey> chunk_queue{};
     ChunkManager &chunk_mgr = ChunkManager::get_instance();
-    std::queue<ChunkMapKey> chunk_queue;
 
     while (settings.is_running)
     {
@@ -256,17 +252,13 @@ void Game::generate_terrain(Camera &camera, std::queue<ChunkMapKey> &chunk_queue
     }};
 
     // 2. Unload chunks that are no longer visible
-    std::erase_if(chunk_mgr.GCL.map, [&](const auto &kv_pair)
+    std::erase_if(chunk_mgr.GCL.map, [=](const auto &kv_pair)
     {
         const auto &chunk = kv_pair.second;
 
         // Can't unload if chunk contains folliage for another chunk that hasn't been unloaded yet
-        if (!chunk->tree_ref.expired())
-        {
-            return false;
-        }
-
-        return !camera.is_chunk_in_visible_radius(chunk->location);
+        return (!chunk->tree_ref.expired()) ? false
+            : !camera.is_chunk_in_visible_radius(chunk->location);
     });
 
     // TODO:
@@ -295,12 +287,12 @@ void Game::generate_terrain(Camera &camera, std::queue<ChunkMapKey> &chunk_queue
 
         auto next = chunk_queue.front();
         chunk_queue.pop();
-        auto chunk_location = Vec3_t{ .v = { (float)next.x, (float)next.y, (float)next.z }};
+        Vec3_t chunk_location{ .v = { (float)next.x, (float)next.y, (float)next.z }};
 
         // Only process chunks that are still within visible radius and don't already exist in the GCL
         if (camera.is_chunk_in_visible_radius(chunk_location) && !chunk_mgr.GCL.contains(chunk_location))
         {
-            auto deferred_chunks = ChunkMap{};
+            ChunkMap deferred_chunks{};
             auto chunk = chunk_factory.make_chunk(chunk_location);
             deferred_chunks.insert(chunk);
 
@@ -363,22 +355,22 @@ static bool are_bodies_collided(const AABB &a, const AABB &b)
 }
 
 static void resolve_axis(
-    Vec3_t &v_eye,
+    Camera &camera,
     int axis,
-    std::shared_ptr<Chunk> chunk
+    std::shared_ptr<Chunk> &chunk
 )
 {
     ChunkManager &chunk_mgr = ChunkManager::get_instance();
     Player &player = Player::get_instance();
 
     const float padding = 0.0001f;
-    const Vec3_t chunk_world_location = { .v = {
+    const Vec3_t chunk_world_location{ .v = {
         chunk->location.x * KC::CHUNK_SIZE,
         chunk->location.y * KC::CHUNK_SIZE,
         chunk->location.z * KC::CHUNK_SIZE
     }};
 
-    AABB player_box = make_player_aabb(v_eye);
+    AABB player_box = make_player_aabb(camera.v_eye);
 
     // Find surrounding blocks from chunk that player might be colliding with
     int min_x = (int)roundf(player_box.min.x - chunk_world_location.x) - 1;
@@ -435,12 +427,12 @@ static void resolve_axis(
                         // Collision with block in front
                         if (player.v_vel.x > 0)
                         {
-                            v_eye.x = block_box.min.x - 0.5f - padding;
+                            camera.v_eye.x = block_box.min.x - 0.5f - padding;
                         }
                         // Collision with block behind
                         else if (player.v_vel.x < 0)
                         {
-                            v_eye.x = block_box.max.x + 0.5f + padding;
+                            camera.v_eye.x = block_box.max.x + 0.5f + padding;
                         }
                         break;
                     }
@@ -449,12 +441,12 @@ static void resolve_axis(
                         // Collision with block to the right
                         if (player.v_vel.y > 0)
                         {
-                            v_eye.y = block_box.min.y - 0.5f - padding;
+                            camera.v_eye.y = block_box.min.y - 0.5f - padding;
                         }
                         // Collision with block to the left
                         else if (player.v_vel.y < 0)
                         {
-                            v_eye.y = block_box.max.y + 0.5f + padding;
+                            camera.v_eye.y = block_box.max.y + 0.5f + padding;
                         }
                         break;
                     }
@@ -466,12 +458,12 @@ static void resolve_axis(
                         // Collision with ceiling
                         if (player.v_vel.z > 0)
                         {
-                            v_eye.z = block_box.min.z - top_offset - padding;
+                            camera.v_eye.z = block_box.min.z - top_offset - padding;
                         }
                         // Collision with ground
                         else if (player.v_vel.z < 0)
                         {
-                            v_eye.z = block_box.max.z + feet_offset + padding;
+                            camera.v_eye.z = block_box.max.z + feet_offset + padding;
                             if (player.state == JumpState::JUMP_KEY_PRESS)
                             {
                                 player.state = JumpState::RESET;
@@ -482,7 +474,7 @@ static void resolve_axis(
                 }
 
                 // Recalculate player bounding box after corrections
-                player_box = make_player_aabb(v_eye);
+                player_box = make_player_aabb(camera.v_eye);
             }
         }
     }
@@ -512,7 +504,7 @@ void Game::apply_physics(Camera &camera)
     ChunkManager &chunk_mgr = ChunkManager::get_instance();
     Player &player = Player::get_instance();
 
-    Vec3_t plyr_chunk_location = { .v = {
+    Vec3_t plyr_chunk_location{ .v = {
         floorf(camera.v_eye.x / KC::CHUNK_SIZE),
         floorf(camera.v_eye.y / KC::CHUNK_SIZE),
         floorf(camera.v_eye.z / KC::CHUNK_SIZE)
@@ -530,13 +522,13 @@ void Game::apply_physics(Camera &camera)
 
     // Resolve x-axis
     camera.v_eye.x += player.v_vel.x * dt;
-    resolve_axis(camera.v_eye, 0, needle);
+    resolve_axis(camera, 0, needle);
     // Resolve y-axis
     camera.v_eye.y += player.v_vel.y * dt;
-    resolve_axis(camera.v_eye, 1, needle);
+    resolve_axis(camera, 1, needle);
     // Resolve z-axis
     camera.v_eye.z += player.v_vel.z * dt;
-    resolve_axis(camera.v_eye, 2, needle);
+    resolve_axis(camera, 2, needle);
 }
 
 /**
