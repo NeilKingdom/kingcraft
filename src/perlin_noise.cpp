@@ -106,23 +106,30 @@ float PerlinNoise::perlin(const float x, const float y, const float z) const
 
 	// Add blended results from 8 corners of cube
 	float noise = lerp(
-        w, lerp(
-            v, lerp(
-                u, gradient(permutations_table[AA], _x, _y, _z),
+        w,
+        lerp(
+            v,
+            lerp(
+                u,
+                gradient(permutations_table[AA], _x, _y, _z),
                 gradient(permutations_table[BA], _x - 1, _y, _z)
             ),
             lerp(
-                u, gradient(permutations_table[AB], _x, _y - 1, _z),
+                u,
+                gradient(permutations_table[AB], _x, _y - 1, _z),
                 gradient(permutations_table[BB], _x - 1, _y - 1, _z)
             )
         ),
         lerp(
-            v, lerp(
-                u, gradient(permutations_table[AA + 1], _x, _y, _z - 1),
+            v,
+            lerp(
+                u,
+                gradient(permutations_table[AA + 1], _x, _y, _z - 1),
                 gradient(permutations_table[BA + 1], _x - 1, _y, _z - 1)
             ),
             lerp(
-                u, gradient(permutations_table[AB + 1], _x, _y - 1, _z - 1),
+                u,
+                gradient(permutations_table[AB + 1], _x, _y - 1, _z - 1),
                 gradient(permutations_table[BB + 1], _x - 1, _y - 1, _z - 1)
             )
         )
