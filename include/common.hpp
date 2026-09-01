@@ -37,8 +37,9 @@
 #include <GL/gl.h>   // General OpenGL APIs
 #include <GL/glx.h>  // X11-specific OpenGL APIs
 
-// liblac
-#include "/home/neil/devel/projects/quikmafs/lib/quikmafs.h"
+// First-party libs
+#include "ezc.h"
+#include "qm.h"
 
 typedef unsigned ID;
 

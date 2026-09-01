@@ -1,44 +1,43 @@
-CC = g++
+CXX ?= g++
 PROFILE ?= DEBUG
 
-CCFLAGS_DEBUG := -DDEBUG -O0 -ggdb -fno-builtin
-CCFLAGS_RELEASE := -Ofast
+CXXFLAGS_DEBUG := -DDEBUG -O0 -ggdb -fno-builtin
+CXXFLAGS_RELEASE := -Ofast
 
 SRC_DIR := src
-OBJ_DIR := obj
 INC_DIR := include
-
-IMGUI := res/vendor/imgui
+TGT_DIR := build
+OBJ_DIR := $(TGT_DIR)/obj
 
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
-DEPS := $(wildcard $(INC_DIR)/*.hpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-CCFLAGS += $(CCFLAGS_$(PROFILE)) -I$(INC_DIR) -I$(IMGUI)/include -std=c++20 -Wall -Wextra
-LDFLAGS += -L$(IMGUI)/bin -l:imgui.a -limc -lX11 -lGL -lGLEW
+INCLUDES += -I$(INC_DIR) -Ilib/ezc/include -Ilib/quikmafs/include -Ivendor/imgui/include
+CXXFLAGS += $(CXXFLAGS_$(PROFILE)) $(INCLUDES) -std=c++20 -Wall -Wextra -MMD -MP
+LDFLAGS += -Lvendor/imgui/bin -l:imgui.a -limc -lX11 -lGL -lGLEW
 
-BIN := kingcraft
+BIN := $(TGT_DIR)/kingcraft
 
 # Default goal
-all: prebuild $(BIN)
-
-# Pre-build actions
-prebuild:
-	@mkdir -p $(OBJ_DIR)
+all: $(BIN)
 
 # Remove object files and binaries
 clean:
-	rm -f $(BIN) $(OBJ_DIR)/*.o
+	rm -rf $(TGT_DIR)
 
 # Rebuild the project
 rebuild: clean all
 
 # Make the binary
 $(BIN): $(OBJS)
-	$(CC) $^ -o $@ $(LDFLAGS)
+	$(CXX) $^ -o $@ $(LDFLAGS)
 
 # Intermediate objects
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CC) $(CCFLAGS) -c $< -o $@
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR):
+	@mkdir -p $@
 
 .PHONY: clean all prebuild rebuild

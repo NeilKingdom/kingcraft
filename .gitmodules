@@ -2,3 +2,12 @@
 	path = res/vendor/imgui
 	url = git@github.com:NeilKingdom/imgui.git
 	branch = main
+[submodule "lib/ezc"]
+	path = lib/ezc
+	url = git@github.com:NeilKingdom/ezc.git
+[submodule "lib/quikmafs"]
+	path = lib/quikmafs
+	url = git@github.com:NeilKingdom/quikmafs.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = git@github.com:NeilKingdom/imgui.git

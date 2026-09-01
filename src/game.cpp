@@ -127,8 +127,8 @@ Game::Game()
 
     /*** Create shader programs ***/
 
-    this->block_shader  = Shader("res/shader/block.vs", "res/shader/block.fs");
-    this->skybox_shader = Shader("res/shader/skybox.vs", "res/shader/skybox.fs");
+    this->block_shader  = Shader("res/shaders/block.vs", "res/shaders/block.fs");
+    this->skybox_shader = Shader("res/shaders/skybox.vs", "res/shaders/skybox.fs");
 
     /*** Other setup ***/
 

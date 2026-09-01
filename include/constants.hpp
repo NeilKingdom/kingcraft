@@ -2,7 +2,8 @@
 
 #include <chrono>
 #include <stdint.h>
-#include "/home/neil/devel/projects/quikmafs/lib/quikmafs.h"
+
+#include "qm.h"
 
 namespace KC
 {

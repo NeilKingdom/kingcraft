@@ -4,11 +4,6 @@
 #include "constants.hpp"
 #include "settings.hpp"
 
-#define SET_BIT(mask, bit)    ((mask) |= (bit))
-#define UNSET_BIT(mask, bit)  ((mask) &= (~bit))
-#define IS_BIT_SET(mask, bit) (((mask) & (bit)) == (bit))
-#define TOGGLE_BIT(mask, bit) ((mask) ^= (bit))
-
 static inline uint32_t hash32(const uint32_t x)
 {
     uint32_t _x = x;
